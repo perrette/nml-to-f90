@@ -22,9 +22,9 @@ def derived_type_name(group):
 #
 
 # load templates
-template_full = open("templates/template_params.f90").read()
-template_io = open("templates/template_subroutines_io.f90").read()
-template_setget = open("templates/template_subroutines_setget.f90").read()
+template_module = open("templates/module_ioparams.f90").read()
+template_io = open("templates/subroutines_io.f90").read()
+template_setget = open("templates/subroutines_setget.f90").read()
 
 
 def _get_vtype(v, freecharlen=False):
@@ -101,7 +101,7 @@ def get_format_io(params, params_mod, io_mod):
         read_nml_interface.append("module procedure :: read_nml_{g}".format(g=g)) 
         write_nml_interface.append("module procedure :: write_nml_{g}".format(g=g)) 
 
-    # source_code = template_full.format(types = ", ".join(types), 
+    # source_code = template_module.format(types = ", ".join(types), 
     fmt = dict(types = ", ".join(types), 
                io_routines = "\n\n".join(io_routines),
                io_module_name = io_mod,
@@ -207,7 +207,7 @@ def make_source(params, params_mod, io_mod):
     fmt = {}
     fmt = get_format_setget(params, params_mod, io_mod)
     fmt.update(fmt_io)
-    return template_full.format(**fmt)
+    return template_module.format(**fmt)
 
 if __name__ == "__main__":
     # when the types are to be output in a dummy, temporary 
