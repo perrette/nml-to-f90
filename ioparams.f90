@@ -1,4 +1,3 @@
-
 module ioparams
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Automatically generated module
@@ -10,7 +9,7 @@ module ioparams
     implicit none
 
     private
-    public :: read_nml, write_nml, set_param, get_param
+    public :: read_nml, write_nml, set_param, get_param, set_param_string, has_param
     public :: group1_t, group2_t
 
     integer, parameter :: dp = kind(0.d0)
@@ -50,6 +49,16 @@ module ioparams
         module procedure :: write_nml_group2
     end interface
 
+    interface has_param
+        module procedure :: has_param_group1
+        module procedure :: has_param_group2
+    end interface
+
+    interface set_param_string
+        module procedure :: set_param_string_group1
+        module procedure :: set_param_string_group2
+    end interface
+
     interface set_param
         module procedure :: set_param_group1_char_arr
         module procedure :: set_param_group1_integer
@@ -80,13 +89,19 @@ module ioparams
         module procedure :: get_param_group2_integer
     end interface
 
+    interface string_to_vector
+      module procedure :: string_to_vector_integer
+      module procedure :: string_to_vector_double
+      module procedure :: string_to_vector_string
+      module procedure :: string_to_vector_logical
+    end interface
+
 contains
 
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! IO routines
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    
 subroutine read_nml_group1 (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the group1 block in a namelist file and assign to type
@@ -150,7 +165,6 @@ subroutine write_nml_group1 (iounit, params)
     ! write_all
     write(unit=iounit, nml=group1) 
 end subroutine
-
 
 
 subroutine read_nml_group2 (iounit, params)
@@ -239,10 +253,255 @@ end subroutine
 
 
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Routines useful to process command-line parameters: 
+    ! - has_param
+    ! - set_param_string
+    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+subroutine set_param_string_group1 (params, name, string)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: string
+    integer :: iostat
+
+    select case (name) 
+    
+case ('string1', 'group1%string1')
+    read(string, *, iostat=iostat) params%string1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%string1: ", trim(string)
+        stop
+    endif
+
+    
+case ('stringarr1', 'group1%stringarr1')
+    call string_to_vector(string, params%stringarr1, iostat=iostat)
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%stringarr1: ", trim(string)
+        stop
+    endif
+
+    
+case ('logical1', 'group1%logical1')
+    read(string, *, iostat=iostat) params%logical1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%logical1: ", trim(string)
+        stop
+    endif
+
+    
+case ('integer1', 'group1%integer1')
+    read(string, *, iostat=iostat) params%integer1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%integer1: ", trim(string)
+        stop
+    endif
+
+    
+case ('integer2', 'group1%integer2')
+    read(string, *, iostat=iostat) params%integer2
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%integer2: ", trim(string)
+        stop
+    endif
+
+    
+case ('string2', 'group1%string2')
+    read(string, *, iostat=iostat) params%string2
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%string2: ", trim(string)
+        stop
+    endif
+
+    case default
+      write(*,*) "ERROR set_param_string for group1: unknown member :: ",trim(name)
+      stop
+    end select
+end subroutine
+
+function has_param_group1 (params, name) result(has_param)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Test whether an attribute name is member of the type group1
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical :: has_param
+
+    has_param = .true.
+    select case (name) 
+      
+case ('string1', 'group1%string1')
+
+    
+case ('stringarr1', 'group1%stringarr1')
+
+    
+case ('logical1', 'group1%logical1')
+
+    
+case ('integer1', 'group1%integer1')
+
+    
+case ('integer2', 'group1%integer2')
+
+    
+case ('string2', 'group1%string2')
+
+    case default
+      has_param = .false.
+    end select
+end function
+
+
+subroutine set_param_string_group2 (params, name, string)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: string
+    integer :: iostat
+
+    select case (name) 
+    
+case ('string1', 'group2%string1')
+    read(string, *, iostat=iostat) params%string1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%string1: ", trim(string)
+        stop
+    endif
+
+    
+case ('stringarr1', 'group2%stringarr1')
+    call string_to_vector(string, params%stringarr1, iostat=iostat)
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%stringarr1: ", trim(string)
+        stop
+    endif
+
+    
+case ('logical1', 'group2%logical1')
+    read(string, *, iostat=iostat) params%logical1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%logical1: ", trim(string)
+        stop
+    endif
+
+    
+case ('integer1', 'group2%integer1')
+    read(string, *, iostat=iostat) params%integer1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%integer1: ", trim(string)
+        stop
+    endif
+
+    
+case ('integer2', 'group2%integer2')
+    read(string, *, iostat=iostat) params%integer2
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%integer2: ", trim(string)
+        stop
+    endif
+
+    
+case ('string2', 'group2%string2')
+    read(string, *, iostat=iostat) params%string2
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%string2: ", trim(string)
+        stop
+    endif
+
+    
+case ('intarr1', 'group2%intarr1')
+    call string_to_vector(string, params%intarr1, iostat=iostat)
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%intarr1: ", trim(string)
+        stop
+    endif
+
+    
+case ('double1', 'group2%double1')
+    read(string, *, iostat=iostat) params%double1
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%double1: ", trim(string)
+        stop
+    endif
+
+    
+case ('dblarr1', 'group2%dblarr1')
+    call string_to_vector(string, params%dblarr1, iostat=iostat)
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%dblarr1: ", trim(string)
+        stop
+    endif
+
+    
+case ('logarr1', 'group2%logarr1')
+    call string_to_vector(string, params%logarr1, iostat=iostat)
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%logarr1: ", trim(string)
+        stop
+    endif
+
+    case default
+      write(*,*) "ERROR set_param_string for group2: unknown member :: ",trim(name)
+      stop
+    end select
+end subroutine
+
+function has_param_group2 (params, name) result(has_param)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Test whether an attribute name is member of the type group2
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical :: has_param
+
+    has_param = .true.
+    select case (name) 
+      
+case ('string1', 'group2%string1')
+
+    
+case ('stringarr1', 'group2%stringarr1')
+
+    
+case ('logical1', 'group2%logical1')
+
+    
+case ('integer1', 'group2%integer1')
+
+    
+case ('integer2', 'group2%integer2')
+
+    
+case ('string2', 'group2%string2')
+
+    
+case ('intarr1', 'group2%intarr1')
+
+    
+case ('double1', 'group2%double1')
+
+    
+case ('dblarr1', 'group2%dblarr1')
+
+    
+case ('logarr1', 'group2%logarr1')
+
+    case default
+      has_param = .false.
+    end select
+end function
+
+
+    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! SET / GET routines
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    
 subroutine set_param_group1_char_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
@@ -253,7 +512,7 @@ subroutine set_param_group1_char_arr (params, name, value)
 
     select case (name) 
         
-case ('stringarr1')
+case ('stringarr1', 'group1%stringarr1')
     params%stringarr1 = value
 
         case default
@@ -272,7 +531,7 @@ subroutine get_param_group1_char_arr (params, name, value)
 
     select case (name) 
         
-case ('stringarr1')
+case ('stringarr1', 'group1%stringarr1')
     value = params%stringarr1
 
         case default
@@ -280,7 +539,6 @@ case ('stringarr1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group1_integer (params, name, value)
@@ -293,11 +551,11 @@ subroutine set_param_group1_integer (params, name, value)
 
     select case (name) 
         
-case ('integer1')
+case ('integer1', 'group1%integer1')
     params%integer1 = value
 
 
-case ('integer2')
+case ('integer2', 'group1%integer2')
     params%integer2 = value
 
         case default
@@ -316,11 +574,11 @@ subroutine get_param_group1_integer (params, name, value)
 
     select case (name) 
         
-case ('integer1')
+case ('integer1', 'group1%integer1')
     value = params%integer1
 
 
-case ('integer2')
+case ('integer2', 'group1%integer2')
     value = params%integer2
 
         case default
@@ -328,7 +586,6 @@ case ('integer2')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group1_char (params, name, value)
@@ -341,11 +598,11 @@ subroutine set_param_group1_char (params, name, value)
 
     select case (name) 
         
-case ('string1')
+case ('string1', 'group1%string1')
     params%string1 = value
 
 
-case ('string2')
+case ('string2', 'group1%string2')
     params%string2 = value
 
         case default
@@ -364,11 +621,11 @@ subroutine get_param_group1_char (params, name, value)
 
     select case (name) 
         
-case ('string1')
+case ('string1', 'group1%string1')
     value = params%string1
 
 
-case ('string2')
+case ('string2', 'group1%string2')
     value = params%string2
 
         case default
@@ -376,7 +633,6 @@ case ('string2')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group1_logical (params, name, value)
@@ -389,7 +645,7 @@ subroutine set_param_group1_logical (params, name, value)
 
     select case (name) 
         
-case ('logical1')
+case ('logical1', 'group1%logical1')
     params%logical1 = value
 
         case default
@@ -408,7 +664,7 @@ subroutine get_param_group1_logical (params, name, value)
 
     select case (name) 
         
-case ('logical1')
+case ('logical1', 'group1%logical1')
     value = params%logical1
 
         case default
@@ -416,7 +672,6 @@ case ('logical1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_char_arr (params, name, value)
@@ -429,7 +684,7 @@ subroutine set_param_group2_char_arr (params, name, value)
 
     select case (name) 
         
-case ('stringarr1')
+case ('stringarr1', 'group2%stringarr1')
     params%stringarr1 = value
 
         case default
@@ -448,7 +703,7 @@ subroutine get_param_group2_char_arr (params, name, value)
 
     select case (name) 
         
-case ('stringarr1')
+case ('stringarr1', 'group2%stringarr1')
     value = params%stringarr1
 
         case default
@@ -456,7 +711,6 @@ case ('stringarr1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_double_arr (params, name, value)
@@ -469,7 +723,7 @@ subroutine set_param_group2_double_arr (params, name, value)
 
     select case (name) 
         
-case ('dblarr1')
+case ('dblarr1', 'group2%dblarr1')
     params%dblarr1 = value
 
         case default
@@ -488,7 +742,7 @@ subroutine get_param_group2_double_arr (params, name, value)
 
     select case (name) 
         
-case ('dblarr1')
+case ('dblarr1', 'group2%dblarr1')
     value = params%dblarr1
 
         case default
@@ -496,7 +750,6 @@ case ('dblarr1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_integer_arr (params, name, value)
@@ -509,7 +762,7 @@ subroutine set_param_group2_integer_arr (params, name, value)
 
     select case (name) 
         
-case ('intarr1')
+case ('intarr1', 'group2%intarr1')
     params%intarr1 = value
 
         case default
@@ -528,7 +781,7 @@ subroutine get_param_group2_integer_arr (params, name, value)
 
     select case (name) 
         
-case ('intarr1')
+case ('intarr1', 'group2%intarr1')
     value = params%intarr1
 
         case default
@@ -536,7 +789,6 @@ case ('intarr1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_logical (params, name, value)
@@ -549,7 +801,7 @@ subroutine set_param_group2_logical (params, name, value)
 
     select case (name) 
         
-case ('logical1')
+case ('logical1', 'group2%logical1')
     params%logical1 = value
 
         case default
@@ -568,7 +820,7 @@ subroutine get_param_group2_logical (params, name, value)
 
     select case (name) 
         
-case ('logical1')
+case ('logical1', 'group2%logical1')
     value = params%logical1
 
         case default
@@ -576,7 +828,6 @@ case ('logical1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_char (params, name, value)
@@ -589,11 +840,11 @@ subroutine set_param_group2_char (params, name, value)
 
     select case (name) 
         
-case ('string1')
+case ('string1', 'group2%string1')
     params%string1 = value
 
 
-case ('string2')
+case ('string2', 'group2%string2')
     params%string2 = value
 
         case default
@@ -612,11 +863,11 @@ subroutine get_param_group2_char (params, name, value)
 
     select case (name) 
         
-case ('string1')
+case ('string1', 'group2%string1')
     value = params%string1
 
 
-case ('string2')
+case ('string2', 'group2%string2')
     value = params%string2
 
         case default
@@ -624,7 +875,6 @@ case ('string2')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_logical_arr (params, name, value)
@@ -637,7 +887,7 @@ subroutine set_param_group2_logical_arr (params, name, value)
 
     select case (name) 
         
-case ('logarr1')
+case ('logarr1', 'group2%logarr1')
     params%logarr1 = value
 
         case default
@@ -656,7 +906,7 @@ subroutine get_param_group2_logical_arr (params, name, value)
 
     select case (name) 
         
-case ('logarr1')
+case ('logarr1', 'group2%logarr1')
     value = params%logarr1
 
         case default
@@ -664,7 +914,6 @@ case ('logarr1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_double (params, name, value)
@@ -677,7 +926,7 @@ subroutine set_param_group2_double (params, name, value)
 
     select case (name) 
         
-case ('double1')
+case ('double1', 'group2%double1')
     params%double1 = value
 
         case default
@@ -696,7 +945,7 @@ subroutine get_param_group2_double (params, name, value)
 
     select case (name) 
         
-case ('double1')
+case ('double1', 'group2%double1')
     value = params%double1
 
         case default
@@ -704,7 +953,6 @@ case ('double1')
             stop
     end select
 end subroutine
-
 
 
 subroutine set_param_group2_integer (params, name, value)
@@ -717,11 +965,11 @@ subroutine set_param_group2_integer (params, name, value)
 
     select case (name) 
         
-case ('integer1')
+case ('integer1', 'group2%integer1')
     params%integer1 = value
 
 
-case ('integer2')
+case ('integer2', 'group2%integer2')
     params%integer2 = value
 
         case default
@@ -740,11 +988,11 @@ subroutine get_param_group2_integer (params, name, value)
 
     select case (name) 
         
-case ('integer1')
+case ('integer1', 'group2%integer1')
     value = params%integer1
 
 
-case ('integer2')
+case ('integer2', 'group2%integer2')
     value = params%integer2
 
         case default
@@ -754,4 +1002,250 @@ case ('integer2')
 end subroutine
 
 
+    ! =============================================================
+    !
+    ! Type conversion functions (Courtesy of Alex Robinson's nml module)
+    ! ==> useful to read vector (lists) from command list argument)
+    !
+    ! =============================================================
+
+subroutine string_to_vector_integer (string, value, iostat)
+
+    implicit none 
+
+    character(len=*), intent(IN) :: string 
+    integer :: value(:)
+    character(len=256) :: tmpvec(size(value))
+    character(len=256) :: tmpstr, fmt 
+    integer, optional :: iostat
+    integer :: stat, n, q, q1, q2, j 
+
+    tmpstr = trim(adjustl(string))
+    n      = len_trim(tmpstr)+2
+
+    tmpvec(:) = "" 
+
+    q1 = 1 
+    do q = 1, size(tmpvec)
+        q2 = index(tmpstr(q1:n)," ") + q1
+        if (q2 .gt. q1 .and. q2 .le. n) then 
+            tmpvec(q) = tmpstr(q1:q2-1)
+            q1 = q2
+
+            ! Make sure gaps of more than one space are properly handled
+            do j = 1, 1000
+                if (tmpstr(q1:q1) == " ") q1 = q1+1
+                if (q1 .ge. n) exit 
+            end do 
+
+            ! Remove quotes around string if they exist 
+            call remove_quotes_comma(tmpvec(q))
+
+            read(tmpvec(q), *, iostat=iostat) value(q)
+        
+        end if 
+    end do 
+end subroutine
+
+subroutine string_to_vector_double (string, value, iostat)
+
+    implicit none 
+
+    character(len=*), intent(IN) :: string 
+    real(dp) :: value(:)
+    character(len=256) :: tmpvec(size(value))
+    character(len=256) :: tmpstr, fmt 
+    integer, optional :: iostat
+    integer :: stat, n, q, q1, q2, j 
+
+    tmpstr = trim(adjustl(string))
+    n      = len_trim(tmpstr)+2
+
+    tmpvec(:) = "" 
+
+    q1 = 1 
+    do q = 1, size(tmpvec)
+        q2 = index(tmpstr(q1:n)," ") + q1
+        if (q2 .gt. q1 .and. q2 .le. n) then 
+            tmpvec(q) = tmpstr(q1:q2-1)
+            q1 = q2
+
+            ! Make sure gaps of more than one space are properly handled
+            do j = 1, 1000
+                if (tmpstr(q1:q1) == " ") q1 = q1+1
+                if (q1 .ge. n) exit 
+            end do 
+
+            ! Remove quotes around string if they exist 
+            call remove_quotes_comma(tmpvec(q))
+
+            read(tmpvec(q), *, iostat=iostat) value(q)
+        
+        end if 
+    end do 
+end subroutine
+
+subroutine string_to_vector_logical (string, value, iostat)
+
+    implicit none 
+
+    character(len=*), intent(IN) :: string 
+    logical :: value(:)
+    character(len=256) :: tmpvec(size(value))
+    character(len=256) :: tmpstr, fmt 
+    integer, optional :: iostat
+    integer :: stat, n, q, q1, q2, j 
+
+    tmpstr = trim(adjustl(string))
+    n      = len_trim(tmpstr)+2
+
+    tmpvec(:) = "" 
+
+    q1 = 1 
+    do q = 1, size(tmpvec)
+        q2 = index(tmpstr(q1:n)," ") + q1
+        if (q2 .gt. q1 .and. q2 .le. n) then 
+            tmpvec(q) = tmpstr(q1:q2-1)
+            q1 = q2
+
+            ! Make sure gaps of more than one space are properly handled
+            do j = 1, 1000
+                if (tmpstr(q1:q1) == " ") q1 = q1+1
+                if (q1 .ge. n) exit 
+            end do 
+
+            ! Remove quotes around string if they exist 
+            call remove_quotes_comma(tmpvec(q))
+
+            read(tmpvec(q), *, iostat=iostat) value(q)
+        
+        end if 
+    end do 
+end subroutine
+subroutine string_to_vector_string (string, value, iostat)
+
+    implicit none 
+
+    character(len=*), intent(IN) :: string 
+    character(len=*) :: value(:)
+    character(len=256) :: tmpvec(size(value))
+    character(len=256) :: tmpstr, fmt 
+    integer, optional :: iostat
+    integer :: stat, n, q, q1, q2, j 
+
+    tmpstr = trim(adjustl(string))
+    n      = len_trim(tmpstr)+2
+
+    tmpvec(:) = "" 
+
+    q1 = 1 
+    do q = 1, size(tmpvec)
+        q2 = index(tmpstr(q1:n)," ") + q1
+        if (q2 .gt. q1 .and. q2 .le. n) then 
+            tmpvec(q) = tmpstr(q1:q2-1)
+            q1 = q2
+
+            ! Make sure gaps of more than one space are properly handled
+            do j = 1, 1000
+                if (tmpstr(q1:q1) == " ") q1 = q1+1
+                if (q1 .ge. n) exit 
+            end do 
+
+            ! Remove quotes around string if they exist 
+            call remove_quotes_comma(tmpvec(q))
+
+            read(tmpvec(q), *, iostat=iostat) value(q)
+        
+        end if 
+    end do 
+end subroutine
+
+subroutine remove_quotes_comma(string)
+
+    implicit none 
+    character(len=*), intent(INOUT) :: string 
+    integer :: i, n 
+
+    ! Eliminate quotes
+    n = len_trim(string)
+    do i = 1,n 
+        if (string(i:i) == '"' .or. string(i:i) == "'") string(i:i) = " "
+    end do 
+    string = trim(adjustl(string))
+
+    ! Remove final comma too
+    n = len_trim(string)
+    if (n > 0) then 
+        if (string(n:n) == ",") string(n:n) = " "
+        string = trim(adjustl(string))
+    end if 
+    
+    return 
+
+end subroutine remove_quotes_comma
+
+    ! function string_to_double(string) result(value)
+    !
+    !     implicit none 
+    !
+    !     character(len=*), intent(IN) :: string 
+    !     double precision :: value 
+    !
+    !     character(len=256) :: tmpstr 
+    !     integer :: stat, n
+    !     double precision :: x 
+    !
+    !     tmpstr = trim(adjustl(string))
+    !     n      = len_trim(tmpstr)
+    !
+    !     read(tmpstr(1:n),*,IOSTAT=stat) x
+    !
+    !     value = 0
+    !     if (stat .eq. 0) then 
+    !         value = x 
+    !     else
+    !         n = len_trim(tmpstr)-1
+    !         READ(tmpstr(1:n),*,IOSTAT=stat) x
+    !         if (stat .ne. 0) then 
+    !             write(*,*) "nml:: ","Error converting string to number!"
+    !             write(*,*) "|",trim(tmpstr),"|",n,stat,x
+    !         else
+    !             value = x 
+    !         end if 
+    !     end if 
+    !
+    !     return 
+    !
+    ! end function string_to_double
+    !
+    ! function string_to_logical(string) result(value)
+    !
+    !     implicit none 
+    !
+    !     character(len=*), intent(IN) :: string 
+    !     logical :: value 
+    !
+    !     character(len=256) :: tmpstr 
+    !     integer :: stat, n
+    !     double precision :: x 
+    !
+    !     tmpstr = trim(adjustl(string))
+    !     
+    !     select case(trim(tmpstr))
+    !         case("T","True","TRUE","true",".TRUE.")
+    !             value = .TRUE. 
+    !         case("F","False","FALSE","false",".FALSE.")
+    !             value = .FALSE. 
+    !         case DEFAULT
+    !             write(*,*) "nml:: Error reading logical parameter."
+    !             stop 
+    !     end select  
+    !
+    !     return 
+    !
+    ! end function string_to_logical
+
+
 end module ioparams
+
+

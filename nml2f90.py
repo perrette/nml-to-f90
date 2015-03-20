@@ -1,11 +1,16 @@
 #!/usr/bin/env python2
 """Generates a fortran module from a namelist.
 
-Usage:
-    python nml2f90.py <namelist.nml> <ioparams>
+This script will read the namelist.nml input file and output ioparams.f90, that 
+contains corresponding parameter types and I/O, setter/getter routines.
 
-It will read the namelist.nml input file and output ioparams.f90, that 
-contains corresponding parameter types and I/O setter/getter functions.
+Usage:
+    python nml2f90.py <namelist.nml> <ioparams> [ --clen <clen> ] [ --aclen <aclen> ]
+
+Options:
+    -h --help : Show this screen
+    --clen : indicate the length of character strings (default: 256)
+    --aclen : indicate the length of character strings in arrays (default: 256)
 """
 import sys, os
 from collections import OrderedDict as odict
@@ -34,6 +39,7 @@ clen = 256
 _dir = os.path.abspath(os.path.dirname(nml2f90_templates.__file__))
 template_module = open(os.path.join(_dir, "module_ioparams.f90")).read()
 template_io = open(os.path.join(_dir, "subroutine_io.f90")).read()
+template_cmd = open(os.path.join(_dir, "subroutine_cmd.f90")).read()
 template_setget = open(os.path.join(_dir, "subroutine_setget.f90")).read()
 
 # load templates
@@ -62,6 +68,50 @@ def _get_vtype(v, charlen=clen, acharlen=clen):
         raise TypeError("Unknown type")
     vtype_short = vtype_short or vtype
     return vtype, vtype_short
+
+
+def get_format_typedef(params):
+    """ Fill-in variable names for derived type definition
+
+    params : dict of dict (params[group][param_name])
+    """
+    groups = params.keys()
+
+    type_definitions = []
+    list_of_types = []
+
+    # loop over derived types
+    for G in groups:
+
+        # fill-in...
+        variable_definitions = []
+
+        g = G.lower()
+
+        for K in params[G]:
+            k = K.lower()
+            vtype, _ = _get_vtype(params[G][K])
+            variable_definitions.append("{vtype} :: {name}".format(vtype=vtype, name=k))
+
+        dtype = derived_type_name(G)
+        list_of_types.append(dtype)
+
+        dtype_def = """
+    type {dtype} 
+        {vdef}
+    end type
+        """.format(dtype=dtype, vdef="\n        ".join(variable_definitions))
+
+        type_definitions.append(dtype_def)
+
+    fmt = dict(
+        type_definitions = "\n    ".join(type_definitions),
+        list_of_types = ", ".join(list_of_types),
+    )
+
+    return fmt
+
+
 
 def get_format_io(params):
     """ Create I/O source code from a namelist template
@@ -117,16 +167,97 @@ def get_format_io(params):
 
     return fmt
 
+template_set_string_case = """
+case ('{vname}', '{group}%{vname}')
+    read(string, *, iostat=iostat) params%{vname}
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%{vname}: ", trim(string)
+        stop
+    endif
+"""
 
+template_set_string_case_vector = """
+case ('{vname}', '{group}%{vname}')
+    call string_to_vector(string, params%{vname}, iostat=iostat)
+    if (iostat /= 0) then 
+        write(*,*) "ERROR converting type for params%{vname}: ", trim(string)
+        stop
+    endif
+"""
+
+template_has_case = """
+case ('{vname}', '{group}%{vname}')
+"""
+
+def get_format_cmd(params):
+    """ Fill template to help parsing command-line arguments
+
+    inputs:
+        params : dict of dict (params[group][param_name])
+    returns:
+        dict with keys:
+        - has_param_proc
+        - has_param_routines
+        - set_string_proc
+        - set_string_routines
+    """
+    cmd_routines = []
+    has_param_proc = []
+    set_param_string_proc = []
+
+    for G in params.keys():
+
+        list_set_cases = []
+        list_has_cases = []
+
+        g = G.lower()
+        t = derived_type_name(g)
+
+        for K in params[G]:
+            k = K.lower()
+            list_has_cases.append(template_has_case.format(vname=k, group=g))
+
+            # vectors are handled differently
+            if type(params[G][K]) is list:
+                list_set_cases.append(template_set_string_case_vector.format(vname=k, group=g))
+            else:
+                list_set_cases.append(template_set_string_case.format(vname=k, group=g))
+
+        fmt = dict(
+            group=g,
+            type_name=t,
+            list_set_cases="\n    ".join(list_set_cases),
+            list_has_cases="\n    ".join(list_has_cases),
+        )
+
+        cmd_routines.append( template_cmd.format(**fmt) )
+
+        set_param_string_proc.append("module procedure :: set_param_string_{g}".format(g=g)) 
+        has_param_proc.append("module procedure :: has_param_{g}".format(g=g)) 
+
+    # source_code = template_module.format(types = ", ".join(types), 
+    fmt = dict(
+               cmd_routines = "\n\n".join(cmd_routines),
+               has_param_proc = "\n        ".join(has_param_proc),
+               set_param_string_proc = "\n        ".join(set_param_string_proc),
+               )
+
+    return fmt
+
+
+# when selecting parameter values, also accept argument names with "group%name" syntax
 template_get_cases = """
-case ('{vname}')
+case ('{vname}', '{group}%{vname}')
     value = params%{vname}
 """
 template_set_cases = """
-case ('{vname}')
+case ('{vname}', '{group}%{vname}')
     params%{vname} = value
 """
 
+# NOTE: Is that functionality get_param / set_param really useful?
+# The same thing could be achieved with set_string. 
+# But well, this may come in handy for some generic application.
 def get_format_setget(params):
     """ Create set_param/get_param source code from a namelist template
 
@@ -165,8 +296,8 @@ def get_format_setget(params):
             list_get_cases = []
             list_set_cases = []
             for k in vtypes[vtype]:
-                list_get_cases.append( template_get_cases.format(vname=k) )
-                list_set_cases.append( template_set_cases.format(vname=k) )
+                list_get_cases.append( template_get_cases.format(vname=k, group=g) )
+                list_set_cases.append( template_set_cases.format(vname=k, group=g) )
 
             # the subroutines
             setget_routines.append(
@@ -200,48 +331,6 @@ def get_format_setget(params):
     return fmt
 
 
-def get_format_typedef(params):
-    """ Fill-in variable names for derived type definition
-
-    params : dict of dict (params[group][param_name])
-    """
-    groups = params.keys()
-
-    type_definitions = []
-    list_of_types = []
-
-    # loop over derived types
-    for G in groups:
-
-        # fill-in...
-        variable_definitions = []
-
-        g = G.lower()
-
-        for K in params[G]:
-            k = K.lower()
-            vtype, _ = _get_vtype(params[G][K])
-            variable_definitions.append("{vtype} :: {name}".format(vtype=vtype, name=k))
-
-        dtype = derived_type_name(G)
-        list_of_types.append(dtype)
-
-        dtype_def = """
-    type {dtype} 
-        {vdef}
-    end type
-        """.format(dtype=dtype, vdef="\n        ".join(variable_definitions))
-
-        type_definitions.append(dtype_def)
-
-    fmt = dict(
-        type_definitions = "\n    ".join(type_definitions),
-        list_of_types = ", ".join(list_of_types),
-    )
-
-    return fmt
-
-
 def make_source(params, io_mod):
     """ Make source code with I/O and getter / setter
     """
@@ -249,13 +338,16 @@ def make_source(params, io_mod):
         io_module_name = io_mod,
     )
     fmt.update( 
+        get_format_typedef(params)
+    )
+    fmt.update( 
         get_format_io(params) 
     )
     fmt.update( 
-        get_format_setget(params)
+        get_format_cmd(params) 
     )
     fmt.update( 
-        get_format_typedef(params)
+        get_format_setget(params)
     )
     return template_module.format(**fmt)
 
