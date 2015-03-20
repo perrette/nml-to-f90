@@ -21,6 +21,12 @@ def derived_type_name(group):
 # BELOW CODE IS FINE
 #
 
+# load templates
+template_full = open("templates/template_params.f90").read()
+template_io = open("templates/template_subroutines_io.f90").read()
+template_setget = open("templates/template_subroutines_setget.f90").read()
+
+
 def _get_vtype(v, freecharlen=False):
     """ return fortran type for a particular namelist variable
     """
@@ -45,100 +51,6 @@ def _get_vtype(v, freecharlen=False):
         raise TypeError("Unknown type")
     vtype_short = vtype_short or vtype
     return vtype, vtype_short
-
-template_full = """
-module {io_module_name}
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Automatically generated module
-    ! 
-    ! Contains read / write subroutines for all derived types imported below.
-    ! As well as setter / getter access by field name
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    use {params_module_name}, only: {types}
-
-    implicit none
-
-    private
-    public :: read_nml, write_nml, set_param, get_param
-
-    integer, parameter :: dp = kind(0.d0)
-
-    interface read_nml
-        {read_nml_proc}
-    end interface
-
-    interface write_nml
-        {write_nml_proc}
-    end interface
-
-    interface set_param
-        {set_param_proc}
-    end interface
-
-    interface get_param
-        {get_param_proc}
-    end interface
-
-contains
-
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! IO routines
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    {io_routines}
-
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! SET / GET routines
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    {setget_routines}
-
-end module {io_module_name}
-"""
-
-template_read = """
-subroutine read_nml_{group} (iounit, params)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the {group} block in a namelist file and assign to type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    integer, intent(in) :: iounit
-    type({type_name}), intent(inout) :: params
-
-    {variable_definitions}
-
-    namelist / {group} / {list_of_variables}
-
-    ! initialize variables
-    {list_of_init}
-
-    ! read all
-    read(unit=iounit, nml={group}) 
-
-    ! assign back to type
-    {list_of_assign}
-end subroutine
-"""
-
-template_write = """
-subroutine write_nml_{group} (iounit, params)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the {group} block in a namelist file and assign to type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    integer, intent(in) :: iounit
-    type({type_name}), intent(inout) :: params
-
-    {variable_definitions}
-
-    namelist / {group} / {list_of_variables}
-
-    ! initialize variables
-    {list_of_init}
-
-    ! write_all
-    write(unit=iounit, nml={group}) 
-end subroutine
-"""
 
 def get_format_io(params, params_mod, io_mod):
     """ Create I/O source code from a namelist template
@@ -184,8 +96,7 @@ def get_format_io(params, params_mod, io_mod):
             list_of_assign = "\n    ".join(list_of_assign),
         )
 
-        io_routines.append( template_read.format(**fmt) )
-        io_routines.append( template_write.format(**fmt) )
+        io_routines.append( template_io.format(**fmt) )
 
         read_nml_interface.append("module procedure :: read_nml_{g}".format(g=g)) 
         write_nml_interface.append("module procedure :: write_nml_{g}".format(g=g)) 
@@ -201,42 +112,6 @@ def get_format_io(params, params_mod, io_mod):
 
     return fmt
 
-
-template_set = """
-subroutine set_param_{group}_{vtype_name} (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the {group} type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type({type_name}), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    {vtype}, intent(in) :: value
-
-    select case (name) 
-        {list_set_cases}
-        case default
-        write(*,*) "ERROR set_param for {group}: unknown type member: {vtype} :: ",trim(name)
-            stop
-    end select
-end subroutine
-"""
-
-template_get = """
-subroutine get_param_{group}_{vtype_name} (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the {group} type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type({type_name}), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    {vtype}, intent(out) :: value
-
-    select case (name) 
-        {list_get_cases}
-        case default
-            write(*,*) "ERROR get_param for {group}: unknown type member {vtype} :: ",trim(name)
-            stop
-    end select
-end subroutine
-"""
 
 template_get_cases = """
 case ('{vname}')
@@ -294,21 +169,13 @@ def get_format_setget(params, params_mod, io_mod):
 
             # the subroutines
             setget_routines.append(
-                template_get.format(
+
+                template_setget.format(
                     vtype=vtype,
                     vtype_name=vtype_short,
                     group=g, # namelist-like group (shorter)
                     type_name= derived_type_name(g), # actual derived type
                     list_get_cases= "\n".join(list_get_cases),
-                )
-            )
-
-            setget_routines.append(
-                template_set.format(
-                    vtype=vtype,
-                    vtype_name=vtype_short,
-                    group=g, # namelist-like group (shorter)
-                    type_name= derived_type_name(g), # actual derived type
                     list_set_cases= "\n".join(list_set_cases),
                 )
             )
