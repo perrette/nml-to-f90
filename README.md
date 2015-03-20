@@ -37,7 +37,13 @@ Generate source code and compile the test program in one go:
 
 Have a look at ioparams.f90 in the repo to get an impression of the generated code.
 
-#Credits
+## Caveats
+
+- character strings have default length of 256 (to be edited in nml2f90.py)
+- certain types may be lost via conversion to python (e.g. all "real" converted to double precision)
+- The default settings are fine, though, and these things can be edited in a per-user-basis in the .py file.
+
+## Credits
 
 Thanks to Alex Robinson and its nml project https://github.com/alex-robinson/nml
 for inspiration and its test namelist file. Have a look for an alternative approach
