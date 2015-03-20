@@ -30,7 +30,7 @@ def _get_vtype(v, freecharlen=False):
     elif type(v) is bool:
         vtype = "logical"
     elif type(v) is float:
-        vtype = "double precision"
+        vtype = "real(dp)"
         vtype_short = "double"
     elif type(v) is str:
         vtype = "character(len={})".format("*" if freecharlen else len(v))
@@ -58,6 +58,11 @@ module {io_module_name}
     use {params_module_name}, only: {types}
 
     implicit none
+
+    private
+    public :: read_nml, write_nml, set_param, get_param
+
+    integer, parameter :: dp = kind(0.d0)
 
     interface read_nml
         {read_nml_proc}

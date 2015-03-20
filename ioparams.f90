@@ -11,6 +11,11 @@ module ioparams
 
     implicit none
 
+    private
+    public :: read_nml, write_nml, set_param, get_param
+
+    integer, parameter :: dp = kind(0.d0)
+
     interface read_nml
         module procedure :: read_nml_group1
         module procedure :: read_nml_group2
@@ -26,13 +31,13 @@ module ioparams
         module procedure :: set_param_group1_char
         module procedure :: set_param_group1_char_arr
         module procedure :: set_param_group1_logical
-        module procedure :: set_param_group2_double
+        module procedure :: set_param_group2_double_arr
         module procedure :: set_param_group2_char_arr
         module procedure :: set_param_group2_logical
         module procedure :: set_param_group2_char
         module procedure :: set_param_group2_logical_arr
+        module procedure :: set_param_group2_double
         module procedure :: set_param_group2_integer
-        module procedure :: set_param_group2_double_arr
         module procedure :: set_param_group2_integer_arr
     end interface
 
@@ -41,13 +46,13 @@ module ioparams
         module procedure :: get_param_group1_char
         module procedure :: get_param_group1_char_arr
         module procedure :: get_param_group1_logical
-        module procedure :: get_param_group2_double
+        module procedure :: get_param_group2_double_arr
         module procedure :: get_param_group2_char_arr
         module procedure :: get_param_group2_logical
         module procedure :: get_param_group2_char
         module procedure :: get_param_group2_logical_arr
+        module procedure :: get_param_group2_double
         module procedure :: get_param_group2_integer
-        module procedure :: get_param_group2_double_arr
         module procedure :: get_param_group2_integer_arr
     end interface
 
@@ -140,8 +145,8 @@ subroutine read_nml_group2 (iounit, params)
     integer :: integer1
     integer :: integer2
     integer, dimension(10) :: intarr1
-    double precision :: double1
-    double precision, dimension(6) :: dblarr1
+    real(dp) :: double1
+    real(dp), dimension(6) :: dblarr1
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, string2, stringarr1, logical1, integer1, integer2, intarr1, double1, dblarr1, logarr1
@@ -190,8 +195,8 @@ subroutine write_nml_group2 (iounit, params)
     integer :: integer1
     integer :: integer2
     integer, dimension(10) :: intarr1
-    double precision :: double1
-    double precision, dimension(6) :: dblarr1
+    real(dp) :: double1
+    real(dp), dimension(6) :: dblarr1
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, string2, stringarr1, logical1, integer1, integer2, intarr1, double1, dblarr1, logarr1
@@ -402,42 +407,42 @@ end subroutine
 
 
 
-subroutine get_param_group2_double (params, name, value)
+subroutine get_param_group2_double_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(pars_group2), intent(inout) :: params
     character(len=*), intent(in) :: name
-    double precision, intent(out) :: value
+    real(dp), dimension(6), intent(out) :: value
 
     select case (name) 
         
-case ('double1')
-    value = params%double1
+case ('dblarr1')
+    value = params%dblarr1
 
         case default
-            write(*,*) "ERROR get_param for group2: unknown type member double precision :: ",trim(name)
+            write(*,*) "ERROR get_param for group2: unknown type member real(dp), dimension(6) :: ",trim(name)
             stop
     end select
 end subroutine
 
 
 
-subroutine set_param_group2_double (params, name, value)
+subroutine set_param_group2_double_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(pars_group2), intent(inout) :: params
     character(len=*), intent(in) :: name
-    double precision, intent(in) :: value
+    real(dp), dimension(6), intent(in) :: value
 
     select case (name) 
         
-case ('double1')
-    params%double1 = value
+case ('dblarr1')
+    params%dblarr1 = value
 
         case default
-        write(*,*) "ERROR set_param for group2: unknown type member: double precision :: ",trim(name)
+        write(*,*) "ERROR set_param for group2: unknown type member: real(dp), dimension(6) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -620,6 +625,48 @@ end subroutine
 
 
 
+subroutine get_param_group2_double (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(pars_group2), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    real(dp), intent(out) :: value
+
+    select case (name) 
+        
+case ('double1')
+    value = params%double1
+
+        case default
+            write(*,*) "ERROR get_param for group2: unknown type member real(dp) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+
+
+subroutine set_param_group2_double (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(pars_group2), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    real(dp), intent(in) :: value
+
+    select case (name) 
+        
+case ('double1')
+    params%double1 = value
+
+        case default
+        write(*,*) "ERROR set_param for group2: unknown type member: real(dp) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+
+
 subroutine get_param_group2_integer (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
@@ -664,48 +711,6 @@ case ('integer2')
 
         case default
         write(*,*) "ERROR set_param for group2: unknown type member: integer :: ",trim(name)
-            stop
-    end select
-end subroutine
-
-
-
-subroutine get_param_group2_double_arr (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the group2 type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    double precision, dimension(6), intent(out) :: value
-
-    select case (name) 
-        
-case ('dblarr1')
-    value = params%dblarr1
-
-        case default
-            write(*,*) "ERROR get_param for group2: unknown type member double precision, dimension(6) :: ",trim(name)
-            stop
-    end select
-end subroutine
-
-
-
-subroutine set_param_group2_double_arr (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the group2 type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    double precision, dimension(6), intent(in) :: value
-
-    select case (name) 
-        
-case ('dblarr1')
-    params%dblarr1 = value
-
-        case default
-        write(*,*) "ERROR set_param for group2: unknown type member: double precision, dimension(6) :: ",trim(name)
             stop
     end select
 end subroutine
