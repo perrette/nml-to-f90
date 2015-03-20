@@ -1,3 +1,4 @@
+
 module ioparams
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Automatically generated module
@@ -85,7 +86,8 @@ contains
     ! IO routines
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    subroutine read_nml_group1 (iounit, params)
+    
+subroutine read_nml_group1 (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the group1 block in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -148,6 +150,7 @@ subroutine write_nml_group1 (iounit, params)
     ! write_all
     write(unit=iounit, nml=group1) 
 end subroutine
+
 
 
 subroutine read_nml_group2 (iounit, params)
@@ -239,7 +242,8 @@ end subroutine
     ! SET / GET routines
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    subroutine set_param_group1_char_arr (params, name, value)
+    
+subroutine set_param_group1_char_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -276,6 +280,7 @@ case ('stringarr1')
             stop
     end select
 end subroutine
+
 
 
 subroutine set_param_group1_integer (params, name, value)
@@ -325,6 +330,7 @@ case ('integer2')
 end subroutine
 
 
+
 subroutine set_param_group1_char (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
@@ -372,6 +378,7 @@ case ('string2')
 end subroutine
 
 
+
 subroutine set_param_group1_logical (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
@@ -409,6 +416,7 @@ case ('logical1')
             stop
     end select
 end subroutine
+
 
 
 subroutine set_param_group2_char_arr (params, name, value)
@@ -450,6 +458,7 @@ case ('stringarr1')
 end subroutine
 
 
+
 subroutine set_param_group2_double_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
@@ -487,6 +496,7 @@ case ('dblarr1')
             stop
     end select
 end subroutine
+
 
 
 subroutine set_param_group2_integer_arr (params, name, value)
@@ -528,6 +538,7 @@ case ('intarr1')
 end subroutine
 
 
+
 subroutine set_param_group2_logical (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
@@ -565,6 +576,7 @@ case ('logical1')
             stop
     end select
 end subroutine
+
 
 
 subroutine set_param_group2_char (params, name, value)
@@ -614,6 +626,7 @@ case ('string2')
 end subroutine
 
 
+
 subroutine set_param_group2_logical_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
@@ -653,6 +666,7 @@ case ('logarr1')
 end subroutine
 
 
+
 subroutine set_param_group2_double (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
@@ -690,6 +704,7 @@ case ('double1')
             stop
     end select
 end subroutine
+
 
 
 subroutine set_param_group2_integer (params, name, value)

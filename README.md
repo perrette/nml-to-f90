@@ -37,6 +37,13 @@ Generate source code and compile the test program in one go:
 
 Have a look at ioparams.f90 in the repo to get an impression of the generated code.
 
+## Install (with administrator rights)
+
+python setup.py install
+
+_NOTE_ : This will install nml2f90.py script and the namelist.py module to read 
+namelist into python.
+
 ## Caveats
 
 - character strings have default length of 256 (to be edited in nml2f90.py)
