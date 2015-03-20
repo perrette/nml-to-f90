@@ -29,7 +29,7 @@ template_io = open("templates/subroutines_io.f90").read()
 template_setget = open("templates/subroutines_setget.f90").read()
 
 
-def _get_vtype(v, charlen=None, acharlen=None):
+def _get_vtype(v, charlen=clen, acharlen=clen):
     """ return fortran type for a particular namelist variable
     """
     vtype_short = ""
@@ -44,7 +44,7 @@ def _get_vtype(v, charlen=None, acharlen=None):
         vtype = "character(len={})".format(charlen or len(v))
         vtype_short = "char"
     elif type(v) is list:
-        vtype0, vtype0_short = _get_vtype(v[0], acharlen)
+        vtype0, vtype0_short = _get_vtype(v[0], charlen, acharlen)
         vtype = "{vtype}, dimension({len})".format(vtype=vtype0, len=len(v)) 
         vtype_short = vtype0_short+'_arr'
     else:
@@ -211,7 +211,7 @@ def get_format_typedef(params):
 
         for K in params[G]:
             k = K.lower()
-            vtype, _ = _get_vtype(params[G][K], charlen=clen, acharlen=clen)
+            vtype, _ = _get_vtype(params[G][K])
             variable_definitions.append("{vtype} :: {name}".format(vtype=vtype, name=k))
 
         dtype = derived_type_name(G)
