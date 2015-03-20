@@ -1,0 +1,24 @@
+
+&group1
+    string1    = "sometext.txt"
+    stringarr1 = "aaaaaa" "b" "ccc"
+    
+    ! Extra info here 
+    logical1   = T
+    integer1   = 1               ! Comment about integer1
+    integer2   = 2               ! Another comment for integer2
+    string2    = "no"
+/
+
+&group2
+    string1    = "sometext2.txt"
+    stringarr1 = "a" "bb" "ccc"
+    logical1   = False
+    integer1   = 11               ! Comment about integer1
+    integer2   = 12               ! Another comment for integer2
+    string2    = "yes"
+    intarr1    = 1 2 3 4 5 6  7
+    double1    = 52.5
+    dblarr1    = 1.0 2.0 3.0 4.0  5e5
+    logarr1    = T True FALSE .FALSE. .TRUE.
+/
