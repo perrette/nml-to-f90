@@ -17,6 +17,9 @@ io_mod="ioparams"
 def derived_type_name(group):
     return "pars_"+group.lower()
 
+# character length
+clen = 256
+
 #
 # BELOW CODE IS FINE
 #
@@ -27,7 +30,7 @@ template_io = open("templates/subroutines_io.f90").read()
 template_setget = open("templates/subroutines_setget.f90").read()
 
 
-def _get_vtype(v, freecharlen=False):
+def _get_vtype(v, charlen=None, acharlen=None):
     """ return fortran type for a particular namelist variable
     """
     vtype_short = ""
@@ -39,10 +42,10 @@ def _get_vtype(v, freecharlen=False):
         vtype = "real(dp)"
         vtype_short = "double"
     elif type(v) is str:
-        vtype = "character(len={})".format("*" if freecharlen else len(v))
+        vtype = "character(len={})".format(charlen or len(v))
         vtype_short = "char"
     elif type(v) is list:
-        vtype0, vtype0_short = _get_vtype(v[0])
+        vtype0, vtype0_short = _get_vtype(v[0], acharlen)
         vtype = "{vtype}, dimension({len})".format(vtype=vtype0, len=len(v)) 
         vtype_short = vtype0_short+'_arr'
     else:
@@ -141,7 +144,7 @@ def get_format_setget(params):
         vtypes_short = {}
         for K in params[G].keys():
             k = K.lower()
-            vtype, vtype_short = _get_vtype(params[G][K], freecharlen=True)
+            vtype, vtype_short = _get_vtype(params[G][K], charlen="*")
             if vtype not in vtypes:
                 vtypes[vtype] = []
             vtypes[vtype].append(k)
@@ -188,6 +191,49 @@ def get_format_setget(params):
 
     return fmt
 
+
+def get_format_typedef(params):
+    """ Fill-in variable names for derived type definition
+
+    params : dict of dict (params[group][param_name])
+    """
+    groups = params.keys()
+
+    type_definitions = []
+    list_of_types = []
+
+    # loop over derived types
+    for G in groups:
+
+        # fill-in...
+        variable_definitions = []
+
+        g = G.lower()
+
+        for K in params[G]:
+            k = K.lower()
+            vtype, _ = _get_vtype(params[G][K], charlen=clen, acharlen=clen)
+            variable_definitions.append("{vtype} :: {name}".format(vtype=vtype, name=k))
+
+        dtype = derived_type_name(G)
+        list_of_types.append(dtype)
+
+        dtype_def = """
+    type {dtype} 
+        {vdef}
+    end type
+        """.format(dtype=dtype, vdef="\n        ".join(variable_definitions))
+
+        type_definitions.append(dtype_def)
+
+    fmt = dict(
+        type_definitions = "\n    ".join(type_definitions),
+        list_of_types = ", ".join(list_of_types),
+    )
+
+    return fmt
+
+
 def make_source(params, params_mod, io_mod):
     """ Make source code with I/O and getter / setter
     """
@@ -200,6 +246,9 @@ def make_source(params, params_mod, io_mod):
     )
     fmt.update( 
         get_format_setget(params)
+    )
+    fmt.update( 
+        get_format_typedef(params)
     )
     return template_module.format(**fmt)
 

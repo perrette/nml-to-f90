@@ -6,14 +6,15 @@ module {io_module_name}
     ! As well as setter / getter access by field name
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    use {params_module_name}, only: {types}
-
     implicit none
 
     private
     public :: read_nml, write_nml, set_param, get_param
+    public :: {list_of_types}
 
     integer, parameter :: dp = kind(0.d0)
+
+    {type_definitions}
 
     interface read_nml
         {read_nml_proc}

@@ -1,7 +1,7 @@
 program test_io_params
 
-  use params, only: pars_group1, pars_group2
   use ioparams, only: read_nml, write_nml, set_param, get_param
+  use ioparams, only: pars_group1, pars_group2
 
   implicit none 
 

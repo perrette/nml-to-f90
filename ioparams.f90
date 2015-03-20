@@ -6,14 +6,38 @@ module ioparams
     ! As well as setter / getter access by field name
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    use params, only: pars_group1, pars_group2
-
     implicit none
 
     private
     public :: read_nml, write_nml, set_param, get_param
+    public :: pars_group1, pars_group2
 
     integer, parameter :: dp = kind(0.d0)
+
+    
+    type pars_group1 
+        character(len=256) :: string1
+        character(len=256) :: string2
+        character(len=256), dimension(3) :: stringarr1
+        logical :: logical1
+        integer :: integer1
+        integer :: integer2
+    end type
+        
+    
+    type pars_group2 
+        character(len=256) :: string1
+        character(len=256) :: string2
+        character(len=256), dimension(3) :: stringarr1
+        logical :: logical1
+        integer :: integer1
+        integer :: integer2
+        integer, dimension(10) :: intarr1
+        real(dp) :: double1
+        real(dp), dimension(6) :: dblarr1
+        logical, dimension(5) :: logarr1
+    end type
+        
 
     interface read_nml
         module procedure :: read_nml_group1
