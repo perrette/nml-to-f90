@@ -130,10 +130,10 @@ def _parse_value(variable_value):
         try:
             parsed_value = float(variable_value)
         except ValueError:
-            if variable_value.lower() in ['.true.', 't']:
+            if variable_value.lower() in ['.true.', 't', 'true']:
                 # boolean
                 parsed_value = True
-            elif variable_value.lower() in ['.false.', 'f']:
+            elif variable_value.lower() in ['.false.', 'f', 'false']:
                 parsed_value = False
             elif variable_value.startswith("'") \
                 and variable_value.endswith("'") \
@@ -153,7 +153,7 @@ def _parse_value(variable_value):
                 parsed_value = _parse_array([variable_value])
             elif len(variable_value.split()) > 1:
                 # array 3 4 5
-                parsed_value = _parse_array(variable_value.split(' '))
+                parsed_value = _parse_array(variable_value.split())
             else:
                 print "Parsing ERROR: >>>{}<<<".format(variable_value)
                 raise ValueError(variable_value)

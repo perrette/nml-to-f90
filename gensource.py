@@ -6,8 +6,6 @@ from namelist import Namelist, read_namelist_file
 #
 # TO BE UPDATED BY THE USER, IF NEEDED
 #
-# module name where parameter types are defined
-params_mod="params" 
 
 # new module name to be generated with all io routines
 io_mod="ioparams"
@@ -15,7 +13,8 @@ io_mod="ioparams"
 # returns derived type name based on namelist group name
 # it was taken to match nml's test program
 def derived_type_name(group):
-    return "pars_"+group.lower()
+    # return "pars_"+group.lower()
+    return group.lower()+'_t'
 
 # character length
 clen = 256
@@ -234,12 +233,11 @@ def get_format_typedef(params):
     return fmt
 
 
-def make_source(params, params_mod, io_mod):
+def make_source(params, io_mod):
     """ Make source code with I/O and getter / setter
     """
     fmt = dict(
         io_module_name = io_mod,
-        params_module_name = params_mod,
     )
     fmt.update( 
         get_format_io(params) 
@@ -259,7 +257,8 @@ if __name__ == "__main__":
     dummygroup="ALLPARAMS"
 
     # read namelist template
-    nml = read_namelist_file("namelist.template.nml")
+    # nml = read_namelist_file("namelist.template.nml")
+    nml = read_namelist_file("namelist.nml")
     if len(nml.groups.keys()) == 1 and dummygroup in nml.groups.keys():
         print "Parse from a mixed-up, grouped dummy namelist"
         params = odict()
@@ -273,6 +272,6 @@ if __name__ == "__main__":
         print nml.groups.keys()
         params = nml.groups
 
-    code = make_source(params, params_mod, io_mod)
+    code = make_source(params, io_mod)
     with open(io_mod+'.f90', 'w') as f:
         f.write(code)

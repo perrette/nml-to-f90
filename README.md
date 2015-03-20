@@ -1,15 +1,15 @@
 # nml-to-f90
-Generate useful fortran source code from a single namelist
+Generate fortran source code from a single namelist
 
-Warning:
+Start from a namelist file namelist.nml and create ioparams.f90, 
+to be used as follow:
 
-For now, everything is assumed to come from params.f90, where all relevant 
-derived types are defined. This is only one short step away from making things derived from a namelist directly. Work in progress.
+    use ioparams, only: group1_t, group2_t, ...
+    use ioparams, only: read_nml, write_nml, get_param, set_param
 
-preparatory phase (one time step in a project):
-- edit gen_src.f90 so that these types are written to a dummy namelist (when a new type is added)
-- edit 3 variables gen_src.py to make sure the relevant fortran modules are known, 
-  and to modify the naming conventions at your convenience.
+where `<group>_t` are newly defined types created from namelist groups
+and the four subroutines are handy I/O and set/get interfaces for the
+above defined types.
 
 create the source code ioparams.f90 :
 
@@ -17,4 +17,6 @@ create the source code ioparams.f90 :
 
 compile the test program
 
-    make nml2
+    make test
+
+Have a look at ioparams.f90 in the repo to get an impression of the generated code.

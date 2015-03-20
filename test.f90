@@ -1,12 +1,12 @@
 program test_io_params
 
   use ioparams, only: read_nml, write_nml, set_param, get_param
-  use ioparams, only: pars_group1, pars_group2
+  use ioparams, only: group1_t, group2_t
 
   implicit none 
 
-  type(pars_group1) :: group1 
-  type(pars_group2) :: group2 
+  type(group1_t) :: group1 
+  type(group2_t) :: group2 
   character(len=256) :: filename, filename2
   integer :: iounit = 88
   double precision :: test_dp

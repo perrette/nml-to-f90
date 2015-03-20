@@ -10,31 +10,31 @@ module ioparams
 
     private
     public :: read_nml, write_nml, set_param, get_param
-    public :: pars_group1, pars_group2
+    public :: group1_t, group2_t
 
     integer, parameter :: dp = kind(0.d0)
 
     
-    type pars_group1 
+    type group1_t 
         character(len=256) :: string1
-        character(len=256) :: string2
         character(len=256), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
+        character(len=256) :: string2
     end type
         
     
-    type pars_group2 
+    type group2_t 
         character(len=256) :: string1
-        character(len=256) :: string2
         character(len=256), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        integer, dimension(10) :: intarr1
+        character(len=256) :: string2
+        integer, dimension(7) :: intarr1
         real(dp) :: double1
-        real(dp), dimension(6) :: dblarr1
+        real(dp), dimension(5) :: dblarr1
         logical, dimension(5) :: logarr1
     end type
         
@@ -54,14 +54,14 @@ module ioparams
         module procedure :: set_param_group1_char
         module procedure :: set_param_group1_char_arr
         module procedure :: set_param_group1_logical
-        module procedure :: set_param_group2_double_arr
         module procedure :: set_param_group2_char_arr
+        module procedure :: set_param_group2_integer_arr
         module procedure :: set_param_group2_logical
         module procedure :: set_param_group2_char
         module procedure :: set_param_group2_logical_arr
         module procedure :: set_param_group2_double
         module procedure :: set_param_group2_integer
-        module procedure :: set_param_group2_integer_arr
+        module procedure :: set_param_group2_double_arr
     end interface
 
     interface get_param
@@ -69,14 +69,14 @@ module ioparams
         module procedure :: get_param_group1_char
         module procedure :: get_param_group1_char_arr
         module procedure :: get_param_group1_logical
-        module procedure :: get_param_group2_double_arr
         module procedure :: get_param_group2_char_arr
+        module procedure :: get_param_group2_integer_arr
         module procedure :: get_param_group2_logical
         module procedure :: get_param_group2_char
         module procedure :: get_param_group2_logical_arr
         module procedure :: get_param_group2_double
         module procedure :: get_param_group2_integer
-        module procedure :: get_param_group2_integer_arr
+        module procedure :: get_param_group2_double_arr
     end interface
 
 contains
@@ -90,35 +90,35 @@ contains
     ! Read the group1 block in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256) :: string2
-    character(len=256), dimension(3) :: stringarr1
+    character(len=12) :: string1
+    character(len=6), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
+    character(len=2) :: string2
 
-    namelist / group1 / string1, string2, stringarr1, logical1, integer1, integer2
+    namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
     ! initialize variables
     string1 = params%string1
-    string2 = params%string2
     stringarr1 = params%stringarr1
     logical1 = params%logical1
     integer1 = params%integer1
     integer2 = params%integer2
+    string2 = params%string2
 
     ! read all
     read(unit=iounit, nml=group1) 
 
     ! assign back to type
     params%string1 = string1
-    params%string2 = string2
     params%stringarr1 = stringarr1
     params%logical1 = logical1
     params%integer1 = integer1
     params%integer2 = integer2
+    params%string2 = string2
 end subroutine
 
 subroutine write_nml_group1 (iounit, params)
@@ -126,24 +126,24 @@ subroutine write_nml_group1 (iounit, params)
     ! Read the group1 block in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256) :: string2
-    character(len=256), dimension(3) :: stringarr1
+    character(len=12) :: string1
+    character(len=6), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
+    character(len=2) :: string2
 
-    namelist / group1 / string1, string2, stringarr1, logical1, integer1, integer2
+    namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
     ! initialize variables
     string1 = params%string1
-    string2 = params%string2
     stringarr1 = params%stringarr1
     logical1 = params%logical1
     integer1 = params%integer1
     integer2 = params%integer2
+    string2 = params%string2
 
     ! write_all
     write(unit=iounit, nml=group1) 
@@ -155,28 +155,28 @@ subroutine read_nml_group2 (iounit, params)
     ! Read the group2 block in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256) :: string2
-    character(len=256), dimension(3) :: stringarr1
+    character(len=13) :: string1
+    character(len=1), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    integer, dimension(10) :: intarr1
+    character(len=3) :: string2
+    integer, dimension(7) :: intarr1
     real(dp) :: double1
-    real(dp), dimension(6) :: dblarr1
+    real(dp), dimension(5) :: dblarr1
     logical, dimension(5) :: logarr1
 
-    namelist / group2 / string1, string2, stringarr1, logical1, integer1, integer2, intarr1, double1, dblarr1, logarr1
+    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
-    string2 = params%string2
     stringarr1 = params%stringarr1
     logical1 = params%logical1
     integer1 = params%integer1
     integer2 = params%integer2
+    string2 = params%string2
     intarr1 = params%intarr1
     double1 = params%double1
     dblarr1 = params%dblarr1
@@ -187,11 +187,11 @@ subroutine read_nml_group2 (iounit, params)
 
     ! assign back to type
     params%string1 = string1
-    params%string2 = string2
     params%stringarr1 = stringarr1
     params%logical1 = logical1
     params%integer1 = integer1
     params%integer2 = integer2
+    params%string2 = string2
     params%intarr1 = intarr1
     params%double1 = double1
     params%dblarr1 = dblarr1
@@ -203,28 +203,28 @@ subroutine write_nml_group2 (iounit, params)
     ! Read the group2 block in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256) :: string2
-    character(len=256), dimension(3) :: stringarr1
+    character(len=13) :: string1
+    character(len=1), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    integer, dimension(10) :: intarr1
+    character(len=3) :: string2
+    integer, dimension(7) :: intarr1
     real(dp) :: double1
-    real(dp), dimension(6) :: dblarr1
+    real(dp), dimension(5) :: dblarr1
     logical, dimension(5) :: logarr1
 
-    namelist / group2 / string1, string2, stringarr1, logical1, integer1, integer2, intarr1, double1, dblarr1, logarr1
+    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
-    string2 = params%string2
     stringarr1 = params%stringarr1
     logical1 = params%logical1
     integer1 = params%integer1
     integer2 = params%integer2
+    string2 = params%string2
     intarr1 = params%intarr1
     double1 = params%double1
     dblarr1 = params%dblarr1
@@ -243,7 +243,7 @@ end subroutine
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     integer, intent(in) :: value
 
@@ -266,7 +266,7 @@ subroutine get_param_group1_integer (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     integer, intent(out) :: value
 
@@ -290,7 +290,7 @@ subroutine set_param_group1_char (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: value
 
@@ -313,7 +313,7 @@ subroutine get_param_group1_char (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(out) :: value
 
@@ -337,9 +337,9 @@ subroutine set_param_group1_char_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
-    character(len=256), dimension(3), intent(in) :: value
+    character(len=6), dimension(3), intent(in) :: value
 
     select case (name) 
         
@@ -347,7 +347,7 @@ case ('stringarr1')
     params%stringarr1 = value
 
         case default
-        write(*,*) "ERROR set_param for group1: unknown type member: character(len=256), dimension(3) :: ",trim(name)
+        write(*,*) "ERROR set_param for group1: unknown type member: character(len=6), dimension(3) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -356,9 +356,9 @@ subroutine get_param_group1_char_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
-    character(len=256), dimension(3), intent(out) :: value
+    character(len=6), dimension(3), intent(out) :: value
 
     select case (name) 
         
@@ -366,7 +366,7 @@ case ('stringarr1')
     value = params%stringarr1
 
         case default
-            write(*,*) "ERROR get_param for group1: unknown type member character(len=256), dimension(3) :: ",trim(name)
+            write(*,*) "ERROR get_param for group1: unknown type member character(len=6), dimension(3) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -376,7 +376,7 @@ subroutine set_param_group1_logical (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     logical, intent(in) :: value
 
@@ -395,7 +395,7 @@ subroutine get_param_group1_logical (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group1), intent(inout) :: params
+    type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     logical, intent(out) :: value
 
@@ -411,52 +411,13 @@ case ('logical1')
 end subroutine
 
 
-subroutine set_param_group2_double_arr (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the group2 type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    real(dp), dimension(6), intent(in) :: value
-
-    select case (name) 
-        
-case ('dblarr1')
-    params%dblarr1 = value
-
-        case default
-        write(*,*) "ERROR set_param for group2: unknown type member: real(dp), dimension(6) :: ",trim(name)
-            stop
-    end select
-end subroutine
-
-subroutine get_param_group2_double_arr (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the group2 type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    real(dp), dimension(6), intent(out) :: value
-
-    select case (name) 
-        
-case ('dblarr1')
-    value = params%dblarr1
-
-        case default
-            write(*,*) "ERROR get_param for group2: unknown type member real(dp), dimension(6) :: ",trim(name)
-            stop
-    end select
-end subroutine
-
-
 subroutine set_param_group2_char_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
-    character(len=256), dimension(3), intent(in) :: value
+    character(len=1), dimension(3), intent(in) :: value
 
     select case (name) 
         
@@ -464,7 +425,7 @@ case ('stringarr1')
     params%stringarr1 = value
 
         case default
-        write(*,*) "ERROR set_param for group2: unknown type member: character(len=256), dimension(3) :: ",trim(name)
+        write(*,*) "ERROR set_param for group2: unknown type member: character(len=1), dimension(3) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -473,9 +434,9 @@ subroutine get_param_group2_char_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
-    character(len=256), dimension(3), intent(out) :: value
+    character(len=1), dimension(3), intent(out) :: value
 
     select case (name) 
         
@@ -483,7 +444,46 @@ case ('stringarr1')
     value = params%stringarr1
 
         case default
-            write(*,*) "ERROR get_param for group2: unknown type member character(len=256), dimension(3) :: ",trim(name)
+            write(*,*) "ERROR get_param for group2: unknown type member character(len=1), dimension(3) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+
+subroutine set_param_group2_integer_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer, dimension(7), intent(in) :: value
+
+    select case (name) 
+        
+case ('intarr1')
+    params%intarr1 = value
+
+        case default
+        write(*,*) "ERROR set_param for group2: unknown type member: integer, dimension(7) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_integer_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer, dimension(7), intent(out) :: value
+
+    select case (name) 
+        
+case ('intarr1')
+    value = params%intarr1
+
+        case default
+            write(*,*) "ERROR get_param for group2: unknown type member integer, dimension(7) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -493,7 +493,7 @@ subroutine set_param_group2_logical (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     logical, intent(in) :: value
 
@@ -512,7 +512,7 @@ subroutine get_param_group2_logical (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     logical, intent(out) :: value
 
@@ -532,7 +532,7 @@ subroutine set_param_group2_char (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: value
 
@@ -555,7 +555,7 @@ subroutine get_param_group2_char (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(out) :: value
 
@@ -579,7 +579,7 @@ subroutine set_param_group2_logical_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     logical, dimension(5), intent(in) :: value
 
@@ -598,7 +598,7 @@ subroutine get_param_group2_logical_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     logical, dimension(5), intent(out) :: value
 
@@ -618,7 +618,7 @@ subroutine set_param_group2_double (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     real(dp), intent(in) :: value
 
@@ -637,7 +637,7 @@ subroutine get_param_group2_double (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     real(dp), intent(out) :: value
 
@@ -657,7 +657,7 @@ subroutine set_param_group2_integer (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     integer, intent(in) :: value
 
@@ -680,7 +680,7 @@ subroutine get_param_group2_integer (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     integer, intent(out) :: value
 
@@ -700,40 +700,40 @@ case ('integer2')
 end subroutine
 
 
-subroutine set_param_group2_integer_arr (params, name, value)
+subroutine set_param_group2_double_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
-    integer, dimension(10), intent(in) :: value
+    real(dp), dimension(5), intent(in) :: value
 
     select case (name) 
         
-case ('intarr1')
-    params%intarr1 = value
+case ('dblarr1')
+    params%dblarr1 = value
 
         case default
-        write(*,*) "ERROR set_param for group2: unknown type member: integer, dimension(10) :: ",trim(name)
+        write(*,*) "ERROR set_param for group2: unknown type member: real(dp), dimension(5) :: ",trim(name)
             stop
     end select
 end subroutine
 
-subroutine get_param_group2_integer_arr (params, name, value)
+subroutine get_param_group2_double_arr (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(pars_group2), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
-    integer, dimension(10), intent(out) :: value
+    real(dp), dimension(5), intent(out) :: value
 
     select case (name) 
         
-case ('intarr1')
-    value = params%intarr1
+case ('dblarr1')
+    value = params%dblarr1
 
         case default
-            write(*,*) "ERROR get_param for group2: unknown type member integer, dimension(10) :: ",trim(name)
+            write(*,*) "ERROR get_param for group2: unknown type member real(dp), dimension(5) :: ",trim(name)
             stop
     end select
 end subroutine

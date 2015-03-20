@@ -66,16 +66,14 @@ $(objdir)/%.o: %.f90
 
 ## Complete programs
 
-test: $(objdir)/params.o $(objdir)/ioparams.o $(objdir)/test.o
+test: $(objdir)/ioparams.o $(objdir)/test.o
 	$(FC) $(DFLAGS) $(FLAGS) -o test.x $^ $(LFLAGS)
 	@echo " "
 	@echo "    test.x is ready."
 	@echo " "
 
-src: $(objdir)/params.o 
-	$(FC) $(DFLAGS) $(FLAGS) -o gen_src.x gen_src.f90 $^ $(LFLAGS)
-	./gen_src.x
-	python gen_src.py
+src: gensource.py
+	python gensource.py
 	@echo " "
 	@echo "  ioparams.f90 is ready."
 	@echo " "
