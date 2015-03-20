@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python2
 """Generates a fortran module from a namelist.
 
 Usage:
