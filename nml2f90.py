@@ -1,5 +1,13 @@
-""" python program to generate fortran source code capable of read/write, set/get parameters from a list of types
+#!/usr/bin/python
+"""Generates a fortran module from a namelist.
+
+Usage:
+    python nml2f90.py <namelist.nml> <ioparams>
+
+It will read the namelist.nml input file and output ioparams.f90, that 
+contains corresponding parameter types and I/O setter/getter functions.
 """
+import sys
 from collections import OrderedDict as odict
 from namelist import Namelist, read_namelist_file
 
@@ -251,27 +259,37 @@ def make_source(params, io_mod):
     return template_module.format(**fmt)
 
 if __name__ == "__main__":
-    # when the types are to be output in a dummy, temporary 
-    # namelist, they are grouped under this name (this can 
-    # stay liek this without any impact, so leave it)
-    dummygroup="ALLPARAMS"
+
+    if len(sys.argv) < 2:
+        input_nml = "namelist.nml"
+    else:
+        input_nml = sys.argv[1]
+
+    if len(sys.argv) == 3:
+        io_mod = sys.argv[2]
+
+    if io_mod.endswith(".f90"):
+        io_file = io_mod  
+        io_mod = io_file[:-4]
+    else: 
+        io_file = io_mod + ".f90"
+
+    if len(sys.argv) > 3 or input_nml in ("-h", "--help"):
+        print __doc__
+        sys.exit()
+
+    print "Convert "+input_nml+" to "+io_file
+    print "...new module: "+io_mod
 
     # read namelist template
     # nml = read_namelist_file("namelist.template.nml")
-    nml = read_namelist_file("namelist.nml")
-    if len(nml.groups.keys()) == 1 and dummygroup in nml.groups.keys():
-        print "Parse from a mixed-up, grouped dummy namelist"
-        params = odict()
-        for k in nml.groups[dummygroup].keys():
-            g, nm = k.split("%")
-            if g not in params:
-                params[g] = odict()
-            params[g][nm] = nml.groups[dummygroup][k]
-    else:
-        print "Parse from an example namelist (not a dummy one)"
-        print nml.groups.keys()
-        params = nml.groups
+    nml = read_namelist_file(input_nml)
+    params = nml.groups
+
+    print "...with types: "+", ".join([derived_type_name(g) for g in params.keys()])
 
     code = make_source(params, io_mod)
-    with open(io_mod+'.f90', 'w') as f:
+    with open(io_file, 'w') as f:
         f.write(code)
+
+    print "done."
