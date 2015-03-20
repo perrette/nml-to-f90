@@ -48,7 +48,8 @@ namelist into python.
 
 - character strings have default length of 256 (to be edited in nml2f90.py)
 - certain types may be lost via conversion to python (e.g. all "real" converted to double precision)
-- The default settings are fine, though, and these things can be edited in a per-user-basis in the .py file.
+- no derived types can be present in the namelist with the % syntax (this would 
+  defy the point of this module...)
 
 ## Credits
 

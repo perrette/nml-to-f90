@@ -20,6 +20,8 @@ setup(name='namelist',
       keywords=('fortran','generic','namelist'),
       # basic stuff here
       py_modules = ['namelist'],
+      packages = ['nml2f90_templates'],
+      package_data = {'nml2f90_templates':['*.f90']},
       scripts = ['nml2f90.py'],
       long_description=long_description,
       url='https://github.com/perrette/nml-to-f90',

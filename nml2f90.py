@@ -10,6 +10,7 @@ contains corresponding parameter types and I/O setter/getter functions.
 import sys, os
 from collections import OrderedDict as odict
 from namelist import Namelist, read_namelist_file
+import nml2f90_templates
 
 #
 # TO BE UPDATED BY THE USER, IF NEEDED
@@ -30,135 +31,12 @@ clen = 256
 #
 # BELOW CODE IS FINE
 #
-_dir = os.path.abspath(os.path.dirname(__file__))
+_dir = os.path.abspath(os.path.dirname(nml2f90_templates.__file__))
+template_module = open(os.path.join(_dir, "module_ioparams.f90")).read()
+template_io = open(os.path.join(_dir, "subroutine_io.f90")).read()
+template_setget = open(os.path.join(_dir, "subroutine_setget.f90")).read()
 
 # load templates
-template_module = """
-module {io_module_name}
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Automatically generated module
-    ! 
-    ! Contains read / write subroutines for all derived types imported below.
-    ! As well as setter / getter access by field name
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    implicit none
-
-    private
-    public :: read_nml, write_nml, set_param, get_param
-    public :: {list_of_types}
-
-    integer, parameter :: dp = kind(0.d0)
-
-    {type_definitions}
-
-    interface read_nml
-        {read_nml_proc}
-    end interface
-
-    interface write_nml
-        {write_nml_proc}
-    end interface
-
-    interface set_param
-        {set_param_proc}
-    end interface
-
-    interface get_param
-        {get_param_proc}
-    end interface
-
-contains
-
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! IO routines
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    {io_routines}
-
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! SET / GET routines
-    ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    {setget_routines}
-
-end module {io_module_name}
-"""
-
-template_io = """
-subroutine read_nml_{group} (iounit, params)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the {group} block in a namelist file and assign to type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    integer, intent(in) :: iounit
-    type({type_name}), intent(inout) :: params
-
-    {variable_definitions}
-
-    namelist / {group} / {list_of_variables}
-
-    ! initialize variables
-    {list_of_init}
-
-    ! read all
-    read(unit=iounit, nml={group}) 
-
-    ! assign back to type
-    {list_of_assign}
-end subroutine
-
-subroutine write_nml_{group} (iounit, params)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the {group} block in a namelist file and assign to type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    integer, intent(in) :: iounit
-    type({type_name}), intent(inout) :: params
-
-    {variable_definitions}
-
-    namelist / {group} / {list_of_variables}
-
-    ! initialize variables
-    {list_of_init}
-
-    ! write_all
-    write(unit=iounit, nml={group}) 
-end subroutine
-"""
-
-template_setget = """
-subroutine set_param_{group}_{vtype_name} (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the {group} type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type({type_name}), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    {vtype}, intent(in) :: value
-
-    select case (name) 
-        {list_set_cases}
-        case default
-        write(*,*) "ERROR set_param for {group}: unknown type member: {vtype} :: ",trim(name)
-            stop
-    end select
-end subroutine
-
-subroutine get_param_{group}_{vtype_name} (params, name, value)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the {group} type
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type({type_name}), intent(inout) :: params
-    character(len=*), intent(in) :: name
-    {vtype}, intent(out) :: value
-
-    select case (name) 
-        {list_get_cases}
-        case default
-            write(*,*) "ERROR get_param for {group}: unknown type member {vtype} :: ",trim(name)
-            stop
-    end select
-end subroutine
-"""
 
 def _get_vtype(v, charlen=clen, acharlen=clen):
     """ return fortran type for a particular namelist variable
