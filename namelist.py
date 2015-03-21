@@ -42,14 +42,16 @@ class Namelist():
     available through 'groups' attribute.
     """
 
-    def __init__(self, input_str):
+    def __init__(self, input_str=None):
         self.groups = OrderedDict()
+        if input_str is None:
+            return 
 
         group_re = re.compile(r'&([^&]+)/', re.DOTALL)  # allow blocks to span multiple lines
         array_re = re.compile(r'(\w+)\((\d+)\)')
         # string_re = re.compile(r"\'\s*\w[^']*\'")
         string_re = re.compile(r"[\'\"]*[\'\"]")
-        self._complex_re = re.compile(r'^\((\d+.?\d*),(\d+.?\d*)\)$')
+        # self._complex_re = re.compile(r'^\((\d+.?\d*),(\d+.?\d*)\)$')
 
         # remove all comments, since they may have forward-slashes
         # TODO: store position of comments so that they can be re-inserted when
