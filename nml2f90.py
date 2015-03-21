@@ -5,7 +5,7 @@ This script will read the namelist.nml input file and output ioparams.f90, that
 contains corresponding parameter types and I/O, setter/getter routines.
 
 Usage:
-    nml2f90.py <namelist.nml> [<ioparams>] [--clen <clen>] [--aclen <aclen>] [--full] [--group-mapping MAP]
+    nml2f90.py <namelist.nml> [<ioparams>] [--clen <clen>] [--aclen <aclen>] [--full] [--mapping MAP]
 
 Options:
     -h --help       Show this screen
@@ -14,7 +14,7 @@ Options:
     --clen CLEN     indicate the length of character strings  [ default: 256 ]
     --aclen ACLEN   indicate the length of character strings in arrays  [ default: 256]
     --full          do include get_param, set_param functions
-    --group-mapping MAP mapping from group to type name (dict as json format)
+    --mapping MAP mapping from group to type name (dict as json format)
 """
 import sys, os, json
 from collections import OrderedDict as odict
@@ -48,6 +48,14 @@ aclen = 256
 def derived_type_name(group):
     # return "pars_"+group.lower()
     return group.lower()+'_t'
+
+def type_mapping_dec(derived_type_name, mapping):
+    def func(group):
+        if group in mapping:
+            return mapping[group]
+        else:
+            return derived_type_name(group)
+    return func
 
 #
 # BELOW CODE IS FINE
@@ -437,14 +445,9 @@ if __name__ == "__main__":
         if args['--aclen']: aclen = int(args['--aclen'])
         if args['--full']:
             include_setget = True
-        if args['--group-mapping']:
-            mapping = json.loads(args['--group-mapping'])
-            der_orig = derived_type_name
-            def derived_type_name(group):
-                if group in mapping:
-                    return mapping[group]
-                else:
-                    return der_orig(group)
+        if args['--mapping']:
+            mapping = json.loads(args['--mapping'])
+            derived_type_name = type_mapping_dec(derived_type_name)
 
     if io_mod.endswith(".f90"):
         io_file = io_mod  
