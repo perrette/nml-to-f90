@@ -37,6 +37,7 @@ It could be used as:
     ! access a type in a generic way
     ! equivalent to myparam = par1%myparam
     call get_param(par1, "myparam", myparam)
+    call set_param(par1, "myparam", 3.14)
 
 
 See test.f90 for a complete example of use.

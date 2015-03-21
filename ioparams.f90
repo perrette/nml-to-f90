@@ -9,9 +9,11 @@ module ioparams
     implicit none
 
     private
-    public :: read_nml, write_nml, set_param, get_param
-    public :: parse_command_argument, set_param_string, has_param
     public :: group1_t, group2_t
+    public :: read_nml, write_nml       ! nml I/O
+    public :: set_param, get_param      ! generic set/get
+    public :: parse_command_argument    ! parse and assign command-line arg
+    public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
     logical :: VERBOSE = .TRUE.
@@ -51,6 +53,11 @@ module ioparams
         module procedure :: write_nml_group2
     end interface
 
+    interface parse_command_argument
+        module procedure :: parse_command_argument_group1
+        module procedure :: parse_command_argument_group2
+    end interface
+
     interface has_param
         module procedure :: has_param_group1
         module procedure :: has_param_group2
@@ -59,11 +66,6 @@ module ioparams
     interface set_param_string
         module procedure :: set_param_string_group1
         module procedure :: set_param_string_group2
-    end interface
-
-    interface parse_command_argument
-        module procedure :: parse_command_argument_group1
-        module procedure :: parse_command_argument_group2
     end interface
 
     interface set_param
@@ -266,6 +268,42 @@ end subroutine
     ! - parse_command_argument
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+subroutine parse_command_argument_group1 (params,i, iostat)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Maybe assign ith command line argument to the params type
+    ! Input:
+    !   params : the paramter type
+    !   i : integer, positional argument of the parameter name
+    ! Output:
+    !   iostat, optional : 0 if success, 1 otherwise (if not
+    !       provided, an error is thrown in case of failure)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    integer, intent(inout) :: i
+    integer, optional :: iostat
+    character(len=512) :: arg, argv
+
+    call get_command_argument(i, arg)
+
+    if (has_param_group1(params, trim(arg(3:)))) then
+      ! +++++  present 
+      call get_command_argument(i+1, argv)
+      call set_param_string_group1(params, trim(arg(3:)), trim(argv))
+      i = i+1
+      if (present(iostat)) then
+        iostat = 0
+      endif
+    else
+      ! +++++  no found
+      if (present(iostat)) then
+        iostat=1
+      else
+        write(*,*) "ERROR: unknown parameter in group1 : --",trim(arg(3:))
+        stop
+      endif
+    endif
+end subroutine
+
 subroutine set_param_string_group1 (params, name, string)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type from a string argument
@@ -368,21 +406,29 @@ case ('string2', 'group1%string2')
     end select
 end function
 
-subroutine parse_command_argument_group1 (params,i, iostat)
+
+
+subroutine parse_command_argument_group2 (params,i, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Maybe set command line argument field
+    ! Maybe assign ith command line argument to the params type
+    ! Input:
+    !   params : the paramter type
+    !   i : integer, positional argument of the parameter name
+    ! Output:
+    !   iostat, optional : 0 if success, 1 otherwise (if not
+    !       provided, an error is thrown in case of failure)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(group1_t), intent(inout) :: params
+    type(group2_t), intent(inout) :: params
     integer, intent(inout) :: i
     integer, optional :: iostat
     character(len=512) :: arg, argv
 
     call get_command_argument(i, arg)
 
-    if (has_param_group1(params, trim(arg(3:)))) then
+    if (has_param_group2(params, trim(arg(3:)))) then
       ! +++++  present 
       call get_command_argument(i+1, argv)
-      call set_param_string_group1(params, trim(arg(3:)), trim(argv))
+      call set_param_string_group2(params, trim(arg(3:)), trim(argv))
       i = i+1
       if (present(iostat)) then
         iostat = 0
@@ -392,12 +438,11 @@ subroutine parse_command_argument_group1 (params,i, iostat)
       if (present(iostat)) then
         iostat=1
       else
-        write(*,*) "ERROR: unknown parameter in group1 : --",trim(arg(3:))
+        write(*,*) "ERROR: unknown parameter in group2 : --",trim(arg(3:))
         stop
       endif
     endif
 end subroutine
-
 
 subroutine set_param_string_group2 (params, name, string)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -546,35 +591,6 @@ case ('logarr1', 'group2%logarr1')
     end select
 end function
 
-subroutine parse_command_argument_group2 (params,i, iostat)
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Maybe set command line argument field
-    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type(group2_t), intent(inout) :: params
-    integer, intent(inout) :: i
-    integer, optional :: iostat
-    character(len=512) :: arg, argv
-
-    call get_command_argument(i, arg)
-
-    if (has_param_group2(params, trim(arg(3:)))) then
-      ! +++++  present 
-      call get_command_argument(i+1, argv)
-      call set_param_string_group2(params, trim(arg(3:)), trim(argv))
-      i = i+1
-      if (present(iostat)) then
-        iostat = 0
-      endif
-    else
-      ! +++++  no found
-      if (present(iostat)) then
-        iostat=1
-      else
-        write(*,*) "ERROR: unknown parameter in group2 : --",trim(arg(3:))
-        stop
-      endif
-    endif
-end subroutine
 
 
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

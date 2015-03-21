@@ -9,9 +9,11 @@ module {io_module_name}
     implicit none
 
     private
-    public :: read_nml, write_nml, set_param, get_param
-    public :: parse_command_argument, set_param_string, has_param
     public :: {list_of_types}
+    public :: read_nml, write_nml       ! nml I/O
+    public :: set_param, get_param      ! generic set/get
+    public :: parse_command_argument    ! parse and assign command-line arg
+    public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
     logical :: VERBOSE = .TRUE.
@@ -26,16 +28,16 @@ module {io_module_name}
         {write_nml_proc}
     end interface
 
+    interface parse_command_argument
+        {parse_command_argument_proc}
+    end interface
+
     interface has_param
         {has_param_proc}
     end interface
 
     interface set_param_string
         {set_param_string_proc}
-    end interface
-
-    interface parse_command_argument
-        {parse_command_argument_proc}
     end interface
 
     interface set_param
