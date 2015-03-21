@@ -21,22 +21,22 @@ module ioparams
 
     
     type group1_t 
-        character(len=12) :: string1
-        character(len=12), dimension(3) :: stringarr1
+        character(len=256) :: string1
+        character(len=256), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        character(len=12) :: string2
+        character(len=256) :: string2
     end type
         
     
     type group2_t 
-        character(len=12) :: string1
-        character(len=12), dimension(3) :: stringarr1
+        character(len=256) :: string1
+        character(len=256), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        character(len=12) :: string2
+        character(len=256) :: string2
         integer, dimension(7) :: intarr1
         real(dp) :: double1
         real(dp), dimension(5) :: dblarr1
@@ -102,12 +102,12 @@ subroutine read_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    character(len=12) :: string1
-    character(len=12), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=12) :: string2
+    character(len=256) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
@@ -138,12 +138,12 @@ subroutine write_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    character(len=12) :: string1
-    character(len=12), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=12) :: string2
+    character(len=256) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
@@ -167,18 +167,19 @@ subroutine read_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    character(len=12) :: string1
-    character(len=12), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=12) :: string2
+    character(len=256) :: string2
     integer, dimension(7) :: intarr1
     real(dp) :: double1
     real(dp), dimension(5) :: dblarr1
     logical, dimension(5) :: logarr1
 
-    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, double1, dblarr1, logarr1
+    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, &
+double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -215,18 +216,19 @@ subroutine write_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    character(len=12) :: string1
-    character(len=12), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=12) :: string2
+    character(len=256) :: string2
     integer, dimension(7) :: intarr1
     real(dp) :: double1
     real(dp), dimension(5) :: dblarr1
     logical, dimension(5) :: logarr1
 
-    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, double1, dblarr1, logarr1
+    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, &
+double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -319,16 +321,16 @@ subroutine print_help_group1(params, iounit, value)
   write(io, *) "+++++++++++++++++      group1      ++++++++++++++++++"
   
 if (def) then
-    write(io, *) "--string1 character(len=12)  (default: ",params%string1," )"
+    write(io, *) "--string1 character(len=256)  (default: ",params%string1," )"
 else
-    write(io, *) "--string1 character(len=12) "
+    write(io, *) "--string1 character(len=256) "
 endif
 
     
 if (def) then
-    write(io, *) "--stringarr1 character(len=12), dimension(3)  (default: ",params%stringarr1," )"
+    write(io, *) "--stringarr1 character(len=256), dimension(3)  (default: ",params%stringarr1," )"
 else
-    write(io, *) "--stringarr1 character(len=12), dimension(3) "
+    write(io, *) "--stringarr1 character(len=256), dimension(3) "
 endif
 
     
@@ -354,9 +356,9 @@ endif
 
     
 if (def) then
-    write(io, *) "--string2 character(len=12)  (default: ",params%string2," )"
+    write(io, *) "--string2 character(len=256)  (default: ",params%string2," )"
 else
-    write(io, *) "--string2 character(len=12) "
+    write(io, *) "--string2 character(len=256) "
 endif
 
 end subroutine
@@ -379,7 +381,7 @@ case ('string1', 'group1%string1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%string1"
         else
-            write(*,*) "ERROR converting string to character(len=12): --group1%string1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group1%string1 ",trim(string)
         endif
         stop
     endif
@@ -391,7 +393,7 @@ case ('stringarr1', 'group1%stringarr1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%stringarr1"
         else
-            write(*,*) "ERROR converting string to character(len=12), dimension(3) array : --group1%stringarr1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256), dimension(3) array : --group1%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -443,7 +445,7 @@ case ('string2', 'group1%string2')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%string2"
         else
-            write(*,*) "ERROR converting string to character(len=12): --group1%string2 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group1%string2 ",trim(string)
         endif
         stop
     endif
@@ -556,16 +558,16 @@ subroutine print_help_group2(params, iounit, value)
   write(io, *) "+++++++++++++++++      group2      ++++++++++++++++++"
   
 if (def) then
-    write(io, *) "--string1 character(len=12)  (default: ",params%string1," )"
+    write(io, *) "--string1 character(len=256)  (default: ",params%string1," )"
 else
-    write(io, *) "--string1 character(len=12) "
+    write(io, *) "--string1 character(len=256) "
 endif
 
     
 if (def) then
-    write(io, *) "--stringarr1 character(len=12), dimension(3)  (default: ",params%stringarr1," )"
+    write(io, *) "--stringarr1 character(len=256), dimension(3)  (default: ",params%stringarr1," )"
 else
-    write(io, *) "--stringarr1 character(len=12), dimension(3) "
+    write(io, *) "--stringarr1 character(len=256), dimension(3) "
 endif
 
     
@@ -591,9 +593,9 @@ endif
 
     
 if (def) then
-    write(io, *) "--string2 character(len=12)  (default: ",params%string2," )"
+    write(io, *) "--string2 character(len=256)  (default: ",params%string2," )"
 else
-    write(io, *) "--string2 character(len=12) "
+    write(io, *) "--string2 character(len=256) "
 endif
 
     
@@ -644,7 +646,7 @@ case ('string1', 'group2%string1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%string1"
         else
-            write(*,*) "ERROR converting string to character(len=12): --group2%string1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group2%string1 ",trim(string)
         endif
         stop
     endif
@@ -656,7 +658,7 @@ case ('stringarr1', 'group2%stringarr1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%stringarr1"
         else
-            write(*,*) "ERROR converting string to character(len=12), dimension(3) array : --group2%stringarr1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256), dimension(3) array : --group2%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -708,7 +710,7 @@ case ('string2', 'group2%string2')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%string2"
         else
-            write(*,*) "ERROR converting string to character(len=12): --group2%string2 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group2%string2 ",trim(string)
         endif
         stop
     endif

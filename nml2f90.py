@@ -20,6 +20,7 @@ from collections import OrderedDict as odict
 from namelist import Namelist, read_namelist_file
 import nml2f90_templates
 import warnings
+import textwrap
 
 try:
     import docopt
@@ -123,7 +124,7 @@ def get_format_typedef(params):
 
     fmt = dict(
         type_definitions = "\n    ".join(type_definitions),
-        list_of_types = ", ".join(list_of_types),
+        list_of_types = " &\n".join(textwrap.wrap(", ".join(list_of_types))),
     )
 
     return fmt
@@ -165,7 +166,7 @@ def get_format_io(params):
             group=g,
             type_name = t,
             variable_definitions="\n    ".join(variable_definitions),
-            list_of_variables = ", ".join(list_of_variables),
+            list_of_variables = " &\n".join(textwrap.wrap(", ".join(list_of_variables))),
             list_of_init = "\n    ".join(list_of_init),
             list_of_assign = "\n    ".join(list_of_assign),
         )
@@ -425,7 +426,7 @@ if __name__ == "__main__":
             sys.exit()
     else:
         args = docopt.docopt(__doc__)
-        print args
+        # print args
         input_nml = args['<namelist.nml>'] or "namelist.nml"
         if args['<ioparams>']: io_mod = args['<ioparams>']
         if args['--clen']: 
@@ -437,7 +438,7 @@ if __name__ == "__main__":
 
     if io_mod.endswith(".f90"):
         io_file = io_mod  
-        io_mod = io_file[:-4]
+        io_mod = os.path.basename(io_file[:-4])
     else: 
         io_file = io_mod + ".f90"
 
