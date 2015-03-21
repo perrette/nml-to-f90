@@ -10,9 +10,10 @@ module {io_module_name}
 
     private
     public :: {list_of_types}
-    public :: read_nml, write_nml       ! nml I/O
-    public :: set_param, get_param      ! generic set/get
-    public :: parse_command_argument    ! parse and assign command-line arg
+    public :: read_nml, write_nml          ! nml I/O
+    public :: set_param, get_param         ! generic set/get
+    public :: parse_command_argument       ! parse and assign command-line arg
+    public :: print_help                   ! print command-line argument help
     public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
@@ -30,6 +31,10 @@ module {io_module_name}
 
     interface parse_command_argument
         {parse_command_argument_proc}
+    end interface
+
+    interface print_help
+        {print_help_proc}
     end interface
 
     interface has_param
@@ -259,67 +264,6 @@ subroutine remove_quotes_comma(string)
     return 
 
 end subroutine remove_quotes_comma
-
-    ! function string_to_double(string) result(value)
-    !
-    !     implicit none 
-    !
-    !     character(len=*), intent(IN) :: string 
-    !     double precision :: value 
-    !
-    !     character(len=256) :: tmpstr 
-    !     integer :: stat, n
-    !     double precision :: x 
-    !
-    !     tmpstr = trim(adjustl(string))
-    !     n      = len_trim(tmpstr)
-    !
-    !     read(tmpstr(1:n),*,IOSTAT=stat) x
-    !
-    !     value = 0
-    !     if (stat .eq. 0) then 
-    !         value = x 
-    !     else
-    !         n = len_trim(tmpstr)-1
-    !         READ(tmpstr(1:n),*,IOSTAT=stat) x
-    !         if (stat .ne. 0) then 
-    !             write(*,*) "nml:: ","Error converting string to number!"
-    !             write(*,*) "|",trim(tmpstr),"|",n,stat,x
-    !         else
-    !             value = x 
-    !         end if 
-    !     end if 
-    !
-    !     return 
-    !
-    ! end function string_to_double
-    !
-    ! function string_to_logical(string) result(value)
-    !
-    !     implicit none 
-    !
-    !     character(len=*), intent(IN) :: string 
-    !     logical :: value 
-    !
-    !     character(len=256) :: tmpstr 
-    !     integer :: stat, n
-    !     double precision :: x 
-    !
-    !     tmpstr = trim(adjustl(string))
-    !     
-    !     select case(trim(tmpstr))
-    !         case("T","True","TRUE","true",".TRUE.")
-    !             value = .TRUE. 
-    !         case("F","False","FALSE","false",".FALSE.")
-    !             value = .FALSE. 
-    !         case DEFAULT
-    !             write(*,*) "nml:: Error reading logical parameter."
-    !             stop 
-    !     end select  
-    !
-    !     return 
-    !
-    ! end function string_to_logical
 
 
 end module {io_module_name}

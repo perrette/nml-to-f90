@@ -27,6 +27,7 @@ It could be used as:
     close(88)
 
     ! parse command-line arguments
+    if (command_argument_count() == 0) call print_help(par1)
     i = 1
     do while(i <= command_argument_count())
         call parse_command_argument(par1, i, iostat)

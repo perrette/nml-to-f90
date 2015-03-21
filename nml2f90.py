@@ -172,7 +172,11 @@ case ('{vname}', '{group}%{vname}')
     read(string, *, iostat=IOSTAT) params%{vname}
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "{group}%{vname} = ", trim(string)
     if (IOSTAT /= 0) then 
-        write(*,*) "ERROR converting type from string"
+        if (trim(string) == "") then
+            write(*,*) "ERROR: missing parameter value for --{group}%{vname}"
+        else
+            write(*,*) "ERROR converting string to {vtype}: --{group}%{vname} ",trim(string)
+        endif
         stop
     endif
 """
@@ -181,13 +185,25 @@ template_set_string_case_vector = """
 case ('{vname}', '{group}%{vname}')
     call string_to_vector(string, params%{vname}, iostat=iostat)
     if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%{vname}: ", trim(string)
+        if (trim(string) == "") then
+            write(*,*) "ERROR: missing parameter value for --{group}%{vname}"
+        else
+            write(*,*) "ERROR converting string to {vtype} array : --{group}%{vname} ",trim(string)
+        endif
         stop
     endif
 """
 
 template_has_case = """
 case ('{vname}', '{group}%{vname}')
+"""
+
+template_help = """
+if (def) then
+    write(io, *) "--{vname} {vtype} {doc} (default: ",params%{vname}," )"
+else
+    write(io, *) "--{vname} {vtype} {doc}"
+endif
 """
 
 def get_format_cmd(params):
@@ -203,33 +219,46 @@ def get_format_cmd(params):
         - set_string_routines
     """
     cmd_routines = []
+
     has_param_proc = []
     set_param_string_proc = []
     parse_command_argument_proc = []
+    print_help_proc = []
 
     for G in params.keys():
 
         list_set_cases = []
         list_has_cases = []
+        list_help = []
 
         g = G.lower()
         t = derived_type_name(g)
 
         for K in params[G]:
             k = K.lower()
+
+            vtype, _ = _get_vtype(params[G][K])
+
+            # has_params routines
             list_has_cases.append(template_has_case.format(vname=k, group=g))
 
+            # set_param_string routines
             # vectors are handled differently
             if type(params[G][K]) is list:
-                list_set_cases.append(template_set_string_case_vector.format(vname=k, group=g))
+                list_set_cases.append(template_set_string_case_vector.format(vname=k, group=g, vtype=vtype))
             else:
-                list_set_cases.append(template_set_string_case.format(vname=k, group=g))
+                list_set_cases.append(template_set_string_case.format(vname=k, group=g, vtype=vtype))
+
+            # print_help routines
+            doc = "" # for now, no documentation available
+            list_help.append(template_help.format(vname=k, group=g, doc=doc, vtype=vtype))
 
         fmt = dict(
             group=g,
             type_name=t,
             list_set_cases="\n    ".join(list_set_cases),
             list_has_cases="\n    ".join(list_has_cases),
+            list_help ="\n    ".join(list_help),
         )
 
         cmd_routines.append( template_cmd.format(**fmt) )
@@ -237,6 +266,7 @@ def get_format_cmd(params):
         set_param_string_proc.append("module procedure :: set_param_string_{g}".format(g=g)) 
         has_param_proc.append("module procedure :: has_param_{g}".format(g=g)) 
         parse_command_argument_proc.append("module procedure :: parse_command_argument_{g}".format(g=g)) 
+        print_help_proc.append("module procedure :: print_help_{g}".format(g=g)) 
 
     # source_code = template_module.format(types = ", ".join(types), 
     fmt = dict(
@@ -244,6 +274,7 @@ def get_format_cmd(params):
                has_param_proc = "\n        ".join(has_param_proc),
                set_param_string_proc = "\n        ".join(set_param_string_proc),
                parse_command_argument_proc = "\n        ".join(parse_command_argument_proc),
+               print_help_proc = "\n        ".join(print_help_proc),
                )
 
     return fmt

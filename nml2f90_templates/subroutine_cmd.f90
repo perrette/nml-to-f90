@@ -15,6 +15,12 @@ subroutine parse_command_argument_{group} (params,i, iostat)
 
     call get_command_argument(i, arg)
 
+    ! Print HELP ?
+    if (arg == '--help' .or. arg=='-h') then
+      call print_help_{group}(params)
+      return
+    endif
+
     if (has_param_{group}(params, trim(arg(3:)))) then
       ! +++++  present 
       call get_command_argument(i+1, argv)
@@ -29,9 +35,35 @@ subroutine parse_command_argument_{group} (params,i, iostat)
         iostat=1
       else
         write(*,*) "ERROR: unknown parameter in {group} : --",trim(arg(3:))
+        write(*,*) ""
+        write(*,*) "-h or --help for HELP"
         stop
       endif
     endif
+end subroutine
+
+subroutine print_help_{group}(params, iounit, value)
+  !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  ! Print HELP on a derived type, useful for command-line arg
+  !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  type({type_name}), intent(in) :: params
+  integer, optional :: iounit
+  integer :: io
+  logical, optional :: value
+  logical :: def
+  if (present(iounit)) then
+    io = iounit
+  else
+    io = 6  ! screen
+  endif
+  if (present(value)) then
+    def =value
+  else
+    def = .false. ! by default do not show default values
+  endif
+  write(io, *) " "
+  write(io, *) "+++++++++++++++++      {group}      ++++++++++++++++++"
+  {list_help}
 end subroutine
 
 subroutine set_param_string_{group} (params, name, string)

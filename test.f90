@@ -1,7 +1,10 @@
 program test_io_params
 
-  use ioparams, only: read_nml, write_nml, set_param, get_param, has_param, set_param_string, parse_command_argument
   use ioparams, only: group1_t, group2_t
+  use ioparams, only: read_nml, write_nml
+  use ioparams, only: set_param, get_param
+  use ioparams, only: parse_command_argument, print_help
+  use ioparams, only: has_param, set_param_string ! low-level
 
   implicit none 
 
@@ -80,17 +83,20 @@ program test_io_params
   write(*,*) "Test command line parameters  "
   write(*,*) "----------------------------- "
   write(*,*) "Type ./test.x -h for help on how to do that."
-  write(*,*) " "
   i = 1
   do while(i <= command_argument_count())
     call get_command_argument(i, arg)
     select case (arg)
-    case ('-h', '--help')
-      print*, "Just pass argument as '--double1 3.14' or, for ambiguous cases, '--group1%integer1 44'"
+    case ('-h', '--help') 
+      call print_help(group1)
+      call print_help(group2)
     case default
       call parse_command_argument(group1, i, iostat=iostats(1))
       call parse_command_argument(group2, i, iostat=iostats(2))
       if (sum(iostats)/=1) then
+        call print_help(group1, value=.true.)
+        call print_help(group2)
+        call get_command_argument(i, arg)
         write(*,*) "ERROR: none or several parameters matched: ",trim(arg)
         stop
       else
