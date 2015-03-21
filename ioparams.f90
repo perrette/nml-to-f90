@@ -1,6 +1,6 @@
 module ioparams
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Automatically generated module
+    ! Automatically generated module by nml2f90.py from namelist.nml
     ! 
     ! Contains read / write subroutines for all derived types imported below.
     ! As well as setter / getter access by field name

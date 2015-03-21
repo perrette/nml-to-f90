@@ -1,6 +1,6 @@
 module {io_module_name}
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Automatically generated module
+    ! Automatically generated module by nml2f90.py from {input_nml}
     ! 
     ! Contains read / write subroutines for all derived types imported below.
     ! As well as setter / getter access by field name

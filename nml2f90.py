@@ -396,6 +396,7 @@ def make_source(params, io_mod):
     """
     fmt = dict(
         io_module_name = io_mod,
+        input_nml = input_nml,
     )
     fmt.update( 
         get_format_typedef(params)
