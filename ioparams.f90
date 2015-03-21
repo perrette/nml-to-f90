@@ -9,10 +9,12 @@ module ioparams
     implicit none
 
     private
-    public :: read_nml, write_nml, set_param, get_param, set_param_string, has_param
+    public :: read_nml, write_nml, set_param, get_param
+    public :: parse_command_line, set_param_string, has_param
     public :: group1_t, group2_t
 
     integer, parameter :: dp = kind(0.d0)
+    logical :: VERBOSE = .TRUE.
 
     
     type group1_t 
@@ -57,6 +59,11 @@ module ioparams
     interface set_param_string
         module procedure :: set_param_string_group1
         module procedure :: set_param_string_group2
+    end interface
+
+    interface parse_command_line
+        module procedure :: parse_command_line_group1
+        module procedure :: parse_command_line_group2
     end interface
 
     interface set_param
@@ -256,11 +263,12 @@ end subroutine
     ! Routines useful to process command-line parameters: 
     ! - has_param
     ! - set_param_string
+    ! - parse_command_line
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 subroutine set_param_string_group1 (params, name, string)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the group1 type
+    ! Set one field of the group1 type from a string argument
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
@@ -270,9 +278,10 @@ subroutine set_param_string_group1 (params, name, string)
     select case (name) 
     
 case ('string1', 'group1%string1')
-    read(string, *, iostat=iostat) params%string1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%string1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%string1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
@@ -286,33 +295,37 @@ case ('stringarr1', 'group1%stringarr1')
 
     
 case ('logical1', 'group1%logical1')
-    read(string, *, iostat=iostat) params%logical1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%logical1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%logical1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%logical1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
     
 case ('integer1', 'group1%integer1')
-    read(string, *, iostat=iostat) params%integer1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%integer1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%integer1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
     
 case ('integer2', 'group1%integer2')
-    read(string, *, iostat=iostat) params%integer2
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%integer2: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%integer2
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer2 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
     
 case ('string2', 'group1%string2')
-    read(string, *, iostat=iostat) params%string2
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%string2: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%string2
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string2 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
@@ -355,10 +368,40 @@ case ('string2', 'group1%string2')
     end select
 end function
 
+subroutine parse_command_line_group1 (params,i, iostat)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Maybe set command line argument field
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    integer, intent(inout) :: i
+    integer, optional :: iostat
+    character(len=512) :: arg, argv
+
+    call get_command_argument(i, arg)
+
+    if (has_param_group1(params, trim(arg(3:)))) then
+      ! +++++  present 
+      call get_command_argument(i+1, argv)
+      call set_param_string_group1(params, trim(arg(3:)), trim(argv))
+      i = i+1
+      if (present(iostat)) then
+        iostat = 0
+      endif
+    else
+      ! +++++  no found
+      if (present(iostat)) then
+        iostat=1
+      else
+        write(*,*) "ERROR: unknown parameter in group1 : --",trim(arg(3:))
+        stop
+      endif
+    endif
+end subroutine
+
 
 subroutine set_param_string_group2 (params, name, string)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Set one field of the group2 type
+    ! Set one field of the group2 type from a string argument
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
@@ -368,9 +411,10 @@ subroutine set_param_string_group2 (params, name, string)
     select case (name) 
     
 case ('string1', 'group2%string1')
-    read(string, *, iostat=iostat) params%string1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%string1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%string1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
@@ -384,33 +428,37 @@ case ('stringarr1', 'group2%stringarr1')
 
     
 case ('logical1', 'group2%logical1')
-    read(string, *, iostat=iostat) params%logical1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%logical1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%logical1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%logical1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
     
 case ('integer1', 'group2%integer1')
-    read(string, *, iostat=iostat) params%integer1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%integer1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%integer1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
     
 case ('integer2', 'group2%integer2')
-    read(string, *, iostat=iostat) params%integer2
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%integer2: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%integer2
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer2 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
     
 case ('string2', 'group2%string2')
-    read(string, *, iostat=iostat) params%string2
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%string2: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%string2
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string2 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
@@ -424,9 +472,10 @@ case ('intarr1', 'group2%intarr1')
 
     
 case ('double1', 'group2%double1')
-    read(string, *, iostat=iostat) params%double1
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%double1: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%double1
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%double1 = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 
@@ -496,6 +545,36 @@ case ('logarr1', 'group2%logarr1')
       has_param = .false.
     end select
 end function
+
+subroutine parse_command_line_group2 (params,i, iostat)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Maybe set command line argument field
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    integer, intent(inout) :: i
+    integer, optional :: iostat
+    character(len=512) :: arg, argv
+
+    call get_command_argument(i, arg)
+
+    if (has_param_group2(params, trim(arg(3:)))) then
+      ! +++++  present 
+      call get_command_argument(i+1, argv)
+      call set_param_string_group2(params, trim(arg(3:)), trim(argv))
+      i = i+1
+      if (present(iostat)) then
+        iostat = 0
+      endif
+    else
+      ! +++++  no found
+      if (present(iostat)) then
+        iostat=1
+      else
+        write(*,*) "ERROR: unknown parameter in group2 : --",trim(arg(3:))
+        stop
+      endif
+    endif
+end subroutine
 
 
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

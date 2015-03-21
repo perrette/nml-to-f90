@@ -169,9 +169,10 @@ def get_format_io(params):
 
 template_set_string_case = """
 case ('{vname}', '{group}%{vname}')
-    read(string, *, iostat=iostat) params%{vname}
-    if (iostat /= 0) then 
-        write(*,*) "ERROR converting type for params%{vname}: ", trim(string)
+    read(string, *, iostat=IOSTAT) params%{vname}
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "{group}%{vname} = ", trim(string)
+    if (IOSTAT /= 0) then 
+        write(*,*) "ERROR converting type from string"
         stop
     endif
 """
@@ -204,6 +205,7 @@ def get_format_cmd(params):
     cmd_routines = []
     has_param_proc = []
     set_param_string_proc = []
+    parse_command_line_proc = []
 
     for G in params.keys():
 
@@ -234,12 +236,14 @@ def get_format_cmd(params):
 
         set_param_string_proc.append("module procedure :: set_param_string_{g}".format(g=g)) 
         has_param_proc.append("module procedure :: has_param_{g}".format(g=g)) 
+        parse_command_line_proc.append("module procedure :: parse_command_line_{g}".format(g=g)) 
 
     # source_code = template_module.format(types = ", ".join(types), 
     fmt = dict(
                cmd_routines = "\n\n".join(cmd_routines),
                has_param_proc = "\n        ".join(has_param_proc),
                set_param_string_proc = "\n        ".join(set_param_string_proc),
+               parse_command_line_proc = "\n        ".join(parse_command_line_proc),
                )
 
     return fmt
