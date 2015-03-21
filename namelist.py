@@ -9,32 +9,8 @@ import re
 def read_namelist_file(filename):
     return Namelist(open(filename, 'r').read())
 
-class AttributeMapper():
-    """
-    Simple mapper to access dictionary items as attributes
-    """
-
-    def __init__(self, obj):
-        self.__dict__['data'] = obj
-
-    def __getattr__(self, attr):
-        if attr in self.data:
-            found_attr = self.data[attr]
-            if isinstance(found_attr, dict):
-                return AttributeMapper(found_attr)
-            else:
-                return found_attr
-        else:
-            raise AttributeError
-
-    def __setattr__(self, attr, value):
-        if attr in self.data:
-            self.data[attr] = value
-        else:
-            raise NotImplementedError
-
-    def __dir__(self):
-        return self.data.keys()
+def write_namelist_file(nml, filename):
+    return open(filename, 'w').write(nml.dump())
 
 class Namelist():
     """
@@ -117,10 +93,6 @@ class Namelist():
             lines.append("/\n")
 
         return "\n".join(lines)
-
-    @property
-    def data(self):
-        return AttributeMapper(self.groups)
 
 def _parse_value(variable_value):
     """
