@@ -7,8 +7,9 @@ Generate fortran source code from a single namelist
 This will create ioparams.f90, with corresponding derived types and I/O functions.
 To be imported in any other program as follow (without dependencies).
 
-    use ioparams, only: group1_t, group2_t, ...
-    use ioparams, only: read_nml, write_nml, get_param, set_param
+    use ioparams, only: group1_t, group2_t
+    use ioparams, only: read_nml, write_nml, parse_command_line
+    use ioparams, only: set_param, get_param
 
 where `<group>_t` are newly defined types created from namelist groups
 and the four subroutines are handy I/O and set/get interfaces for the
@@ -18,14 +19,25 @@ It could be used as:
 
     type(group1_t) :: par1
     double precision :: myparam
+    integer :: iostat
 
+    ! read namelist
     open(88, file="namelist.nml")
     call read_nml(88, par1)
     close(88)
 
-    ! access a specific file in a generic way
+    ! parse command-line arguments
+    i = 1
+    do while(i <= command_argument_count())
+        call parse_command_line(par1, i, iostat)
+        if (iostat/=0) call parse_command_line(par2, i)
+        i = i + 2
+    enddo
+
+    ! access a type in a generic way
     ! equivalent to myparam = par1%myparam
     call get_param(par1, "myparam", myparam)
+
 
 See test.f90 for a complete example of use.
 
@@ -54,5 +66,5 @@ namelist into python.
 ## Credits
 
 Thanks to Alex Robinson and its nml project https://github.com/alex-robinson/nml
-for inspiration and its test namelist file. Have a look for an alternative approach
-to generic parameters I/O.
+for inspiration and some pieces of code (e.g. parse vector string) test namelist file). 
+Have a look at it for an alternative approach to generic parameters I/O.
