@@ -9,7 +9,6 @@ To be imported in any other program as follow (without dependencies).
 
     use ioparams, only: group1_t, group2_t
     use ioparams, only: read_nml, write_nml, parse_command_argument
-    use ioparams, only: set_param, get_param
 
 where `<group>_t` are newly defined types created from namelist groups
 and the four subroutines are handy I/O and set/get interfaces for the
@@ -34,11 +33,6 @@ It could be used as:
         if (iostat/=0) call parse_command_argument(par2, i)
         i = i + 2
     enddo
-
-    ! access a type in a generic way
-    ! equivalent to myparam = par1%myparam
-    call get_param(par1, "myparam", myparam)
-    call set_param(par1, "myparam", 3.14)
 
 
 See test.f90 for a complete example of use.

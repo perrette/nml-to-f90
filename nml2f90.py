@@ -5,17 +5,28 @@ This script will read the namelist.nml input file and output ioparams.f90, that
 contains corresponding parameter types and I/O, setter/getter routines.
 
 Usage:
-    python nml2f90.py <namelist.nml> <ioparams> [ --clen <clen> ] [ --aclen <aclen> ]
+    nml2f90.py <namelist.nml> [<ioparams>] [--clen <clen>] [--aclen <aclen>] [--full]
 
 Options:
-    -h --help : Show this screen
-    --clen : indicate the length of character strings (default: 256)
-    --aclen : indicate the length of character strings in arrays (default: 256)
+    -h --help       Show this screen
+    <nanelist.nml>  input namelist
+    <ioparams>      module name to be created (default: io params)
+    --clen CLEN     indicate the length of character strings  [ default: 256 ]
+    --aclen ACLEN   indicate the length of character strings in arrays  [ default: 256]
+    --full          do include get_param, set_param functions
 """
 import sys, os
 from collections import OrderedDict as odict
 from namelist import Namelist, read_namelist_file
 import nml2f90_templates
+import warnings
+
+try:
+    import docopt
+    hasdocopt = True
+except ImportError:
+    warnings.warn("install 'docopt' to use all command-line arguments")
+    hasdocopt = False
 
 #
 # TO BE UPDATED BY THE USER, IF NEEDED
@@ -23,15 +34,18 @@ import nml2f90_templates
 
 # new module name to be generated with all io routines
 io_mod="ioparams"
+global include_setget
+include_setget = False
+
+# character length
+clen = 256
+aclen = 256
 
 # returns derived type name based on namelist group name
 # it was taken to match nml's test program
 def derived_type_name(group):
     # return "pars_"+group.lower()
     return group.lower()+'_t'
-
-# character length
-clen = 256
 
 #
 # BELOW CODE IS FINE
@@ -44,9 +58,12 @@ template_setget = open(os.path.join(_dir, "subroutine_setget.f90")).read()
 
 # load templates
 
-def _get_vtype(v, charlen=clen, acharlen=clen):
+def _get_vtype(v, charlen=None, acharlen=None):
     """ return fortran type for a particular namelist variable
     """
+    charlen = charlen or clen
+    acharlen = acharlen or aclen
+    
     vtype_short = ""
     if type(v) is int:
         vtype = "integer"
@@ -159,7 +176,7 @@ def get_format_io(params):
         write_nml_interface.append("module procedure :: write_nml_{g}".format(g=g)) 
 
     # source_code = template_module.format(types = ", ".join(types), 
-    fmt = dict(types = ", ".join(types), 
+    fmt = dict(
                io_routines = "\n\n".join(io_routines),
                read_nml_proc = "\n        ".join(read_nml_interface),
                write_nml_proc = "\n        ".join(write_nml_interface),
@@ -293,11 +310,18 @@ case ('{vname}', '{group}%{vname}')
 # NOTE: Is that functionality get_param / set_param really useful?
 # The same thing could be achieved with set_string. 
 # But well, this may come in handy for some generic application.
-def get_format_setget(params):
+def get_format_setget(params, dummy=False):
     """ Create set_param/get_param source code from a namelist template
 
     params : dict of dict (params[group][param_name])
     """
+    if dummy:
+        return dict(
+            set_param_proc = "",
+            get_param_proc = "",
+            setget_routines = "",
+        )
+
     groups = params.keys()
     types = [derived_type_name(g) for g in groups]
 
@@ -357,7 +381,6 @@ def get_format_setget(params):
 
 
     fmt = dict(
-        types = ", ".join(types), 
         set_param_proc = "\n        ".join(set_param_interface),
         get_param_proc = "\n        ".join(get_param_interface),
         setget_routines = "\n\n".join(setget_routines),
@@ -382,19 +405,35 @@ def make_source(params, io_mod):
         get_format_cmd(params) 
     )
     fmt.update( 
-        get_format_setget(params)
+        get_format_setget(params, dummy=not include_setget)
     )
     return template_module.format(**fmt)
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
-        input_nml = "namelist.nml"
-    else:
-        input_nml = sys.argv[1]
+    if not hasdocopt:
+        if len(sys.argv) < 2:
+            input_nml = "namelist.nml"
+        else:
+            input_nml = sys.argv[1]
 
-    if len(sys.argv) == 3:
-        io_mod = sys.argv[2]
+        if len(sys.argv) == 3:
+            io_mod = sys.argv[2]
+
+        if len(sys.argv) > 3 or input_nml in ("-h", "--help"):
+            print __doc__
+            sys.exit()
+    else:
+        args = docopt.docopt(__doc__)
+        print args
+        input_nml = args['<namelist.nml>'] or "namelist.nml"
+        if args['<ioparams>']: io_mod = args['<ioparams>']
+        if args['--clen']: 
+            clen = int(args['--clen'])
+            aclen = int(args['--clen'])
+        if args['--aclen']: aclen = int(args['--aclen'])
+        if args['--full']:
+            include_setget = True
 
     if io_mod.endswith(".f90"):
         io_file = io_mod  
@@ -402,9 +441,6 @@ if __name__ == "__main__":
     else: 
         io_file = io_mod + ".f90"
 
-    if len(sys.argv) > 3 or input_nml in ("-h", "--help"):
-        print __doc__
-        sys.exit()
 
     print "Convert "+input_nml+" to "+io_file
     print "...new module: "+io_mod

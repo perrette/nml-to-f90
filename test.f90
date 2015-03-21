@@ -2,7 +2,7 @@ program test_io_params
 
   use ioparams, only: group1_t, group2_t
   use ioparams, only: read_nml, write_nml
-  use ioparams, only: set_param, get_param
+  ! use ioparams, only: set_param, get_param
   use ioparams, only: parse_command_argument, print_help
   use ioparams, only: has_param, set_param_string ! low-level
 
@@ -17,7 +17,7 @@ program test_io_params
   integer :: test_int, test_int_arr(10)
   character(len=50) :: test_s
 
-  integer :: i, iostats(2), stat
+  integer :: i, iostat, iostats(2), stat
   character(len=256) :: arg, argv
 
   filename = "namelist.nml" 
@@ -39,42 +39,42 @@ program test_io_params
   close(iounit)
   write(*,*) "Done. Namelist read successfully."
   write(*,*) " "
-  write(*,*) "Test set_param / get_param "
-  write(*,*) "---------------------------"
-  call get_param(group2, "string1", test_s)
-  call set_param(group2, 'string1', "this is a new string set via set_param")
-  write(*,*) "group2%string1:", trim(test_s), " ==> ", trim(group2%string1), " (this is ...)"
+  ! write(*,*) "Test set_param / get_param "
+  ! write(*,*) "---------------------------"
+  ! call get_param(group2, "string1", test_s)
+  ! call set_param(group2, 'string1', "this is a new string set via set_param")
+  ! write(*,*) "group2%string1:", trim(test_s), " ==> ", trim(group2%string1), " (this is ...)"
+  !
+  ! call get_param(group2, "double1", test_dp)
+  ! call set_param(group2, 'double1', 11111111111.11111111111d0)
+  ! write(*,*) "group2%double1:", test_dp, " ==> ", group2%double1, " (111...)"
+  !
+  ! call get_param(group2, 'integer1', test_int)
+  ! call set_param(group2, 'integer1', 777777777)
+  ! write(*,*) "group2%integer1:", test_int, " ==> ", group2%integer1, " (777..)"
+  !
+  ! call get_param(group2, "intarr1", test_int_arr)
+  ! call set_param(group2, "intarr1", [7,6,5,4,3,2,1])
+  ! write(*,*) "group2%intarr1:", test_int_arr, " ==> ", group2%intarr1, " (7,6,5...)"
+  !
+  ! call get_param(group2, "logical1", test_l)
+  ! call set_param(group2, "logical1", .false.)
+  ! write(*,*) "group2%longical1:", test_l, " ==> ", group2%logical1, " (false)"
 
-  call get_param(group2, "double1", test_dp)
-  call set_param(group2, 'double1', 11111111111.11111111111d0)
-  write(*,*) "group2%double1:", test_dp, " ==> ", group2%double1, " (111...)"
-
-  call get_param(group2, 'integer1', test_int)
-  call set_param(group2, 'integer1', 777777777)
-  write(*,*) "group2%integer1:", test_int, " ==> ", group2%integer1, " (777..)"
-
-  call get_param(group2, "intarr1", test_int_arr)
-  call set_param(group2, "intarr1", [7,6,5,4,3,2,1])
-  write(*,*) "group2%intarr1:", test_int_arr, " ==> ", group2%intarr1, " (7,6,5...)"
-
-  call get_param(group2, "logical1", test_l)
-  call set_param(group2, "logical1", .false.)
-  write(*,*) "group2%longical1:", test_l, " ==> ", group2%logical1, " (false)"
-
-  write(*,*) " "
-  write(*,*) "Test has_param"
-  write(*,*) "--------------"
-
-  write(*,*) "has_param(group1, 'integer1') ? ", has_param(group1, 'integer1')
-  write(*,*) "has_param(group1, 'thisdoesnotexists') ? ", has_param(group1, 'thisdoesnotexists')
-  write(*,*) 
-  write(*,*) "Test set_param_string"
-  write(*,*) "---------------------"
-  call set_param_string(group2, 'string1', "another string")
-  call set_param_string(group2, 'double1', "3333.44444")
-  call set_param_string(group2, 'integer1', "3333")
-  call set_param_string(group2, "intarr1", "(/ 7,7,7,7,7,7,7 /)")
-  call set_param_string(group2, "logical1", ".true.")
+  ! write(*,*) " "
+  ! write(*,*) "Test has_param"
+  ! write(*,*) "--------------"
+  !
+  ! write(*,*) "has_param(group1, 'integer1') ? ", has_param(group1, 'integer1')
+  ! write(*,*) "has_param(group1, 'thisdoesnotexists') ? ", has_param(group1, 'thisdoesnotexists')
+  ! write(*,*) 
+  ! write(*,*) "Test set_param_string"
+  ! write(*,*) "---------------------"
+  ! call set_param_string(group2, 'string1', "another string")
+  ! call set_param_string(group2, 'double1', "3333.44444")
+  ! call set_param_string(group2, 'integer1', "3333")
+  ! call set_param_string(group2, "intarr1", "(/ 7,7,7,7,7,7,7 /)")
+  ! call set_param_string(group2, "logical1", ".true.")
 
   !
   ! Retrieve command-line arguments
@@ -91,13 +91,15 @@ program test_io_params
       call print_help(group1)
       call print_help(group2)
     case default
-      call parse_command_argument(group1, i, iostat=iostats(1))
-      call parse_command_argument(group2, i, iostat=iostats(2))
-      if (sum(iostats)/=1) then
-        call print_help(group1, value=.true.)
+      call parse_command_argument(group1, i, iostat=iostat)
+      if (iostat/=0) call parse_command_argument(group2, i, iostat=iostat)
+      if (iostat/=0) then
+        call print_help(group1)
         call print_help(group2)
         call get_command_argument(i, arg)
-        write(*,*) "ERROR: none or several parameters matched: ",trim(arg)
+        write(*,*) 
+        write(*,*) ">>>> ERROR: none or several parameters matched: ",trim(arg)
+        write(*,*) 
         stop
       else
         i = i+1
