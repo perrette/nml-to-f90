@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python2.7
 """Generates a fortran module from a namelist.
 
 This script will read the namelist.nml input file and output ioparams.f90, that 
@@ -19,7 +19,7 @@ Options:
 """
 import sys, os, json
 from collections import OrderedDict as odict
-from namelist import Namelist, read_namelist_file
+from namelist import Namelist
 import nml2f90_templates
 import warnings
 import textwrap
@@ -468,8 +468,7 @@ if __name__ == "__main__":
 
     # read namelist template
     # nml = read_namelist_file("namelist.template.nml")
-    nml = read_namelist_file(input_nml)
-    params = nml.groups
+    params = Namelist.read(input_nml)
 
     print "...with types: "+", ".join([derived_type_name(g) for g in params.keys()])
 

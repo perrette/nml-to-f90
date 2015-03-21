@@ -3,96 +3,112 @@
 Originally adapted from 
 https://github.com/leifdenby/namelist_python
 """
-from collections import OrderedDict
+from __future__ import print_function
+from collections import OrderedDict as odict
 import re
 
-def read_namelist_file(filename):
-    return Namelist(open(filename, 'r').read())
+def _convert_mapping(*args, **kwargs):
+    " make sure an argument is (ordered) dict-like "
+    try:
+        obj = odict(*args, **kwargs)
+    except TypeError as error:
+        print(error.message)
+        raise TypeError("can only be initialized via a 2-level dict-like object")
+    return obj
 
-def write_namelist_file(nml, filename):
-    return open(filename, 'w').write(nml.dump())
-
-class Namelist():
+class Namelist(odict):
+    """ Two nested ordered dict to represent a namelist
+    with read/write and parse/format methods
     """
-    Parses namelist files in Fortran 90 format, recognised groups are
-    available through 'groups' attribute.
+    def __init__(self, *args, **kwargs):
+        # make sure arguments are conform
+        obj = _convert_mapping(*args, **kwargs)
+        for k in obj.keys():
+            obj[k] = _convert_mapping(obj[k])
+        # initialize the class
+        odict.__init__(self, obj)
+
+    @classmethod
+    def parse(cls, string):
+        groups = _parse_nml(string)
+        return cls(groups)
+
+    def format(self, array_inline=True):
+        return _format_nml(self, array_inline)
+
+    def write(self, filename, mode='w', **kwargs):
+        with open(filename, mode) as f:
+            f.write(self.format(**kwargs))
+
+    @classmethod
+    def read(cls, filename):
+        with open(filename) as f:
+            nml = cls.parse(f.read())
+        return nml
+
+    def __repr__(self):
+        import json
+        return "Namelist({})".format(json.dumps(self, indent=4))
+
+def _parse_nml(string):
+    """ parse a string namelist, and returns a 2-level dict object
     """
+    group_re = re.compile(r'&([^&]+)/', re.DOTALL)  # allow blocks to span multiple lines
+    array_re = re.compile(r'(\w+)\((\d+)\)')
+    # string_re = re.compile(r"\'\s*\w[^']*\'")
+    string_re = re.compile(r"[\'\"]*[\'\"]")
+    # self._complex_re = re.compile(r'^\((\d+.?\d*),(\d+.?\d*)\)$')
 
-    def __init__(self, input_str=None):
-        self.groups = OrderedDict()
-        if input_str is None:
-            return 
+    # remove all comments, since they may have forward-slashes
+    # TODO: store position of comments so that they can be re-inserted when
+    # we eventually save
+    filtered_lines = []
+    for line in string.split('\n'):
+        if '!' in line:
+            line = line[:line.index('!')]
+        if line.strip() == "":
+            continue
+        filtered_lines.append(line)
 
-        group_re = re.compile(r'&([^&]+)/', re.DOTALL)  # allow blocks to span multiple lines
-        array_re = re.compile(r'(\w+)\((\d+)\)')
-        # string_re = re.compile(r"\'\s*\w[^']*\'")
-        string_re = re.compile(r"[\'\"]*[\'\"]")
-        # self._complex_re = re.compile(r'^\((\d+.?\d*),(\d+.?\d*)\)$')
+    group_blocks = re.findall(group_re, "\n".join(filtered_lines))
 
-        # remove all comments, since they may have forward-slashes
-        # TODO: store position of comments so that they can be re-inserted when
-        # we eventually save
-        filtered_lines = []
-        for line in input_str.split('\n'):
-            if '!' in line:
-                line = line[:line.index('!')]
-            if line.strip() == "":
+    groups = odict()
+
+    for i, group_block in enumerate(group_blocks):
+        block_lines = group_block.split('\n')
+        group_name = block_lines.pop(0).strip()
+
+        # some lines are continuation of previous lines: filter
+        clean_lines = []
+        for line in block_lines:
+            line = line.strip()
+            if line == "":
                 continue
-            filtered_lines.append(line)
+            if line.startswith('!'):
+                continue
+            if '=' in line:
+                clean_lines.append(line)
+            else:
+                # continuation of previous line
+                clean_lines[-1] += line
 
-        group_blocks = re.findall(group_re, "\n".join(filtered_lines))
+        group = odict()
 
-        for i, group_block in enumerate(group_blocks):
-            block_lines = group_block.split('\n')
-            group_name = block_lines.pop(0).strip()
+        for line in clean_lines:
 
-            # some lines are continuation of previous lines: filter
-            clean_lines = []
-            for line in block_lines:
-                line = line.strip()
-                if line == "":
-                    continue
-                if line.startswith('!'):
-                    continue
-                if '=' in line:
-                    clean_lines.append(line)
-                else:
-                    # continuation of previous line
-                    clean_lines[-1] += line
+            # commas at the end of lines seem to be optional
+            if line.endswith(','):
+                line = line[:-1]
 
-            group = OrderedDict()
+            k, v = line.split('=')
+            variable_name = k.strip()
+            variable_value = v.strip()
 
-            for line in clean_lines:
+            parsed_value = _parse_value(variable_value)
+            group[variable_name] = parsed_value
 
-                # commas at the end of lines seem to be optional
-                if line.endswith(','):
-                    line = line[:-1]
-
-                k, v = line.split('=')
-                variable_name = k.strip()
-                variable_value = v.strip()
-
-                parsed_value = _parse_value(variable_value)
-                group[variable_name] = parsed_value
-
-            self.groups[group_name] = group
-
-    def dump(self, array_inline=True):
-        lines = []
-        for group_name, group_variables in self.groups.items():
-            lines.append("&%s" % group_name)
-            for variable_name, variable_value in group_variables.items():
-                if isinstance(variable_value, list):
-                    if array_inline:
-                        lines.append("  %s = %s" % (variable_name, " ".join([_format_value(v) for v in variable_value])))
-                    else:
-                        for n, v in enumerate(variable_value):
-                            lines.append("  %s(%d) = %s" % (variable_name, n+1, _format_value(v)))
-                else:
-                    lines.append("  %s = %s" % (variable_name, _format_value(variable_value)))
-            lines.append("/\n")
-
-        return "\n".join(lines)
+        groups[group_name] = group
+    return groups
 
 def _parse_value(variable_value):
     """
@@ -129,11 +145,14 @@ def _parse_value(variable_value):
                 # array 3 4 5
                 parsed_value = _parse_array(variable_value.split())
             else:
-                print "Parsing ERROR: >>>{}<<<".format(variable_value)
+                print("Parsing ERROR: >>>{}<<<".format(variable_value))
                 raise ValueError(variable_value)
     return parsed_value
 
 def _parse_array(values):
+    """ parse a list of (string) values representing a fortran array
+    and return a python list
+    """
     assert type(values) is list
     parsed_value = []
     for v in values:
@@ -145,7 +164,27 @@ def _parse_array(values):
             parsed_value.append(_parse_value(v))
     return parsed_value
 
+def _format_nml(groups, array_inline=True):
+    """ format a dict of dict into namelist string
+    """
+    lines = []
+    for group_name, group_variables in groups.items():
+        lines.append("&%s" % group_name)
+        for variable_name, variable_value in group_variables.items():
+            if isinstance(variable_value, list):
+                if array_inline:
+                    lines.append("  %s = %s" % (variable_name, " ".join([_format_value(v) for v in variable_value])))
+                else:
+                    for n, v in enumerate(variable_value):
+                        lines.append("  %s(%d) = %s" % (variable_name, n+1, _format_value(v)))
+            else:
+                lines.append("  %s = %s" % (variable_name, _format_value(variable_value)))
+        lines.append("/\n")
+    return "\n".join(lines)
+
 def _format_value(value):
+    """ Format a value into fortran's namelist format (return a string)
+    """
     if isinstance(value, bool):
         return value and '.true.' or '.false.'
     elif isinstance(value, int):
@@ -159,4 +198,3 @@ def _format_value(value):
         return "(%s,%s)" % (_format_value(value.real), _format_value(value.imag))
     else:
         raise Exception("Variable type not understood: %s" % type(value))
-
