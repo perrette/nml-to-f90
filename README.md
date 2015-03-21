@@ -8,7 +8,7 @@ This will create ioparams.f90, with corresponding derived types and I/O function
 To be imported in any other program as follow (without dependencies).
 
     use ioparams, only: group1_t, group2_t
-    use ioparams, only: read_nml, write_nml, parse_command_line
+    use ioparams, only: read_nml, write_nml, parse_command_argument
     use ioparams, only: set_param, get_param
 
 where `<group>_t` are newly defined types created from namelist groups
@@ -29,8 +29,8 @@ It could be used as:
     ! parse command-line arguments
     i = 1
     do while(i <= command_argument_count())
-        call parse_command_line(par1, i, iostat)
-        if (iostat/=0) call parse_command_line(par2, i)
+        call parse_command_argument(par1, i, iostat)
+        if (iostat/=0) call parse_command_argument(par2, i)
         i = i + 2
     enddo
 

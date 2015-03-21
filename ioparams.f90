@@ -10,7 +10,7 @@ module ioparams
 
     private
     public :: read_nml, write_nml, set_param, get_param
-    public :: parse_command_line, set_param_string, has_param
+    public :: parse_command_argument, set_param_string, has_param
     public :: group1_t, group2_t
 
     integer, parameter :: dp = kind(0.d0)
@@ -61,9 +61,9 @@ module ioparams
         module procedure :: set_param_string_group2
     end interface
 
-    interface parse_command_line
-        module procedure :: parse_command_line_group1
-        module procedure :: parse_command_line_group2
+    interface parse_command_argument
+        module procedure :: parse_command_argument_group1
+        module procedure :: parse_command_argument_group2
     end interface
 
     interface set_param
@@ -263,7 +263,7 @@ end subroutine
     ! Routines useful to process command-line parameters: 
     ! - has_param
     ! - set_param_string
-    ! - parse_command_line
+    ! - parse_command_argument
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 subroutine set_param_string_group1 (params, name, string)
@@ -368,7 +368,7 @@ case ('string2', 'group1%string2')
     end select
 end function
 
-subroutine parse_command_line_group1 (params,i, iostat)
+subroutine parse_command_argument_group1 (params,i, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe set command line argument field
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -546,7 +546,7 @@ case ('logarr1', 'group2%logarr1')
     end select
 end function
 
-subroutine parse_command_line_group2 (params,i, iostat)
+subroutine parse_command_argument_group2 (params,i, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe set command line argument field
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++

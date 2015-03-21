@@ -205,7 +205,7 @@ def get_format_cmd(params):
     cmd_routines = []
     has_param_proc = []
     set_param_string_proc = []
-    parse_command_line_proc = []
+    parse_command_argument_proc = []
 
     for G in params.keys():
 
@@ -236,14 +236,14 @@ def get_format_cmd(params):
 
         set_param_string_proc.append("module procedure :: set_param_string_{g}".format(g=g)) 
         has_param_proc.append("module procedure :: has_param_{g}".format(g=g)) 
-        parse_command_line_proc.append("module procedure :: parse_command_line_{g}".format(g=g)) 
+        parse_command_argument_proc.append("module procedure :: parse_command_argument_{g}".format(g=g)) 
 
     # source_code = template_module.format(types = ", ".join(types), 
     fmt = dict(
                cmd_routines = "\n\n".join(cmd_routines),
                has_param_proc = "\n        ".join(has_param_proc),
                set_param_string_proc = "\n        ".join(set_param_string_proc),
-               parse_command_line_proc = "\n        ".join(parse_command_line_proc),
+               parse_command_argument_proc = "\n        ".join(parse_command_argument_proc),
                )
 
     return fmt

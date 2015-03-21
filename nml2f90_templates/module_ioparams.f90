@@ -10,7 +10,7 @@ module {io_module_name}
 
     private
     public :: read_nml, write_nml, set_param, get_param
-    public :: parse_command_line, set_param_string, has_param
+    public :: parse_command_argument, set_param_string, has_param
     public :: {list_of_types}
 
     integer, parameter :: dp = kind(0.d0)
@@ -34,8 +34,8 @@ module {io_module_name}
         {set_param_string_proc}
     end interface
 
-    interface parse_command_line
-        {parse_command_line_proc}
+    interface parse_command_argument
+        {parse_command_argument_proc}
     end interface
 
     interface set_param
@@ -65,7 +65,7 @@ contains
     ! Routines useful to process command-line parameters: 
     ! - has_param
     ! - set_param_string
-    ! - parse_command_line
+    ! - parse_command_argument
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 {cmd_routines}

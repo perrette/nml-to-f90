@@ -1,6 +1,6 @@
 program test_io_params
 
-  use ioparams, only: read_nml, write_nml, set_param, get_param, has_param, set_param_string, parse_command_line
+  use ioparams, only: read_nml, write_nml, set_param, get_param, has_param, set_param_string, parse_command_argument
   use ioparams, only: group1_t, group2_t
 
   implicit none 
@@ -88,8 +88,8 @@ program test_io_params
     case ('-h', '--help')
       print*, "Just pass argument as '--double1 3.14' or, for ambiguous cases, '--group1%integer1 44'"
     case default
-      call parse_command_line(group1, i, iostat=iostats(1))
-      call parse_command_line(group2, i, iostat=iostats(2))
+      call parse_command_argument(group1, i, iostat=iostats(1))
+      call parse_command_argument(group2, i, iostat=iostats(2))
       if (sum(iostats)/=1) then
         write(*,*) "ERROR: none or several parameters matched: ",trim(arg)
         stop

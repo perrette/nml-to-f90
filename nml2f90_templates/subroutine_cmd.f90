@@ -31,7 +31,7 @@ function has_param_{group} (params, name) result(has_param)
     end select
 end function
 
-subroutine parse_command_line_{group} (params,i, iostat)
+subroutine parse_command_argument_{group} (params,i, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe set command line argument field
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
