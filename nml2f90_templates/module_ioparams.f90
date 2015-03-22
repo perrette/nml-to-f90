@@ -1,6 +1,9 @@
 module {io_module_name}
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Automatically generated module by nml2f90.py from {input_nml}
+    ! Automatically generated module by nml2f90.py [source: {source}]
+    !
+    ! https://github.com/perrette/nml-to-f90
+    ! version: {version}
     ! 
     ! Contains read / write subroutines for all derived types imported below.
     ! As well as setter / getter access by field name
@@ -17,7 +20,8 @@ module {io_module_name}
     public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
-    logical :: VERBOSE = .TRUE.
+    integer, parameter :: clen = {clen}    ! character length
+    logical :: VERBOSE = {verbose}
 
     {type_definitions}
 
@@ -53,11 +57,11 @@ module {io_module_name}
         {get_param_proc}
     end interface
 
-    interface string_to_vector
-      module procedure :: string_to_vector_integer
-      module procedure :: string_to_vector_double
-      module procedure :: string_to_vector_string
-      module procedure :: string_to_vector_logical
+    interface string_to_array
+      module procedure :: string_to_array_integer
+      module procedure :: string_to_array_double
+      module procedure :: string_to_array_string
+      module procedure :: string_to_array_logical
     end interface
 
 contains
@@ -86,11 +90,11 @@ contains
     ! =============================================================
     !
     ! Type conversion functions (Courtesy of Alex Robinson's nml module)
-    ! ==> useful to read vector (lists) from command list argument)
+    ! ==> useful to read array (lists) from command list argument)
     !
     ! =============================================================
 
-subroutine string_to_vector_integer (string, value, iostat)
+subroutine string_to_array_integer (string, value, iostat)
 
     implicit none 
 
@@ -128,7 +132,7 @@ subroutine string_to_vector_integer (string, value, iostat)
     end do 
 end subroutine
 
-subroutine string_to_vector_double (string, value, iostat)
+subroutine string_to_array_double (string, value, iostat)
 
     implicit none 
 
@@ -166,7 +170,7 @@ subroutine string_to_vector_double (string, value, iostat)
     end do 
 end subroutine
 
-subroutine string_to_vector_logical (string, value, iostat)
+subroutine string_to_array_logical (string, value, iostat)
 
     implicit none 
 
@@ -203,7 +207,7 @@ subroutine string_to_vector_logical (string, value, iostat)
         end if 
     end do 
 end subroutine
-subroutine string_to_vector_string (string, value, iostat)
+subroutine string_to_array_string (string, value, iostat)
 
     implicit none 
 

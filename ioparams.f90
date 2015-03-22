@@ -1,6 +1,9 @@
 module ioparams
     ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Automatically generated module by nml2f90.py from namelist.nml
+    ! Automatically generated module by nml2f90.py [source: namelist.nml]
+    !
+    ! https://github.com/perrette/nml-to-f90
+    ! version: unknown
     ! 
     ! Contains read / write subroutines for all derived types imported below.
     ! As well as setter / getter access by field name
@@ -17,32 +20,29 @@ module ioparams
     public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
-    logical :: VERBOSE = .TRUE.
+    integer, parameter :: clen = 256    ! character length
+    logical :: VERBOSE = .true.
 
-    
-    type group1_t 
-        character(len=256) :: string1
-        character(len=256), dimension(3) :: stringarr1
+    type group1_t
+        character(len=clen) :: string1
+        character(len=clen), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        character(len=256) :: string2
+        character(len=clen) :: string2
     end type
-        
-    
-    type group2_t 
-        character(len=256) :: string1
-        character(len=256), dimension(3) :: stringarr1
+    type group2_t
+        character(len=clen) :: string1
+        character(len=clen), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        character(len=256) :: string2
+        character(len=clen) :: string2
         integer, dimension(7) :: intarr1
-        real(dp) :: double1
-        real(dp), dimension(5) :: dblarr1
+        real(kind=dp) :: double1
+        real(kind=dp), dimension(5) :: dblarr1
         logical, dimension(5) :: logarr1
     end type
-        
 
     interface read_nml
         module procedure :: read_nml_group1
@@ -82,11 +82,11 @@ module ioparams
         
     end interface
 
-    interface string_to_vector
-      module procedure :: string_to_vector_integer
-      module procedure :: string_to_vector_double
-      module procedure :: string_to_vector_string
-      module procedure :: string_to_vector_logical
+    interface string_to_array
+      module procedure :: string_to_array_integer
+      module procedure :: string_to_array_double
+      module procedure :: string_to_array_string
+      module procedure :: string_to_array_logical
     end interface
 
 contains
@@ -102,12 +102,12 @@ subroutine read_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256), dimension(3) :: stringarr1
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=256) :: string2
+    character(len=clen) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
@@ -138,12 +138,12 @@ subroutine write_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256), dimension(3) :: stringarr1
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=256) :: string2
+    character(len=clen) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
@@ -167,15 +167,15 @@ subroutine read_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256), dimension(3) :: stringarr1
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=256) :: string2
+    character(len=clen) :: string2
     integer, dimension(7) :: intarr1
-    real(dp) :: double1
-    real(dp), dimension(5) :: dblarr1
+    real(kind=dp) :: double1
+    real(kind=dp), dimension(5) :: dblarr1
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, &
@@ -216,15 +216,15 @@ subroutine write_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    character(len=256) :: string1
-    character(len=256), dimension(3) :: stringarr1
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=256) :: string2
+    character(len=clen) :: string2
     integer, dimension(7) :: intarr1
-    real(dp) :: double1
-    real(dp), dimension(5) :: dblarr1
+    real(kind=dp) :: double1
+    real(kind=dp), dimension(5) :: dblarr1
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, integer2, string2, intarr1, &
@@ -321,16 +321,16 @@ subroutine print_help_group1(params, iounit, value)
   write(io, *) "+++++++++++++++++      group1      ++++++++++++++++++"
   
 if (def) then
-    write(io, *) "--string1 character(len=256)  (default: ",params%string1," )"
+    write(io, *) "--string1 character(len=clen)  (default: ",params%string1," )"
 else
-    write(io, *) "--string1 character(len=256) "
+    write(io, *) "--string1 character(len=clen) "
 endif
 
     
 if (def) then
-    write(io, *) "--stringarr1 character(len=256), dimension(3)  (default: ",params%stringarr1," )"
+    write(io, *) "--stringarr1 character(len=clen), dimension(3)  (default: ",params%stringarr1," )"
 else
-    write(io, *) "--stringarr1 character(len=256), dimension(3) "
+    write(io, *) "--stringarr1 character(len=clen), dimension(3) "
 endif
 
     
@@ -356,9 +356,9 @@ endif
 
     
 if (def) then
-    write(io, *) "--string2 character(len=256)  (default: ",params%string2," )"
+    write(io, *) "--string2 character(len=clen)  (default: ",params%string2," )"
 else
-    write(io, *) "--string2 character(len=256) "
+    write(io, *) "--string2 character(len=clen) "
 endif
 
 end subroutine
@@ -376,24 +376,24 @@ subroutine set_param_string_group1 (params, name, string)
     
 case ('string1', 'group1%string1')
     read(string, *, iostat=IOSTAT) params%string1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string1 = ", params%string1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%string1"
         else
-            write(*,*) "ERROR converting string to character(len=256): --group1%string1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=clen): --group1%string1 ",trim(string)
         endif
         stop
     endif
 
     
 case ('stringarr1', 'group1%stringarr1')
-    call string_to_vector(string, params%stringarr1, iostat=iostat)
+    call string_to_array(string, params%stringarr1, iostat=iostat)
     if (iostat /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%stringarr1"
         else
-            write(*,*) "ERROR converting string to character(len=256), dimension(3) array : --group1%stringarr1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=clen), dimension(3) array : --group1%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -401,7 +401,7 @@ case ('stringarr1', 'group1%stringarr1')
     
 case ('logical1', 'group1%logical1')
     read(string, *, iostat=IOSTAT) params%logical1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%logical1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%logical1 = ", params%logical1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%logical1"
@@ -414,7 +414,7 @@ case ('logical1', 'group1%logical1')
     
 case ('integer1', 'group1%integer1')
     read(string, *, iostat=IOSTAT) params%integer1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer1 = ", params%integer1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%integer1"
@@ -427,7 +427,7 @@ case ('integer1', 'group1%integer1')
     
 case ('integer2', 'group1%integer2')
     read(string, *, iostat=IOSTAT) params%integer2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer2 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer2 = ", params%integer2
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%integer2"
@@ -440,12 +440,12 @@ case ('integer2', 'group1%integer2')
     
 case ('string2', 'group1%string2')
     read(string, *, iostat=IOSTAT) params%string2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string2 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string2 = ", params%string2
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%string2"
         else
-            write(*,*) "ERROR converting string to character(len=256): --group1%string2 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=clen): --group1%string2 ",trim(string)
         endif
         stop
     endif
@@ -558,16 +558,16 @@ subroutine print_help_group2(params, iounit, value)
   write(io, *) "+++++++++++++++++      group2      ++++++++++++++++++"
   
 if (def) then
-    write(io, *) "--string1 character(len=256)  (default: ",params%string1," )"
+    write(io, *) "--string1 character(len=clen)  (default: ",params%string1," )"
 else
-    write(io, *) "--string1 character(len=256) "
+    write(io, *) "--string1 character(len=clen) "
 endif
 
     
 if (def) then
-    write(io, *) "--stringarr1 character(len=256), dimension(3)  (default: ",params%stringarr1," )"
+    write(io, *) "--stringarr1 character(len=clen), dimension(3)  (default: ",params%stringarr1," )"
 else
-    write(io, *) "--stringarr1 character(len=256), dimension(3) "
+    write(io, *) "--stringarr1 character(len=clen), dimension(3) "
 endif
 
     
@@ -593,9 +593,9 @@ endif
 
     
 if (def) then
-    write(io, *) "--string2 character(len=256)  (default: ",params%string2," )"
+    write(io, *) "--string2 character(len=clen)  (default: ",params%string2," )"
 else
-    write(io, *) "--string2 character(len=256) "
+    write(io, *) "--string2 character(len=clen) "
 endif
 
     
@@ -607,16 +607,16 @@ endif
 
     
 if (def) then
-    write(io, *) "--double1 real(dp)  (default: ",params%double1," )"
+    write(io, *) "--double1 real(kind=dp)  (default: ",params%double1," )"
 else
-    write(io, *) "--double1 real(dp) "
+    write(io, *) "--double1 real(kind=dp) "
 endif
 
     
 if (def) then
-    write(io, *) "--dblarr1 real(dp), dimension(5)  (default: ",params%dblarr1," )"
+    write(io, *) "--dblarr1 real(kind=dp), dimension(5)  (default: ",params%dblarr1," )"
 else
-    write(io, *) "--dblarr1 real(dp), dimension(5) "
+    write(io, *) "--dblarr1 real(kind=dp), dimension(5) "
 endif
 
     
@@ -641,24 +641,24 @@ subroutine set_param_string_group2 (params, name, string)
     
 case ('string1', 'group2%string1')
     read(string, *, iostat=IOSTAT) params%string1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string1 = ", params%string1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%string1"
         else
-            write(*,*) "ERROR converting string to character(len=256): --group2%string1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=clen): --group2%string1 ",trim(string)
         endif
         stop
     endif
 
     
 case ('stringarr1', 'group2%stringarr1')
-    call string_to_vector(string, params%stringarr1, iostat=iostat)
+    call string_to_array(string, params%stringarr1, iostat=iostat)
     if (iostat /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%stringarr1"
         else
-            write(*,*) "ERROR converting string to character(len=256), dimension(3) array : --group2%stringarr1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=clen), dimension(3) array : --group2%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -666,7 +666,7 @@ case ('stringarr1', 'group2%stringarr1')
     
 case ('logical1', 'group2%logical1')
     read(string, *, iostat=IOSTAT) params%logical1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%logical1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%logical1 = ", params%logical1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%logical1"
@@ -679,7 +679,7 @@ case ('logical1', 'group2%logical1')
     
 case ('integer1', 'group2%integer1')
     read(string, *, iostat=IOSTAT) params%integer1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer1 = ", params%integer1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%integer1"
@@ -692,7 +692,7 @@ case ('integer1', 'group2%integer1')
     
 case ('integer2', 'group2%integer2')
     read(string, *, iostat=IOSTAT) params%integer2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer2 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer2 = ", params%integer2
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%integer2"
@@ -705,19 +705,19 @@ case ('integer2', 'group2%integer2')
     
 case ('string2', 'group2%string2')
     read(string, *, iostat=IOSTAT) params%string2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string2 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string2 = ", params%string2
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%string2"
         else
-            write(*,*) "ERROR converting string to character(len=256): --group2%string2 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=clen): --group2%string2 ",trim(string)
         endif
         stop
     endif
 
     
 case ('intarr1', 'group2%intarr1')
-    call string_to_vector(string, params%intarr1, iostat=iostat)
+    call string_to_array(string, params%intarr1, iostat=iostat)
     if (iostat /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%intarr1"
@@ -730,31 +730,31 @@ case ('intarr1', 'group2%intarr1')
     
 case ('double1', 'group2%double1')
     read(string, *, iostat=IOSTAT) params%double1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%double1 = ", trim(string)
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%double1 = ", params%double1
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%double1"
         else
-            write(*,*) "ERROR converting string to real(dp): --group2%double1 ",trim(string)
+            write(*,*) "ERROR converting string to real(kind=dp): --group2%double1 ",trim(string)
         endif
         stop
     endif
 
     
 case ('dblarr1', 'group2%dblarr1')
-    call string_to_vector(string, params%dblarr1, iostat=iostat)
+    call string_to_array(string, params%dblarr1, iostat=iostat)
     if (iostat /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%dblarr1"
         else
-            write(*,*) "ERROR converting string to real(dp), dimension(5) array : --group2%dblarr1 ",trim(string)
+            write(*,*) "ERROR converting string to real(kind=dp), dimension(5) array : --group2%dblarr1 ",trim(string)
         endif
         stop
     endif
 
     
 case ('logarr1', 'group2%logarr1')
-    call string_to_vector(string, params%logarr1, iostat=iostat)
+    call string_to_array(string, params%logarr1, iostat=iostat)
     if (iostat /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%logarr1"
@@ -826,11 +826,11 @@ end function
     ! =============================================================
     !
     ! Type conversion functions (Courtesy of Alex Robinson's nml module)
-    ! ==> useful to read vector (lists) from command list argument)
+    ! ==> useful to read array (lists) from command list argument)
     !
     ! =============================================================
 
-subroutine string_to_vector_integer (string, value, iostat)
+subroutine string_to_array_integer (string, value, iostat)
 
     implicit none 
 
@@ -868,7 +868,7 @@ subroutine string_to_vector_integer (string, value, iostat)
     end do 
 end subroutine
 
-subroutine string_to_vector_double (string, value, iostat)
+subroutine string_to_array_double (string, value, iostat)
 
     implicit none 
 
@@ -906,7 +906,7 @@ subroutine string_to_vector_double (string, value, iostat)
     end do 
 end subroutine
 
-subroutine string_to_vector_logical (string, value, iostat)
+subroutine string_to_array_logical (string, value, iostat)
 
     implicit none 
 
@@ -943,7 +943,7 @@ subroutine string_to_vector_logical (string, value, iostat)
         end if 
     end do 
 end subroutine
-subroutine string_to_vector_string (string, value, iostat)
+subroutine string_to_array_string (string, value, iostat)
 
     implicit none 
 
