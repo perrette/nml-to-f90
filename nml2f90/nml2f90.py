@@ -8,11 +8,12 @@ from __future__ import print_function, absolute_import
 import sys, os, json
 from itertools import groupby
 from collections import OrderedDict as odict
-from namelist import Namelist
-from nml2f90.version import version as __version__
 import warnings
 import textwrap
 import argparse
+
+from .namelist import Namelist
+from .version import version as __version__
 
 # +++++++++++++++++++++++++++++++++++++++++
 # load templates

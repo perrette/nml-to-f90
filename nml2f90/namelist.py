@@ -6,6 +6,7 @@ https://github.com/leifdenby/namelist_python
 from __future__ import print_function
 from collections import OrderedDict as odict
 import re
+import warnings
 from itertools import groupby
 
 class Param(object):
@@ -80,7 +81,11 @@ class Namelist(Params):
     """
     @classmethod
     def parse(cls, string):
-        params = _parse_nml(string)
+        try:
+            params = _parse_nml(string)
+        except:
+            warnings.warn("some characters in the comments (likely / or \) namelist parsing, discard all comments")
+            params = _parse_nml(string)
         return cls(params)
 
     def format(self):
@@ -153,15 +158,14 @@ def _parse_nml(string, ignore_comments=False):
 def _parse_line(line):
     "parse a line within a block"
     # commas at the end of lines seem to be optional
-    line = line.strip()
-    if line.endswith(','):
-        line = line[:-1]
-
     comment = ""
     if '!' in line:
         sep = line.index("!")
-        comment = line[sep+1:]
-        line = line[:sep]
+        comment = line[sep+1:].strip()
+        line = line[:sep].strip()
+
+    if line.endswith(','):
+        line = line[:-1]
 
     k, v = line.split('=')
     name = k.strip()
