@@ -2,7 +2,7 @@
 """
 """
 #from distutils.core import setup
-import os, sys
+import os, sys, re
 from distutils.core import setup
 import warnings
 
