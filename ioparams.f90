@@ -823,6 +823,8 @@ end function
 
 
 
+    ! Type conversion
+
     ! =============================================================
     !
     ! Type conversion functions (Courtesy of Alex Robinson's nml module)
@@ -1004,6 +1006,8 @@ subroutine remove_quotes_comma(string)
     return 
 
 end subroutine remove_quotes_comma
+
+
 
 
 end module ioparams

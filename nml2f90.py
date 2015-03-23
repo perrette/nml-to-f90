@@ -1,63 +1,8 @@
 #!/usr/bin/env python2.7
 """Generates a fortran module from a namelist.
 
-Usage:
-    nml2f90.py <namelist.nml> [<ioparams>] [--clen <clen>] [--aclen <aclen>] [--full] [--mapping MAP] [--type-suffix SUF] [--json JSON]
-
-Options:
-    -h --help       Show this screen
-    <namelist.nml>  input namelist
-    <ioparams>      module name to be created (default: io params)
-    --clen CLEN     indicate the length of character strings  [ default: 256 ]
-    --aclen ACLEN   indicate the length of character strings in arrays  [ default: 256]
-    --full          do include get_param, set_param functions
-    --type-suffix S suffix for mapping from block_name to type name  [ default: '_t' ]
-    --type-prefix P prefix for mapping from block_name to type name  [ default: '' ]
-    --json JSON     All informations maybe stored in a json file (NOT IMPLEMENTED)
-    
 This script will read the namelist.nml input file and output ioparams.f90, that 
 contains corresponding parameter types and I/O, setter/getter routines.
-
---map-blocks and --map-params parameters
-
-These parameters are to be provided in json format,
-as dict '{key1:val1, key2:val2}' or list of dict '[{...},{...}]'. Mind the single
-quotes '', which may be needed for your shell to recognize this chain as a single
-argument. Watch out for the forthcoming --json option to provide a json file directly,
-comprehending all information, and possibly even replacing the <namelist.nml> input.
-
-Accepted mapping keys at the block level are 
-
-    block_name : namelist block, required
-    type_name : corresponding type name
-    mod_name : corresponding module name, if the type is already defined in a module
-        Note that if mod_name is not provided, the type will be defined in ioparams.f90
-
-    Additionally, a few parameters indicate the functionality to add to that block
-    io_nml : read_nml, write_nml
-        namelist I/O, true by default
-    command_line : parse_command_argument, print_help
-        command-line functionality, true by default
-    setget : set_param, get_param
-        generic setter/getter for the type, false by default
-
-Accepted mapping keys at the param level are:
-    
-    "block": block to which this variable belongs
-    "name" : parameter name, required
-    "dtype": "real", "integer", "logical", "character"
-        Note there is no dimension or precision specification here,
-        even though we may deal with an array.
-    "units": units as a string
-    "doc": documentation for the variable
-    "precision": integer (e.g. len= parameter for character, kind= for real)
-        By default, all real numbers are double precision, characters are 256
-        or whatever value passed by --clen
-    "array" : True, False (default)
-        add the dimension(size) qualifyer
-    "size" : integer (if array==True)
-    "value": default value 
-        This is needed if dtype is not provided
 """
 from __future__ import print_function
 import sys, os, json
@@ -66,6 +11,7 @@ from namelist import Namelist
 import nml2f90_templates
 import warnings
 import textwrap
+import argparse
 
 __version__ = nml2f90_templates.__version__
 
@@ -84,6 +30,7 @@ template_module = open(os.path.join(_dir, "module_ioparams.f90")).read()
 template_io = open(os.path.join(_dir, "subroutine_io.f90")).read()
 template_cmd = open(os.path.join(_dir, "subroutine_cmd.f90")).read()
 template_setget = open(os.path.join(_dir, "subroutine_setget.f90")).read()
+code_typeconversion = open(os.path.join(_dir, "subroutine_typeconversion.f90")).read()
 
 
 # +++++++++++++++++++++++++++++++++++++++++
@@ -470,7 +417,7 @@ def get_format_setget(block_maps):
                 list_set_cases.append( template_set_cases.format(**v_map) )
 
             routine_map = block_map.copy() # usual block map
-            routine_map = routine_map.update({
+            routine_map.update({
                 "type_interface" : type_interface,
                 "type" : v_map["type"], # should all have the same type
                 "list_get_cases" :  "\n".join(list_get_cases),
@@ -515,6 +462,7 @@ def make_source(map_blocks, io_mod="ioparams", source="", clen=256, verbose=True
         "source" : source,
         "clen" : clen, 
         "verbose" : ".true." if verbose else ".false.",
+        "type_conversion" : code_typeconversion,
     }
     fmt.update( 
         get_format_typedef(map_blocks)
@@ -531,65 +479,90 @@ def make_source(map_blocks, io_mod="ioparams", source="", clen=256, verbose=True
     return template_module.format(**fmt)
 
 
+# --map-blocks and --map-params parameters
+#
+# These parameters are to be provided in json format,
+# as dict '{key1:val1, key2:val2}' or list of dict '[{...},{...}]'. Mind the single
+# quotes '', which may be needed for your shell to recognize this chain as a single
+# argument. Watch out for the forthcoming --json option to provide a json file directly,
+# comprehending all information, and possibly even replacing the <namelist.nml> input.
+#
+# Accepted mapping keys at the block level are 
+#
+#     block_name : namelist block, required
+#     type_name : corresponding type name
+#     mod_name : corresponding module name, if the type is already defined in a module
+#         Note that if mod_name is not provided, the type will be defined in ioparams.f90
+#
+#     Additionally, a few parameters indicate the functionality to add to that block
+#     io_nml : read_nml, write_nml
+#         namelist I/O, true by default
+#     command_line : parse_command_argument, print_help
+#         command-line functionality, true by default
+#     setget : set_param, get_param
+#         generic setter/getter for the type, false by default
+#
+# Accepted mapping keys at the param level are:
+#     
+#     "block": block to which this variable belongs
+#     "name" : parameter name, required
+#     "dtype": "real", "integer", "logical", "character"
+#         Note there is no dimension or precision specification here,
+#         even though we may deal with an array.
+#     "units": units as a string
+#     "doc": documentation for the variable
+#     "precision": integer (e.g. len= parameter for character, kind= for real)
+#         By default, all real numbers are double precision, characters are 256
+#         or whatever value passed by --clen
+#     "array" : True, False (default)
+#         add the dimension(size) qualifyer
+#     "size" : integer (if array==True)
+#     "value": default value 
+#         This is needed if dtype is not provided
+# """
+
+
 def main():
 
-    # new module name to be generated with all io routines
-    # global parameters
-    io_mod = "ioparams"
-    clen = aclen = 256
-    # global include_setget
-    # include_setget = False
+    # Generate command line arguments
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("namelist", help="input namelist")
+    parser.add_argument("module", default="ioparams", nargs="?",help="module name to be created")
+    parser.add_argument("--clen", type=int, default=256, help="character length")
+    parser.add_argument("--type-suffix", default='_t', help="suffix for mapping from block_name to type name")
+    parser.add_argument("--type-prefix", default='', help="prefix for mapping from block_name to type name")
+    group = parser.add_argument_group("user-defined correspondance between python and fortran")
+    group.add_argument("--map-block", type=json.loads, help='user-defined block-level mapping, in json, e.g. {"block_name":"block1", "type_name":"mytype"}')
+    group.add_argument("--map-param", type=json.loads, help='user-defined param-level mapping, in json')
+    group.add_argument("--json", type=lambda s: json.loads(open(s)), help='read spec from json file instead of namelist')
+    group.add_argument("--write-json", help='write derived specs to the provided json file')
+    group = parser.add_argument_group("fortran functionality to be provided in ioparams")
+    # group.add_argument("--full", help="do include get_param, set_param functions")
+    group.add_argument("--no-io-nml", action="store_false", dest='io_nml', help="read_nml, write_nml")
+    group.add_argument("--no-command-line", action="store_false", dest="command_line", help="no parse_command_argument, print_help")
+    group.add_argument("--io-nml", action="store_true", help="read_nml, write_nml")
+    group.add_argument("--command-line", action="store_true", help="parse_command_argument, print_help")
+    group.add_argument("--set-get-param", action="store_true", help="get_param, set_param functions")
 
-    # character length
-    # clen = 256
-    # aclen = 256
-    # suffix = '_t'
+    args = parser.parse_args()
+    print(args)
 
-    # if not hasdocopt:
-
-    if len(sys.argv) < 2:
-        print(__doc__)
-        raise Exception("Must provide at least namelist as argument")
-
-    input_nml = sys.argv[1]
-
-    if len(sys.argv) == 3:
-        io_mod = sys.argv[2]
-    if len(sys.argv) > 3 or input_nml in ("-h", "--help"):
-        print("Usage: nml2f90 NAMELIST [MODULE]")
-        # print(__doc__)
-        sys.exit()
-
-    # else:
-    #     args = docopt.docopt(__doc__)
-    #     # print args
-    #     input_nml = args['<namelist.nml>'] or "namelist.nml"
-    #     if args['<ioparams>']: io_mod = args['<ioparams>']
-    #     if args['--clen']: 
-    #         clen = int(args['--clen'])
-    #         aclen = int(args['--clen'])
-    #     if args['--aclen']: aclen = int(args['--aclen'])
-    #     if args['--full']:
-    #         include_setget = True
-    #     if args['--suffix']:
-    #         suffix = set_suffix(args['--suffix'])
-    #     if args['--mapping']:
-    #         mapping = json.loads(args['--mapping'])
-    #         derived_type_name = type_mapping_dec(derived_type_name)
-
+    # module name and source code file name
+    io_mod = args.module
     if io_mod.endswith(".f90"):
         io_file = io_mod  
         io_mod = os.path.basename(io_file[:-4])
     else: 
         io_file = io_mod + ".f90"
 
-    print("Convert "+input_nml+" to "+io_file)
+    print("Convert "+args.namelist+" to "+io_file)
     print("...new module: "+io_mod)
 
     # read namelist
-    params = Namelist.read(input_nml)
+    params = Namelist.read(args.namelist)
 
     # Derive all variable and namelist blocks information
+
     # from namelist and input argument
     b_maps = []
     for b in params.keys():
@@ -598,9 +571,18 @@ def main():
             v_map = make_map_variable(value=params[b][p], name=p, block=b)
             # v_map = make_map_variable(value=params[b][v], name=v, units="", doc="", precision=None, dtype=None, block=b)
             v_maps.append(v_map)
-        b_map = make_map_block(b, members=v_maps)
+        b_map = make_map_block(b, members=v_maps, suffix=args.type_suffix, prefix=args.type_prefix, 
+                               setget=args.set_get_param, 
+                               io_nml=args.io_nml,
+                               command_line=args.command_line,
+                               )
         # b_map = make_map_block(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
         b_maps.append(b_map)
+
+    # write specs to file if required
+    if args.write_json:
+        with open(args.write_json,'w') as f:
+            f.write(json.dumps(b_maps, indent=4))
 
     # also add the full fortran types, including a dynamic version (length or size guessed from input)
     for b_map in b_maps:
@@ -610,7 +592,7 @@ def main():
     print("...with types: "+", ".join([b_map["type_name"] for b_map in b_maps]))
 
     # Write the actual code
-    code = make_source(b_maps, io_mod=io_mod, source=input_nml, clen=clen)
+    code = make_source(b_maps, io_mod=io_mod, source=args.namelist, clen=args.clen)
 
     with open(io_file, 'w') as f:
         f.write(code)
