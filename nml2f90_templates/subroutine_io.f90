@@ -1,38 +1,38 @@
-subroutine read_nml_{block_name} (iounit, params)
+subroutine read_nml_{group_name} (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the {block_name} block in a namelist file and assign to type
+    ! Read the {group_name} group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type({type_name}), intent(inout) :: params
 
     {variable_definitions}
 
-    namelist / {block_name} / {list_of_variables}
+    namelist / {group_name} / {list_of_variables}
 
     ! initialize variables
     {list_of_init}
 
     ! read all
-    read(unit=iounit, nml={block_name}) 
+    read(unit=iounit, nml={group_name}) 
 
     ! assign back to type
     {list_of_assign}
 end subroutine
 
-subroutine write_nml_{block_name} (iounit, params)
+subroutine write_nml_{group_name} (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the {block_name} block in a namelist file and assign to type
+    ! Read the {group_name} group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type({type_name}), intent(inout) :: params
 
     {variable_definitions}
 
-    namelist / {block_name} / {list_of_variables}
+    namelist / {group_name} / {list_of_variables}
 
     ! initialize variables
     {list_of_init}
 
     ! write_all
-    write(unit=iounit, nml={block_name}) 
+    write(unit=iounit, nml={group_name}) 
 end subroutine

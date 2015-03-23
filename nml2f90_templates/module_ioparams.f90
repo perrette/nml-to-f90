@@ -20,7 +20,7 @@ module {io_module_name}
     public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
-    integer, parameter :: clen = {clen}    ! character length
+    integer, parameter :: clen = {clen}    ! default character length
     logical :: VERBOSE = {verbose}
 
     {type_definitions}

@@ -48,7 +48,7 @@ _map_type = {
     "NoneType" : None, # convenience  to that value does not have to be passed to make_map_variable
 }
 
-def make_map_variable(value=None, name=None, units="", doc="", precision=None, dtype=None, block=None):
+def make_map_variable(value=None, name=None, units="", doc="", attrs=None, dtype=None, group=None):
     """ return a dict of attributes to map a python variable to fortran
     """
     # basic data type
@@ -59,11 +59,11 @@ def make_map_variable(value=None, name=None, units="", doc="", precision=None, d
             dtype = _map_type[type(value).__name__]
 
     # precision?
-    if precision is None:
+    if attrs is None:
         if dtype == "real":
-            precision = ("kind","dp")  # e.g. kind=8 ; assuming that dp is defined in module
+            attrs = {"kind":"dp"}  # e.g. kind=8 ; assuming that dp is defined in module
         elif dtype == "character":
-            precision = ("len","clen") # e.g. len=4 ; same, assume that clen is defined is module
+            attrs = {"len":"clen"} # e.g. len=4 ; same, assume that clen is defined is module
 
     # array?
     if type(value) is list:
@@ -78,11 +78,11 @@ def make_map_variable(value=None, name=None, units="", doc="", precision=None, d
         "units": units,
         "doc": doc,
         "dtype": dtype,
-        "precision": precision,
+        "attrs": attrs,
         "array": array,
         "size": size,
         "value": value,
-        "block": block,  # block to which this variable belongs
+        "group": group,  # group to which this variable belongs
     }
 
     return map_v
@@ -101,11 +101,11 @@ def _make_def_variable(v_map, dynamic=False):
     """
     dtype = v_map["dtype"]
 
-    precision = v_map["precision"]
-    if precision is not None:
+    attrs = v_map["attrs"]
+    if attrs is not None:
         if dtype == "character" and dynamic: 
-            precision = ("len","*")
-        dtype = dtype+"({}={})".format(*precision)
+            attrs = {"len":"*"}
+        dtype = dtype+"("+",".join(["{}={}".format(k,attrs[k]) for k in attrs])+')'
 
     if v_map["array"]:
         if dynamic:
@@ -117,23 +117,23 @@ def _make_def_variable(v_map, dynamic=False):
     return dtype
 
 # +++++++++++++++++++++++++++++++++++++++++
-# Namelist's block map
+# Namelist's group map
 # +++++++++++++++++++++++++++++++++++++++++
-# map betweem whole namelist blocks and the fortran type and modules
+# map betweem whole namelist group and the fortran type and modules
 
-def make_map_block(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
-    """ return a map for one namelist block, to match block name, module and type names
+def make_map_group(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
+    """ return a map for one namelist group, to match group name, module and type names
 
     Parameters
     ---------
-    name : namelist block
+    name : namelist group
     prefix, suffix : short-way to built type_name, if the latter is not provided
     type_name : corresponding type name
     mod_name : corresponding module name, if the type is already defined in a module
         Note that if mod_name is not provided, the type will be defined in ioparams.f90
     members : a list of variable maps (returned by make_map_variable)
 
-    Additionally, a few parameters indicate the functionality to add to that block
+    Additionally, a few parameters indicate the functionality to add to that group
     io_nml : read_nml, write_nml
         namelist I/O, true by default
     command_line : parse_command_argument, print_help
@@ -149,27 +149,24 @@ def make_map_block(name, suffix="_t", prefix="", type_name=None, mod_name=None, 
         type_name = prefix+name+suffix
 
     map_b = {
-        "block_name": name, 
+        "group_name": name, 
         "mod_name": mod_name, # if None, will be written in ioparams
         "type_name": type_name,
         "members" : members,
-        "io_nml": io_nml, 
-        "command_line":command_line,
-        "setget":setget,
     }
 
-    # make sure the block is right
+    # make sure the group is right
     if members is not None:
         for m in members:
-            m["block"] = name
+            m["group"] = name
 
     return map_b
 
-def _make_def_block(block_map):
+def _make_def_group(group_map):
     """ build type definition
     """
-    type_def = ["type {type_name}".format(**block_map)]
-    for v_map in block_map["members"]:
+    type_def = ["type {type_name}".format(**group_map)]
+    for v_map in group_map["members"]:
         type_def.append("        {type} :: {name}".format(**v_map))
     type_def.append("    end type")
     return "\n".join(type_def)
@@ -179,10 +176,10 @@ def _make_def_block(block_map):
 # +++++++++++++++++++++++++++++++++++++++++
 # get formatting information at the module level
 
-def get_format_typedef(block_maps):
+def get_format_typedef(group_maps):
     """ Fill-in variable names for derived type definition
 
-    block_maps : list of namelist block maps (see make_map_block and make_map_variable)
+    group_maps : list of namelist group maps (see make_map_group and make_map_variable)
     """
     # groups = params.keys()
     type_definitions = []
@@ -190,12 +187,12 @@ def get_format_typedef(block_maps):
     type_includes = []
 
     # loop over derived types
-    for block_map in block_maps:
-        if block_map["mod_name"] is None:
-            type_definitions.append( _make_def_block(block_map) )
+    for group_map in group_maps:
+        if group_map["mod_name"] is None:
+            type_definitions.append( _make_def_group(group_map) )
         else:
             type_inclues.append("use {type_mod}; only: {type_name}")
-        list_of_types.append( block_map["type_name"] )
+        list_of_types.append( group_map["type_name"] )
 
     module_map = {
         "type_includes" : " \n".join(type_includes),
@@ -205,10 +202,10 @@ def get_format_typedef(block_maps):
     return module_map
 
 
-def get_format_io(block_maps):
+def get_format_io(group_maps):
     """ Create I/O source code from a namelist template
 
-    params : dict of dict (params[block_name][param_name])
+    params : dict of dict (params[group_name][param_name])
     """
 
     io_routines = []
@@ -216,9 +213,9 @@ def get_format_io(block_maps):
     write_nml_interface = []
 
     # Namelist I/O for whole groups
-    for block_map in block_maps:
+    for group_map in group_maps:
 
-        if not block_map["io_nml"]:
+        if not group_map["io_nml"]:
             continue
 
         # For each parameter type, build a map specific to this routine
@@ -226,15 +223,15 @@ def get_format_io(block_maps):
         list_of_variables = []
         list_of_init = []
         list_of_assign = []
-        for v_map in block_map["members"]:
+        for v_map in group_map["members"]:
             variable_definitions.append("{type} :: {name}".format(**v_map))
             list_of_variables.append("{name}".format(**v_map))
             list_of_init.append("{name} = params%{name}".format(**v_map))
             list_of_assign.append("params%{name} = {name}".format(**v_map))
 
-        routines_map = block_map.copy()
+        routines_map = group_map.copy()
         routines_map.update(dict(
-            block_name=block_map["block_name"], # TODO: remove, and replace with name= in the templates
+            group_name=group_map["group_name"], # TODO: remove, and replace with name= in the templates
             variable_definitions="\n    ".join(variable_definitions),
             list_of_variables = " &\n".join(textwrap.wrap(", ".join(list_of_variables))),
             list_of_init = "\n    ".join(list_of_init),
@@ -242,8 +239,8 @@ def get_format_io(block_maps):
         ))
 
         io_routines.append( template_io.format(**routines_map) )
-        read_nml_interface.append("module procedure :: read_nml_{block_name}".format(**block_map)) 
-        write_nml_interface.append("module procedure :: write_nml_{block_name}".format(**block_map)) 
+        read_nml_interface.append("module procedure :: read_nml_{group_name}".format(**group_map)) 
+        write_nml_interface.append("module procedure :: write_nml_{group_name}".format(**group_map)) 
 
     # source_code = template_module.format(types = ", ".join(types), 
 
@@ -256,34 +253,34 @@ def get_format_io(block_maps):
     return io_map
 
 template_set_string_case = """
-case ('{name}', '{block}%{name}')
+case ('{name}', '{group}%{name}')
     read(string, *, iostat=IOSTAT) params%{name}
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "{block}%{name} = ", params%{name}
+    if (VERBOSE .or. IOSTAT/=0) write(*,*) "{group}%{name} = ", params%{name}
     if (IOSTAT /= 0) then 
         if (trim(string) == "") then
-            write(*,*) "ERROR: missing parameter value for --{block}%{name}"
+            write(*,*) "ERROR: missing parameter value for --{group}%{name}"
         else
-            write(*,*) "ERROR converting string to {type}: --{block}%{name} ",trim(string)
+            write(*,*) "ERROR converting string to {type}: --{group}%{name} ",trim(string)
         endif
         stop
     endif
 """
 
 template_set_string_case_array = """
-case ('{name}', '{block}%{name}')
+case ('{name}', '{group}%{name}')
     call string_to_array(string, params%{name}, iostat=iostat)
     if (iostat /= 0) then 
         if (trim(string) == "") then
-            write(*,*) "ERROR: missing parameter value for --{block}%{name}"
+            write(*,*) "ERROR: missing parameter value for --{group}%{name}"
         else
-            write(*,*) "ERROR converting string to {type} array : --{block}%{name} ",trim(string)
+            write(*,*) "ERROR converting string to {type} array : --{group}%{name} ",trim(string)
         endif
         stop
     endif
 """
 
 template_has_case = """
-case ('{name}', '{block}%{name}')
+case ('{name}', '{group}%{name}')
 """
 
 template_help = """
@@ -301,11 +298,11 @@ else
 endif
 """
 
-def get_format_cmd(block_maps):
+def get_format_cmd(group_maps):
     """ Fill template to help parsing command-line arguments
 
     inputs:
-        params : dict of dict (params[block_name][param_name])
+        params : dict of dict (params[group_name][param_name])
     returns:
         dict with keys:
         - has_param_proc
@@ -320,16 +317,16 @@ def get_format_cmd(block_maps):
     parse_command_argument_proc = []
     print_help_proc = []
 
-    for block_map in block_maps:
+    for group_map in group_maps:
 
-        if not block_map["command_line"]:
+        if not group_map["command_line"]:
             continue
 
         list_set_cases = []
         list_has_cases = []
         list_help = []
 
-        for v_map in block_map['members']:
+        for v_map in group_map['members']:
 
             # has_params routines
             list_has_cases.append(template_has_case.format(**v_map))
@@ -343,7 +340,7 @@ def get_format_cmd(block_maps):
             # print_help routines
             list_help.append(template_help.format(**v_map))
 
-        routines_map = block_map.copy() # routine-level map
+        routines_map = group_map.copy() # routine-level map
         routines_map.update( dict(
             list_set_cases="\n    ".join(list_set_cases),
             list_has_cases="\n    ".join(list_has_cases),
@@ -352,10 +349,10 @@ def get_format_cmd(block_maps):
 
         cmd_routines.append( template_cmd.format(**routines_map) )
 
-        set_param_string_proc.append("module procedure :: set_param_string_{block_name}".format(**block_map)) 
-        has_param_proc.append("module procedure :: has_param_{block_name}".format(**block_map)) 
-        parse_command_argument_proc.append("module procedure :: parse_command_argument_{block_name}".format(**block_map)) 
-        print_help_proc.append("module procedure :: print_help_{block_name}".format(**block_map)) 
+        set_param_string_proc.append("module procedure :: set_param_string_{group_name}".format(**group_map)) 
+        has_param_proc.append("module procedure :: has_param_{group_name}".format(**group_map)) 
+        parse_command_argument_proc.append("module procedure :: parse_command_argument_{group_name}".format(**group_map)) 
+        print_help_proc.append("module procedure :: print_help_{group_name}".format(**group_map)) 
 
     # source_code = template_module.format(types = ", ".join(types), 
     cmd_map = {
@@ -369,39 +366,39 @@ def get_format_cmd(block_maps):
     return cmd_map
 
 
-# when selecting parameter values, also accept argument names with "block_name%name" syntax
+# when selecting parameter values, also accept argument names with "group_name%name" syntax
 template_get_cases = """
-case ('{name}', '{block}%{name}')
+case ('{name}', '{group}%{name}')
     value = params%{name}
 """
 template_set_cases = """
-case ('{name}', '{block}%{name}')
+case ('{name}', '{group}%{name}')
     params%{name} = value
 """
 
 # NOTE: Is that functionality get_param / set_param really useful?
 # The same thing could be achieved with set_string. 
 # But well, this may come in handy for some generic application.
-def get_format_setget(block_maps):
+def get_format_setget(group_maps):
     """ Create set_param/get_param source code from a namelist template
 
-    params : dict of dict (params[block_name][param_name])
+    params : dict of dict (params[group_name][param_name])
     """
     get_param_interface = []
     set_param_interface = []
     setget_routines = []
 
     # loop over derived types
-    for block_map in block_maps:
+    for group_map in group_maps:
 
-        if not block_map["setget"]:
+        if not group_map["setget"]:
             continue
 
         # determine the list of all members type present in this derived type
         # build a dict of [(vtype1: [p11, p12, ...]), ...]
         maps_by_type = odict()
 
-        for v_map in block_map["members"]:
+        for v_map in group_map["members"]:
             type_interface = v_map["dtype"] + v_map["array"]*"_arr"
             if type_interface not in maps_by_type:
                 maps_by_type[type_interface] = []
@@ -416,7 +413,7 @@ def get_format_setget(block_maps):
                 list_get_cases.append( template_get_cases.format(**v_map) )
                 list_set_cases.append( template_set_cases.format(**v_map) )
 
-            routine_map = block_map.copy() # usual block map
+            routine_map = group_map.copy() # usual group map
             routine_map.update({
                 "type_interface" : type_interface,
                 "type" : v_map["type"], # should all have the same type
@@ -431,10 +428,10 @@ def get_format_setget(block_maps):
 
             # prepare interface of all subroutines
             get_param_interface.append(
-                "module procedure :: get_param_{block_name}_{type_name}".format(**block_map)
+                "module procedure :: get_param_{group_name}_{type_name}".format(**group_map)
             )
             set_param_interface.append(
-                "module procedure :: set_param_{block_name}_{type_name}".format(**block_map)
+                "module procedure :: set_param_{group_name}_{type_name}".format(**group_map)
             )
 
 
@@ -447,14 +444,26 @@ def get_format_setget(block_maps):
     return fmt
 
 
-def make_source(map_blocks, io_mod="ioparams", source="", clen=256, verbose=True):
+def make_source(map_groups, io_mod="ioparams", source="", clen=256, verbose=True, 
+                io_nml=True, command_line=True, setget=False):
     """ Make source code with I/O and getter / setter
     
-    map_blocks : essential info
+    map_groups : essential info
     io_mod : generated module name
     source : source namelist or else from which the file was generated 
     version : version of this file
     """
+
+    # also add the full fortran types, including a dynamic version (length or size guessed from input)
+    for b_map in map_groups:
+        for v_map in b_map['members']:
+            _update_variable_type_info(v_map)
+        b_map.update({
+            "io_nml": io_nml, 
+            "command_line":command_line,
+            "setget":setget,
+        })
+
     # choose what to include or not
     fmt = {
         "version" : __version__,
@@ -465,21 +474,21 @@ def make_source(map_blocks, io_mod="ioparams", source="", clen=256, verbose=True
         "type_conversion" : code_typeconversion,
     }
     fmt.update( 
-        get_format_typedef(map_blocks)
+        get_format_typedef(map_groups)
     )
     fmt.update( 
-        get_format_io(map_blocks) 
+        get_format_io(map_groups) 
     )
     fmt.update( 
-        get_format_cmd(map_blocks) 
+        get_format_cmd(map_groups) 
     )
     fmt.update( 
-        get_format_setget(map_blocks)
+        get_format_setget(map_groups)
     )
     return template_module.format(**fmt)
 
 
-# --map-blocks and --map-params parameters
+# --map-groups and --map-params parameters
 #
 # These parameters are to be provided in json format,
 # as dict '{key1:val1, key2:val2}' or list of dict '[{...},{...}]'. Mind the single
@@ -487,14 +496,14 @@ def make_source(map_blocks, io_mod="ioparams", source="", clen=256, verbose=True
 # argument. Watch out for the forthcoming --json option to provide a json file directly,
 # comprehending all information, and possibly even replacing the <namelist.nml> input.
 #
-# Accepted mapping keys at the block level are 
+# Accepted mapping keys at the group level are 
 #
-#     block_name : namelist block, required
+#     group_name : namelist group, required
 #     type_name : corresponding type name
 #     mod_name : corresponding module name, if the type is already defined in a module
 #         Note that if mod_name is not provided, the type will be defined in ioparams.f90
 #
-#     Additionally, a few parameters indicate the functionality to add to that block
+#     Additionally, a few parameters indicate the functionality to add to that group
 #     io_nml : read_nml, write_nml
 #         namelist I/O, true by default
 #     command_line : parse_command_argument, print_help
@@ -504,7 +513,7 @@ def make_source(map_blocks, io_mod="ioparams", source="", clen=256, verbose=True
 #
 # Accepted mapping keys at the param level are:
 #     
-#     "block": block to which this variable belongs
+#     "group": group to which this variable belongs
 #     "name" : parameter name, required
 #     "dtype": "real", "integer", "logical", "character"
 #         Note there is no dimension or precision specification here,
@@ -530,13 +539,13 @@ def main():
     parser.add_argument("namelist", help="input namelist")
     parser.add_argument("module", default="ioparams", nargs="?",help="module name to be created")
     parser.add_argument("--clen", type=int, default=256, help="character length (default: %(default)s)")
-    parser.add_argument("--type-suffix", default='_t', help="suffix for mapping from block_name to type name")
-    parser.add_argument("--type-prefix", default='', help="prefix for mapping from block_name to type name")
+    parser.add_argument("--type-suffix", default='_t', help="suffix for mapping from group_name to type name")
+    parser.add_argument("--type-prefix", default='', help="prefix for mapping from group_name to type name")
     # group = parser.add_argument_group("user-defined correspondance between python and fortran")
-    # group.add_argument("--map-block", type=json.loads, help='user-defined block-level mapping, in json, e.g. {"block_name":"block1", "type_name":"mytype"}')
+    # group.add_argument("--map-group", type=json.loads, help='user-defined group-level mapping, in json, e.g. {"group_name":"group1", "type_name":"mytype"}')
     # group.add_argument("--map-param", type=json.loads, help='user-defined param-level mapping, in json')
     # group.add_argument("--json", type=lambda s: json.loads(open(s)), help='read spec from json file instead of namelist')
-    # group.add_argument("--write-json", help='write derived specs to the provided json file')
+    parser.add_argument("--write-json", help='write derived specs to the provided json file')
     group = parser.add_argument_group("fortran functionality to be provided in ioparams")
     # group.add_argument("--full", help="do include get_param, set_param functions")
     group.add_argument("--no-io-nml", action="store_false", dest='io_nml', help="read_nml, write_nml")
@@ -562,33 +571,28 @@ def main():
     # read namelist
     params = Namelist.read(args.namelist)
 
-    # Derive all variable and namelist blocks information
+    # Derive all variable and namelist groups information
 
     # from namelist and input argument
     b_maps = []
     for b in params.keys():
         v_maps = []
         for p in params[b]:
-            v_map = make_map_variable(value=params[b][p], name=p, block=b)
-            # v_map = make_map_variable(value=params[b][v], name=v, units="", doc="", precision=None, dtype=None, block=b)
+            v_map = make_map_variable(value=params[b][p], name=p, group=b)
+            # v_map = make_map_variable(value=params[b][v], name=v, units="", doc="", precision=None, dtype=None, group=b)
             v_maps.append(v_map)
-        b_map = make_map_block(b, members=v_maps, suffix=args.type_suffix, prefix=args.type_prefix, 
+        b_map = make_map_group(b, members=v_maps, suffix=args.type_suffix, prefix=args.type_prefix, 
                                setget=args.set_get_param, 
                                io_nml=args.io_nml,
                                command_line=args.command_line,
                                )
-        # b_map = make_map_block(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
+        # b_map = make_map_group(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
         b_maps.append(b_map)
 
     # write specs to file if required
     if args.write_json:
         with open(args.write_json,'w') as f:
             f.write(json.dumps(b_maps, indent=4))
-
-    # also add the full fortran types, including a dynamic version (length or size guessed from input)
-    for b_map in b_maps:
-        for v_map in b_map['members']:
-            _update_variable_type_info(v_map)
 
     print("...with types: "+", ".join([b_map["type_name"] for b_map in b_maps]))
 

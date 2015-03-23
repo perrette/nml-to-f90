@@ -3,7 +3,7 @@ module ioparams
     ! Automatically generated module by nml2f90.py [source: namelist.nml]
     !
     ! https://github.com/perrette/nml-to-f90
-    ! version: unknown
+    ! version: 0.0.0.dev-c47e1e3
     ! 
     ! Contains read / write subroutines for all derived types imported below.
     ! As well as setter / getter access by field name
@@ -20,7 +20,7 @@ module ioparams
     public :: has_param, set_param_string  ! useful fine-grained control on parse_command
 
     integer, parameter :: dp = kind(0.d0)
-    integer, parameter :: clen = 256    ! character length
+    integer, parameter :: clen = 256    ! default character length
     logical :: VERBOSE = .true.
 
     type group1_t
@@ -97,7 +97,7 @@ contains
 
 subroutine read_nml_group1 (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the group1 block in a namelist file and assign to type
+    ! Read the group1 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
@@ -133,7 +133,7 @@ end subroutine
 
 subroutine write_nml_group1 (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the group1 block in a namelist file and assign to type
+    ! Read the group1 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
@@ -162,7 +162,7 @@ end subroutine
 
 subroutine read_nml_group2 (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the group2 block in a namelist file and assign to type
+    ! Read the group2 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
@@ -211,7 +211,7 @@ end subroutine
 
 subroutine write_nml_group2 (iounit, params)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    ! Read the group2 block in a namelist file and assign to type
+    ! Read the group2 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params

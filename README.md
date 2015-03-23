@@ -59,6 +59,63 @@ namelist into python.
 - no derived types can be present in the namelist with the % syntax (this would 
   defy the point of this module...)
 
+## Perspectives, ideas for the development of this project
+
+- Generalize beyond namelist: think about a generic, flat json format that could
+  contain all necessary information about each parameter, a list of e.g.:
+
+      {"name":..., "group":..., "help":...}
+
+  And would serve as exchange format between namelist and other parameters.
+  Like python's argparse module, "help" could access any other fields defined 
+  in the dict, such as "units".
+
+- Try to make the code as un-invasive and flexible as possible, so that it
+  only provides additional functionality with as few tradeoffs as possible:
+
+    - parse source code to re-use existing type definitions (as only - argably
+      desirable - tradeoff, enforce "dimension(n)" and "::" notation, to
+      ease parsing)
+
+    - use existing object (even without source code) to retrieve the types,
+      provided their name, making use of the fortran built-innamelist 
+      functionality to write a dummy namelist. Requires generating the 
+      following small program, parse the dummy namelist so written, and 
+      generate types (and possibly namelist) from that.
+      Difficulty: needs compiling, requires additional info about the compiler
+      used by the user.
+     
+        program writedummynamelist
+
+            use mod1, only: group1_t  ! from template
+            use mod2, only: group2_t  ! from template 
+
+            type(group1_t) :: group1  ! from template
+            type(group2_t) :: group2  ! from template
+
+            integer :: iounit = 88
+
+            namelist /dummynamelist/ group1, group2 ! from template
+
+            open(iounit, file="dummy.nml")
+            write(iounit, dummynamelist)
+            close(iounit)
+
+        end program
+
+    - turn all functions off by default except for defining derived types.
+      Ask user to specify desired functionalities:
+
+            nml2f90.py input.nml ioparams.f90   # only define derived types
+            nml2f90.py input.nml ioparams.f90 --io-nml --command-line
+
+    - have various options how the source code for io-nml is generated. For 
+      example, if Alex Robinson's nml module is available, one could automatically
+      generate a series of `nml_read(filename,group_name,param_name,
+      group_name%param_name)` calls. This could be advantagous for a one-time 
+      use of nml2f90.py code, to have generated ioparams.f90 which is easier to 
+      maintain by hand... (assuming only type definition and io-nml is required)
+
 ## Credits
 
 Thanks to Alex Robinson and its nml project https://github.com/alex-robinson/nml
