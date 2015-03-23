@@ -4,29 +4,20 @@
 This script will read the namelist.nml input file and output ioparams.f90, that 
 contains corresponding parameter types and I/O, setter/getter routines.
 """
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 import sys, os, json
 from itertools import groupby
 from collections import OrderedDict as odict
 from namelist import Namelist
-import nml2f90_templates
+from nml2f90.version import version as __version__
 import warnings
 import textwrap
 import argparse
 
-__version__ = nml2f90_templates.__version__
-
-try:
-    from docopt import docopt
-    hasdocopt = True
-except ImportError:
-    warnings.warn("install 'docopt' to use all command-line arguments")
-    hasdocopt = True
-
 # +++++++++++++++++++++++++++++++++++++++++
 # load templates
 # +++++++++++++++++++++++++++++++++++++++++
-_dir = os.path.abspath(os.path.dirname(nml2f90_templates.__file__))
+_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'templates'))
 template_module = open(os.path.join(_dir, "module_ioparams.f90")).read()
 template_io = open(os.path.join(_dir, "subroutine_io.f90")).read()
 template_cmd = open(os.path.join(_dir, "subroutine_cmd.f90")).read()

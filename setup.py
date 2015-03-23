@@ -39,8 +39,8 @@ if not ISRELEASED:
 
     if pipe is None or pipe.returncode != 0:
         # no git, or not in git dir
-        if os.path.exists('nml2f90_templates/version.py'):
-            warnings.warn("WARNING: Couldn't get git revision, using existing nml2f90_templates/version.py")
+        if os.path.exists('nml2f90/version.py'):
+            warnings.warn("WARNING: Couldn't get git revision, using existing nml2f90/version.py")
             write_version = False
         else:
             warnings.warn("WARNING: Couldn't get git revision, using generic version string")
@@ -66,17 +66,17 @@ else:
 #
 # Actually important part
 #
-setup(name='namelist',
+setup(name='nml2f90',
       version=FULLVERSION,
       author='Mahe Perrette',
       author_email='mahe.perrette@pik-potsdam.de',
       description='Generate fortran source code from a namelist',
-      keywords=('fortran','generic','namelist'),
+      keywords=('fortran','template','namelist'),
       # basic stuff here
-      py_modules = ['namelist'],
-      packages = ['nml2f90_templates'],
-      package_data = {'nml2f90_templates':['*.f90']},
-      scripts = ['nml2f90.py'],
+      py_modules = ['nml2f90'],
+      packages = ['nml2f90'],
+      package_data = {'nml2f90':['templates/*.f90']},
+      scripts = ['scripts/nml2f90'],
       long_description=long_description,
       url='https://github.com/perrette/nml-to-f90',
       license = "MIT",
@@ -91,7 +91,7 @@ short_version = '%s'
     if not filename:
         #filename = os.path.join(
         #    os.path.dirname(__file__), 'dimarray', 'version.py')
-        filename = os.path.join('nml2f90_templates', 'version.py')
+        filename = os.path.join('nml2f90', 'version.py')
 
     with open(filename, 'w') as a:
         a.write(cnt % (FULLVERSION, VERSION))

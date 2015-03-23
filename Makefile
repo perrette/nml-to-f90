@@ -72,8 +72,8 @@ test: $(objdir)/ioparams.o $(objdir)/test.o
 	@echo "    test.x is ready."
 	@echo " "
 
-src: nml2f90.py
-	python nml2f90.py namelist.nml ioparams
+src: nml2f90/nml2f90.py
+	python -m nml2f90.nml2f90 namelist.nml ioparams
 	@echo " "
 	@echo "  ioparams.f90 is ready."
 	@echo " "
