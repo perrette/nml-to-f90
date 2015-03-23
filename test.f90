@@ -88,7 +88,7 @@ program test_io_params
     call get_command_argument(i, arg)
     select case (arg)
     case ('-h', '--help') 
-      call print_help(group1)
+      call print_help(group1, default=.false.)
       call print_help(group2)
     case default
       call parse_command_argument(group1, i, iostat=iostat)

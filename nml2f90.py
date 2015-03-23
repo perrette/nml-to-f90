@@ -6,6 +6,7 @@ contains corresponding parameter types and I/O, setter/getter routines.
 """
 from __future__ import print_function
 import sys, os, json
+from itertools import groupby
 from collections import OrderedDict as odict
 from namelist import Namelist
 import nml2f90_templates
@@ -48,7 +49,7 @@ _map_type = {
     "NoneType" : None, # convenience  to that value does not have to be passed to make_map_variable
 }
 
-def make_map_variable(value=None, name=None, units="", doc="", attrs=None, dtype=None, group=None):
+def make_map_variable(value=None, name=None, units="", help="", attrs=None, dtype=None, group=None, kind="dp", clen="clen"):
     """ return a dict of attributes to map a python variable to fortran
     """
     # basic data type
@@ -61,9 +62,9 @@ def make_map_variable(value=None, name=None, units="", doc="", attrs=None, dtype
     # precision?
     if attrs is None:
         if dtype == "real":
-            attrs = {"kind":"dp"}  # e.g. kind=8 ; assuming that dp is defined in module
+            attrs = {"kind":kind}  # e.g. kind=8 ; assuming that dp is defined in module
         elif dtype == "character":
-            attrs = {"len":"clen"} # e.g. len=4 ; same, assume that clen is defined is module
+            attrs = {"len":clen} # e.g. len=4 ; same, assume that clen is defined is module
 
     # array?
     if type(value) is list:
@@ -76,7 +77,7 @@ def make_map_variable(value=None, name=None, units="", doc="", attrs=None, dtype
     map_v = {
         "name": name,
         "units": units,
-        "doc": doc,
+        "help": help,
         "dtype": dtype,
         "attrs": attrs,
         "array": array,
@@ -285,16 +286,22 @@ case ('{name}', '{group}%{name}')
 
 template_help = """
 if (def) then
-    write(io, *) "--{name} {type} {doc} (default: ",params%{name}," )"
+    write(valuestr, *) params%{name}
+    write(io, *) "--{name} {help} (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--{name} {type} {doc}"
+    write(io, *) "--{name} {help} (type: {type})"
 endif
 """
-template_help_string = """
+
+template_help_array = """
 if (def) then
-    write(io, *) "--{name} {type} {doc} (default: ",trim(params%{name})," )"
+    write(valuestr, *) params%{name}(1) ! only first element is shown
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--{name} {help} (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
+            trim(adjustl(valuestr)), size(params%{name})
 else
-    write(io, *) "--{name} {type} {doc}"
+    write(io, *) "--{name} {help} (type: {type})"
 endif
 """
 
@@ -334,11 +341,10 @@ def get_format_cmd(group_maps):
             # set_param_string routines
             if v_map["array"]:
                 list_set_cases.append(template_set_string_case_array.format(**v_map))
+                list_help.append(template_help_array.format(**v_map))
             else:
                 list_set_cases.append(template_set_string_case.format(**v_map))
-
-            # print_help routines
-            list_help.append(template_help.format(**v_map))
+                list_help.append(template_help.format(**v_map))
 
         routines_map = group_map.copy() # routine-level map
         routines_map.update( dict(
@@ -455,10 +461,10 @@ def make_source(map_groups, io_mod="ioparams", source="", clen=256, verbose=True
     """
 
     # also add the full fortran types, including a dynamic version (length or size guessed from input)
-    for b_map in map_groups:
-        for v_map in b_map['members']:
+    for g_map in map_groups:
+        for v_map in g_map['members']:
             _update_variable_type_info(v_map)
-        b_map.update({
+        g_map.update({
             "io_nml": io_nml, 
             "command_line":command_line,
             "setget":setget,
@@ -519,7 +525,7 @@ def make_source(map_groups, io_mod="ioparams", source="", clen=256, verbose=True
 #         Note there is no dimension or precision specification here,
 #         even though we may deal with an array.
 #     "units": units as a string
-#     "doc": documentation for the variable
+#     "help": documentation for the variable
 #     "precision": integer (e.g. len= parameter for character, kind= for real)
 #         By default, all real numbers are double precision, characters are 256
 #         or whatever value passed by --clen
@@ -574,30 +580,29 @@ def main():
     # Derive all variable and namelist groups information
 
     # from namelist and input argument
-    b_maps = []
-    for b in params.keys():
+    g_maps = []
+    for b, params in groupby(params, lambda x: x.group):
         v_maps = []
-        for p in params[b]:
-            v_map = make_map_variable(value=params[b][p], name=p, group=b)
-            # v_map = make_map_variable(value=params[b][v], name=v, units="", doc="", precision=None, dtype=None, group=b)
+        for p in params:
+            v_map = make_map_variable(value=p.value, name=p.name, group=p.group, help=p.help, clen=args.clen)
             v_maps.append(v_map)
-        b_map = make_map_group(b, members=v_maps, suffix=args.type_suffix, prefix=args.type_prefix, 
+        g_map = make_map_group(p.group, members=v_maps, suffix=args.type_suffix, prefix=args.type_prefix, 
                                setget=args.set_get_param, 
                                io_nml=args.io_nml,
                                command_line=args.command_line,
                                )
-        # b_map = make_map_group(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
-        b_maps.append(b_map)
+        # g_map = make_map_group(name, suffix="_t", prefix="", type_name=None, mod_name=None, members=None, io_nml=True, command_line=True, setget=False):
+        g_maps.append(g_map)
 
     # write specs to file if required
     if args.write_json:
         with open(args.write_json,'w') as f:
-            f.write(json.dumps(b_maps, indent=4))
+            f.write(json.dumps(g_maps, indent=4))
 
-    print("...with types: "+", ".join([b_map["type_name"] for b_map in b_maps]))
+    print("...with types: "+", ".join([g_map["type_name"] for g_map in g_maps]))
 
     # Write the actual code
-    code = make_source(b_maps, io_mod=io_mod, source=args.namelist, clen=args.clen)
+    code = make_source(g_maps, io_mod=io_mod, source=args.namelist, clen=args.clen)
 
     with open(io_file, 'w') as f:
         f.write(code)

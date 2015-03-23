@@ -3,7 +3,7 @@ module ioparams
     ! Automatically generated module by nml2f90.py [source: namelist.nml]
     !
     ! https://github.com/perrette/nml-to-f90
-    ! version: 0.0.0.dev-c47e1e3
+    ! version: 0.0.0.dev-eb11ea4
     ! 
     ! Contains read / write subroutines for all derived types imported below.
     ! As well as setter / getter access by field name
@@ -24,20 +24,20 @@ module ioparams
     logical :: VERBOSE = .true.
 
     type group1_t
-        character(len=clen) :: string1
-        character(len=clen), dimension(3) :: stringarr1
+        character(len=256) :: string1
+        character(len=256), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        character(len=clen) :: string2
+        character(len=256) :: string2
     end type
     type group2_t
-        character(len=clen) :: string1
-        character(len=clen), dimension(3) :: stringarr1
+        character(len=256) :: string1
+        character(len=256), dimension(3) :: stringarr1
         logical :: logical1
         integer :: integer1
         integer :: integer2
-        character(len=clen) :: string2
+        character(len=256) :: string2
         integer, dimension(7) :: intarr1
         real(kind=dp) :: double1
         real(kind=dp), dimension(5) :: dblarr1
@@ -102,12 +102,12 @@ subroutine read_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    character(len=clen) :: string1
-    character(len=clen), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=clen) :: string2
+    character(len=256) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
@@ -138,12 +138,12 @@ subroutine write_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    character(len=clen) :: string1
-    character(len=clen), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=clen) :: string2
+    character(len=256) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, string2
 
@@ -167,12 +167,12 @@ subroutine read_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    character(len=clen) :: string1
-    character(len=clen), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=clen) :: string2
+    character(len=256) :: string2
     integer, dimension(7) :: intarr1
     real(kind=dp) :: double1
     real(kind=dp), dimension(5) :: dblarr1
@@ -216,12 +216,12 @@ subroutine write_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    character(len=clen) :: string1
-    character(len=clen), dimension(3) :: stringarr1
+    character(len=256) :: string1
+    character(len=256), dimension(3) :: stringarr1
     logical :: logical1
     integer :: integer1
     integer :: integer2
-    character(len=clen) :: string2
+    character(len=256) :: string2
     integer, dimension(7) :: intarr1
     real(kind=dp) :: double1
     real(kind=dp), dimension(5) :: dblarr1
@@ -298,67 +298,78 @@ subroutine parse_command_argument_group1 (params,i, iostat)
     endif
 end subroutine
 
-subroutine print_help_group1(params, iounit, value)
+subroutine print_help_group1(params, iounit, default)
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Print HELP on a derived type, useful for command-line arg
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   type(group1_t), intent(in) :: params
   integer, optional :: iounit
   integer :: io
-  logical, optional :: value
+  logical, optional :: default
   logical :: def
+  character(len=2000) :: valuestr
+  character(len=20) :: valuelen
   if (present(iounit)) then
     io = iounit
   else
     io = 6  ! screen
   endif
-  if (present(value)) then
-    def =value
+  if (present(default)) then
+    def = default
   else
-    def = .false. ! by default do not show default values
+    def = .true. ! by default do show default values
   endif
   write(io, *) " "
   write(io, *) "+++++++++++++++++      group1      ++++++++++++++++++"
   
 if (def) then
-    write(io, *) "--string1 character(len=clen)  (default: ",params%string1," )"
+    write(valuestr, *) params%string1
+    write(io, *) "--string1  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--string1 character(len=clen) "
+    write(io, *) "--string1  (type: character(len=256))"
 endif
 
     
 if (def) then
-    write(io, *) "--stringarr1 character(len=clen), dimension(3)  (default: ",params%stringarr1," )"
+    write(valuestr, *) params%stringarr1(1) ! only first element is shown
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--stringarr1  (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
+            trim(adjustl(valuestr)), size(params%stringarr1)
 else
-    write(io, *) "--stringarr1 character(len=clen), dimension(3) "
+    write(io, *) "--stringarr1  (type: character(len=256), dimension(3))"
 endif
 
     
 if (def) then
-    write(io, *) "--logical1 logical  (default: ",params%logical1," )"
+    write(valuestr, *) params%logical1
+    write(io, *) "--logical1  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--logical1 logical "
+    write(io, *) "--logical1  (type: logical)"
 endif
 
     
 if (def) then
-    write(io, *) "--integer1 integer  (default: ",params%integer1," )"
+    write(valuestr, *) params%integer1
+    write(io, *) "--integer1  Comment about integer1 (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--integer1 integer "
+    write(io, *) "--integer1  Comment about integer1 (type: integer)"
 endif
 
     
 if (def) then
-    write(io, *) "--integer2 integer  (default: ",params%integer2," )"
+    write(valuestr, *) params%integer2
+    write(io, *) "--integer2  Another comment for integer2 (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--integer2 integer "
+    write(io, *) "--integer2  Another comment for integer2 (type: integer)"
 endif
 
     
 if (def) then
-    write(io, *) "--string2 character(len=clen)  (default: ",params%string2," )"
+    write(valuestr, *) params%string2
+    write(io, *) "--string2  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--string2 character(len=clen) "
+    write(io, *) "--string2  (type: character(len=256))"
 endif
 
 end subroutine
@@ -381,7 +392,7 @@ case ('string1', 'group1%string1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%string1"
         else
-            write(*,*) "ERROR converting string to character(len=clen): --group1%string1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group1%string1 ",trim(string)
         endif
         stop
     endif
@@ -393,7 +404,7 @@ case ('stringarr1', 'group1%stringarr1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%stringarr1"
         else
-            write(*,*) "ERROR converting string to character(len=clen), dimension(3) array : --group1%stringarr1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256), dimension(3) array : --group1%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -445,7 +456,7 @@ case ('string2', 'group1%string2')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%string2"
         else
-            write(*,*) "ERROR converting string to character(len=clen): --group1%string2 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group1%string2 ",trim(string)
         endif
         stop
     endif
@@ -535,95 +546,119 @@ subroutine parse_command_argument_group2 (params,i, iostat)
     endif
 end subroutine
 
-subroutine print_help_group2(params, iounit, value)
+subroutine print_help_group2(params, iounit, default)
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Print HELP on a derived type, useful for command-line arg
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   type(group2_t), intent(in) :: params
   integer, optional :: iounit
   integer :: io
-  logical, optional :: value
+  logical, optional :: default
   logical :: def
+  character(len=2000) :: valuestr
+  character(len=20) :: valuelen
   if (present(iounit)) then
     io = iounit
   else
     io = 6  ! screen
   endif
-  if (present(value)) then
-    def =value
+  if (present(default)) then
+    def = default
   else
-    def = .false. ! by default do not show default values
+    def = .true. ! by default do show default values
   endif
   write(io, *) " "
   write(io, *) "+++++++++++++++++      group2      ++++++++++++++++++"
   
 if (def) then
-    write(io, *) "--string1 character(len=clen)  (default: ",params%string1," )"
+    write(valuestr, *) params%string1
+    write(io, *) "--string1  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--string1 character(len=clen) "
+    write(io, *) "--string1  (type: character(len=256))"
 endif
 
     
 if (def) then
-    write(io, *) "--stringarr1 character(len=clen), dimension(3)  (default: ",params%stringarr1," )"
+    write(valuestr, *) params%stringarr1(1) ! only first element is shown
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--stringarr1  (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
+            trim(adjustl(valuestr)), size(params%stringarr1)
 else
-    write(io, *) "--stringarr1 character(len=clen), dimension(3) "
+    write(io, *) "--stringarr1  (type: character(len=256), dimension(3))"
 endif
 
     
 if (def) then
-    write(io, *) "--logical1 logical  (default: ",params%logical1," )"
+    write(valuestr, *) params%logical1
+    write(io, *) "--logical1  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--logical1 logical "
+    write(io, *) "--logical1  (type: logical)"
 endif
 
     
 if (def) then
-    write(io, *) "--integer1 integer  (default: ",params%integer1," )"
+    write(valuestr, *) params%integer1
+    write(io, *) "--integer1  Comment about integer1 (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--integer1 integer "
+    write(io, *) "--integer1  Comment about integer1 (type: integer)"
 endif
 
     
 if (def) then
-    write(io, *) "--integer2 integer  (default: ",params%integer2," )"
+    write(valuestr, *) params%integer2
+    write(io, *) "--integer2  Another comment for integer2 (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--integer2 integer "
+    write(io, *) "--integer2  Another comment for integer2 (type: integer)"
 endif
 
     
 if (def) then
-    write(io, *) "--string2 character(len=clen)  (default: ",params%string2," )"
+    write(valuestr, *) params%string2
+    write(io, *) "--string2  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--string2 character(len=clen) "
+    write(io, *) "--string2  (type: character(len=256))"
 endif
 
     
 if (def) then
-    write(io, *) "--intarr1 integer, dimension(7)  (default: ",params%intarr1," )"
+    write(valuestr, *) params%intarr1(1) ! only first element is shown
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--intarr1  (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
+            trim(adjustl(valuestr)), size(params%intarr1)
 else
-    write(io, *) "--intarr1 integer, dimension(7) "
+    write(io, *) "--intarr1  (type: integer, dimension(7))"
 endif
 
     
 if (def) then
-    write(io, *) "--double1 real(kind=dp)  (default: ",params%double1," )"
+    write(valuestr, *) params%double1
+    write(io, *) "--double1  (default: ",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--double1 real(kind=dp) "
+    write(io, *) "--double1  (type: real(kind=dp))"
 endif
 
     
 if (def) then
-    write(io, *) "--dblarr1 real(kind=dp), dimension(5)  (default: ",params%dblarr1," )"
+    write(valuestr, *) params%dblarr1(1) ! only first element is shown
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--dblarr1  (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
+            trim(adjustl(valuestr)), size(params%dblarr1)
 else
-    write(io, *) "--dblarr1 real(kind=dp), dimension(5) "
+    write(io, *) "--dblarr1  (type: real(kind=dp), dimension(5))"
 endif
 
     
 if (def) then
-    write(io, *) "--logarr1 logical, dimension(5)  (default: ",params%logarr1," )"
+    write(valuestr, *) params%logarr1(1) ! only first element is shown
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--logarr1  (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
+            trim(adjustl(valuestr)), size(params%logarr1)
 else
-    write(io, *) "--logarr1 logical, dimension(5) "
+    write(io, *) "--logarr1  (type: logical, dimension(5))"
 endif
 
 end subroutine
@@ -646,7 +681,7 @@ case ('string1', 'group2%string1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%string1"
         else
-            write(*,*) "ERROR converting string to character(len=clen): --group2%string1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group2%string1 ",trim(string)
         endif
         stop
     endif
@@ -658,7 +693,7 @@ case ('stringarr1', 'group2%stringarr1')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%stringarr1"
         else
-            write(*,*) "ERROR converting string to character(len=clen), dimension(3) array : --group2%stringarr1 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256), dimension(3) array : --group2%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -710,7 +745,7 @@ case ('string2', 'group2%string2')
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%string2"
         else
-            write(*,*) "ERROR converting string to character(len=clen): --group2%string2 ",trim(string)
+            write(*,*) "ERROR converting string to character(len=256): --group2%string2 ",trim(string)
         endif
         stop
     endif

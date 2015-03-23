@@ -6,35 +6,61 @@ https://github.com/leifdenby/namelist_python
 from __future__ import print_function
 from collections import OrderedDict as odict
 import re
+from itertools import groupby
 
-def _convert_mapping(*args, **kwargs):
-    " make sure an argument is (ordered) dict-like "
-    try:
-        obj = odict(*args, **kwargs)
-    except TypeError as error:
-        print(error.message)
-        raise TypeError("can only be initialized via a 2-level dict-like object")
-    return obj
+class Param(object):
+    def __init__(self, name="", value=None, group="", help="", units="", **kwargs):
+        self.name = name
+        self.value = value
+        self.group = group
+        self.help = help  # .e.g. "blabla ({units})"
+        self.units = units
+        if (len(kwargs) > 0):
+            warnings.warn("unknown parameters to Param were ignored: "+", ".join(kwargs.keys()))
+        # self.__dict__.update(kwargs)
 
-class Namelist(odict):
-    """ Two nested ordered dict to represent a namelist
-    with read/write and parse/format methods
+    @property
+    def key(self):
+        " unique ID "
+        return (self.group, self.name)
+
+    def __eq__(self, other):
+        return self.key == other.key
+
+    def __repr__(self):
+        return "Param(name=%r, value=%r, group=%r)" % (self.name, self.value, self.group)
+
+class Params(list):
+    """ list of parameters
     """
-    def __init__(self, *args, **kwargs):
-        # make sure arguments are conform
-        obj = _convert_mapping(*args, **kwargs)
-        for k in obj.keys():
-            obj[k] = _convert_mapping(obj[k])
-        # initialize the class
-        odict.__init__(self, obj)
+    def __init__(self, *args):
+        # make sure we have a list
+        list.__init__(self, *args)
+        for p in self:
+            if not isinstance(p, Param):
+                print(type(p),":",p)
+                raise TypeError("Params can only contain Param instances")
+
+    def append(self, param):
+        if not isinstance(param, Param):
+            raise TypeError("Params can only contain Param instances")
+        list.append(self, param)
+
+    def to_nml(self):
+        return Namelist(self)
+
+    def to_json(self, **kwargs):
+        import json
+        return json.dumps([vars(p) for p in self], **kwargs)
 
     @classmethod
-    def parse(cls, string):
-        groups = _parse_nml(string)
-        return cls(groups)
+    def from_json(cls, string):
+        import json
+        return cls([Param(**p) for p in json.loads(string)])
 
-    def format(self, array_inline=True):
-        return _format_nml(self, array_inline)
+    # generic method to be overloaded, default to json
+    parse = from_json
+    format = to_json
 
     def write(self, filename, mode='w', **kwargs):
         with open(filename, mode) as f:
@@ -43,15 +69,29 @@ class Namelist(odict):
     @classmethod
     def read(cls, filename):
         with open(filename) as f:
-            nml = cls.parse(f.read())
-        return nml
+            params = cls.parse(f.read())
+        return params
 
     def __repr__(self):
-        import json
-        return "Namelist({})".format(json.dumps(self, indent=4))
+        return "{cls}({list})".format(cls=self.__class__.__name__, list=list.__repr__(self))
 
-def _parse_nml(string):
-    """ parse a string namelist, and returns a 2-level dict object
+class Namelist(Params):
+    """ Parse / Format method specific to Namelist
+    """
+    @classmethod
+    def parse(cls, string):
+        params = _parse_nml(string)
+        return cls(params)
+
+    def format(self):
+        return _format_nml(self)
+
+#
+# Work for Namelist parsing and conversion
+#
+def _parse_nml(string, ignore_comments=False):
+    """ parse a string namelist, and returns a list of params
+    with four keys: name, value, help, group
     """
     group_re = re.compile(r'&([^&]+)/', re.DOTALL)  # allow blocks to span multiple lines
     array_re = re.compile(r'(\w+)\((\d+)\)')
@@ -59,56 +99,74 @@ def _parse_nml(string):
     string_re = re.compile(r"[\'\"]*[\'\"]")
     # self._complex_re = re.compile(r'^\((\d+.?\d*),(\d+.?\d*)\)$')
 
-    # remove all comments, since they may have forward-slashes
-    # TODO: store position of comments so that they can be re-inserted when
-    # we eventually save
+    # list of parameters
+    params = Params()
+    # groups = odict()
+
     filtered_lines = []
     for line in string.split('\n'):
-        if '!' in line:
-            line = line[:line.index('!')]
-        if line.strip() == "":
+        line = line.strip()
+        if line == "":
             continue
+        # remove comments, since they may have forward-slashes
+        # set ignore_comments to True is you want to keep them.
+        if line.startswith('!'):
+            continue  
+        if ignore_comments and '!' in line:
+            line = line[:line.index('!')]
+
         filtered_lines.append(line)
 
     group_blocks = re.findall(group_re, "\n".join(filtered_lines))
 
-    groups = odict()
-
     for i, group_block in enumerate(group_blocks):
-        block_lines = group_block.split('\n')
-        group_name = block_lines.pop(0).strip()
+        group_lines = group_block.split('\n')
+        group_name = group_lines.pop(0).strip()
 
         # some lines are continuation of previous lines: filter
-        clean_lines = []
-        for line in block_lines:
+        joined_lines = []
+        for line in group_lines:
             line = line.strip()
-            if line == "":
-                continue
-            if line.startswith('!'):
-                continue
             if '=' in line:
-                clean_lines.append(line)
+                joined_lines.append(line)
             else:
                 # continuation of previous line
-                clean_lines[-1] += line
+                joined_lines[-1] += line
+        group_lines = joined_lines
 
-        group = odict()
+        for line in group_lines:
+            name, value, comment = _parse_line(line)
 
-        for line in clean_lines:
+            param = {
+                "name": name,
+                "value": value,
+                "help": comment,
+                "group": group_name,
+            }
+            param = Param(**param)
+            # group[variable_name] = parsed_value
+            params.append(param)
 
-            # commas at the end of lines seem to be optional
-            if line.endswith(','):
-                line = line[:-1]
+        # groups[group_name] = group
+    return params
 
-            k, v = line.split('=')
-            variable_name = k.strip()
-            variable_value = v.strip()
+def _parse_line(line):
+    "parse a line within a block"
+    # commas at the end of lines seem to be optional
+    line = line.strip()
+    if line.endswith(','):
+        line = line[:-1]
 
-            parsed_value = _parse_value(variable_value)
-            group[variable_name] = parsed_value
+    comment = ""
+    if '!' in line:
+        sep = line.index("!")
+        comment = line[sep+1:]
+        line = line[:sep]
 
-        groups[group_name] = group
-    return groups
+    k, v = line.split('=')
+    name = k.strip()
+    value = _parse_value(v.strip())
+    return name, value, comment
 
 def _parse_value(variable_value):
     """
@@ -164,21 +222,23 @@ def _parse_array(values):
             parsed_value.append(_parse_value(v))
     return parsed_value
 
-def _format_nml(groups, array_inline=True):
-    """ format a dict of dict into namelist string
+def _format_nml(params):
+    """ format a flat parameter list to be written in the namelist
     """
     lines = []
-    for group_name, group_variables in groups.items():
+    for group_name, group_params in groupby(params, lambda x: x.group):
+        if group_name == "":
+            print(list(group_params))
+            raise ValueError("Group not defined. Cannot write to namelist.")
         lines.append("&%s" % group_name)
-        for variable_name, variable_value in group_variables.items():
-            if isinstance(variable_value, list):
-                if array_inline:
-                    lines.append("  %s = %s" % (variable_name, " ".join([_format_value(v) for v in variable_value])))
-                else:
-                    for n, v in enumerate(variable_value):
-                        lines.append("  %s(%d) = %s" % (variable_name, n+1, _format_value(v)))
+        for param in group_params:
+            if isinstance(param.value, list):
+                line = "  %s = %s" % (param.name, " ".join([_format_value(v) for v in param.value]))
             else:
-                lines.append("  %s = %s" % (variable_name, _format_value(variable_value)))
+                line = "  %s = %s" % (param.name, _format_value(param.value))
+            if param.help:
+                line += '! '+param.help
+            lines.append(line)
         lines.append("/\n")
     return "\n".join(lines)
 

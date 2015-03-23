@@ -42,24 +42,26 @@ subroutine parse_command_argument_{group_name} (params,i, iostat)
     endif
 end subroutine
 
-subroutine print_help_{group_name}(params, iounit, value)
+subroutine print_help_{group_name}(params, iounit, default)
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Print HELP on a derived type, useful for command-line arg
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   type({type_name}), intent(in) :: params
   integer, optional :: iounit
   integer :: io
-  logical, optional :: value
+  logical, optional :: default
   logical :: def
+  character(len=2000) :: valuestr
+  character(len=20) :: valuelen
   if (present(iounit)) then
     io = iounit
   else
     io = 6  ! screen
   endif
-  if (present(value)) then
-    def =value
+  if (present(default)) then
+    def = default
   else
-    def = .false. ! by default do not show default values
+    def = .true. ! by default do show default values
   endif
   write(io, *) " "
   write(io, *) "+++++++++++++++++      {group_name}      ++++++++++++++++++"

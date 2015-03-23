@@ -41,7 +41,7 @@ Generate source code and compile the test program in one go:
 
     make clean src test
 
-    ./test.x  # to try it out
+    ./test.x -h  # to try it out
 
 Have a look at ioparams.f90 in the repo to get an impression of the generated code.
 
