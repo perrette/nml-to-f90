@@ -160,7 +160,10 @@ def _make_def_group(group_map):
     """
     type_def = ["type {type_name}".format(**group_map)]
     for v_map in group_map["members"]:
-        type_def.append("        {type} :: {name}".format(**v_map))
+        vdef = "        {type} :: {name}".format(**v_map)
+        if v_map["help"]:
+            vdef += " ! "+v_map["help"]
+        type_def.append(vdef)
     type_def.append("    end type")
     return "\n".join(type_def)
 
