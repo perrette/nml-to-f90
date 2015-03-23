@@ -85,7 +85,7 @@ namelist into python.
       Difficulty: needs compiling, requires additional info about the compiler
       used by the user.
      
-        program writedummynamelist
+            program writedummynamelist
 
             use mod1, only: group1_t  ! from template
             use mod2, only: group2_t  ! from template 
@@ -101,7 +101,7 @@ namelist into python.
             write(iounit, dummynamelist)
             close(iounit)
 
-        end program
+            end program
 
     - turn all functions off by default except for defining derived types.
       Ask user to specify desired functionalities:
