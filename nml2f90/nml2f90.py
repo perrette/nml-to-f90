@@ -404,7 +404,7 @@ class SetGetParam(Feature):
     case ('{name}', '{group}%{name}')
         params%{name} = value
     """
-    def append_group(group):
+    def append_group(self, group):
         """ Create set_param/get_param source code from a namelist template
 
         params : dict of dict (params[group_name][param_name])
@@ -412,7 +412,7 @@ class SetGetParam(Feature):
         # function to return interface type from variable
         interface_type = lambda v : v.dtype + v.array * "_arr" 
 
-        for t, variables in groupby(group.variables, interface_type):
+        for t, variables in groupby(sorted(group.variables, key=interface_type), interface_type):
             # vtype_short = vtypes_short[vtype]
             list_get_cases = ""
             list_set_cases = ""
@@ -423,9 +423,10 @@ class SetGetParam(Feature):
             self.content += self.template.format(
                 type_interface=t,
                 group_name=group.name,
-                type=v.format(),
-                list_get_case=list_get_case,
-                list_set_case=list_set_case,
+                type_name=group.type_name,
+                type=v.format_type(dynamic=True),
+                list_get_cases=list_get_cases,
+                list_set_cases=list_set_cases,
             ) + '\n'
 
             # add procedure to be included in the interface

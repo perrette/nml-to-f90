@@ -22,3 +22,7 @@
     dblarr1    = 1.0 2.0 3.0 4.0  5e5
     logarr1    = T True FALSE .FALSE. .TRUE.
 /
+
+&control
+    print_nml   = F  ! print read namelist to string?
+/

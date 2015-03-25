@@ -11,7 +11,8 @@ usage:
 	@echo "    * USAGE * "
 	@echo ""
 	@echo " make src      : compile the source code from namelist"
-	@echo " make test     : compile the test program"
+	@echo " make example  : compile the example program"
+	@echo " make test     : compile the test program (somewhat more exhaustive)"
 	@echo " make clean    : cleans object and executable files"
 	@echo ""
 
@@ -58,6 +59,12 @@ $(objdir)/%.o: %.f90
 
 ## Complete programs
 
+example: $(objdir)/ioparams.o $(objdir)/example.o
+	$(FC) $(DFLAGS) $(FLAGS) -o example.x $^ $(LFLAGS)
+	@echo " "
+	@echo "    example.x is ready."
+	@echo " "
+
 test: $(objdir)/ioparams.o $(objdir)/test.o
 	$(FC) $(DFLAGS) $(FLAGS) -o test.x $^ $(LFLAGS)
 	@echo " "
@@ -65,7 +72,7 @@ test: $(objdir)/ioparams.o $(objdir)/test.o
 	@echo " "
 
 src: nml2f90/nml2f90.py
-	python -m nml2f90.nml2f90 namelist.nml ioparams --io-nml --command-line --verbose
+	python -m nml2f90.nml2f90 namelist.nml ioparams --io-nml --command-line --set-get-param -v
 	@echo " "
 	@echo "  ioparams.f90 is ready."
 	@echo " "

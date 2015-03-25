@@ -1,30 +1,41 @@
-subroutine parse_command_argument_{group_name} (params,i, iostat)
+subroutine parse_command_argument_{group_name} (params,i, iostat, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
     !   i : integer, positional argument of the parameter name
     ! Output:
-    !   iostat, optional : 0 if success, 1 otherwise (if not
+    !   iostat : integer, optional : 0 if success, 1 otherwise (if not
     !       provided, an error is thrown in case of failure)
+    !   arg : character, optional : the ith command line argument
+    !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type({type_name}), intent(inout) :: params
     integer, intent(inout) :: i
     integer, optional :: iostat
-    character(len=512) :: arg, argv
+    character(len=*), optional :: arg
+    character(len=512) :: argn, argv
 
-    call get_command_argument(i, arg)
+    call get_command_argument(i, argn)
+
+    if (present(arg)) arg = trim(argn)
 
     ! Print HELP ?
-    if (arg == '--help' .or. arg=='-h') then
+    if (argn == '--help' .or. argn=='-h') then
       call print_help_{group_name}(params)
+      if (present(iostat)) iostat = 0
       return
     endif
 
-    if (has_param_{group_name}(params, trim(arg(3:)))) then
+    if (argn(1:2)  /= "--") then
+      stop("ERROR: type-specific command line &
+        arguments must start with '--'")
+    endif
+
+    if (has_param_{group_name}(params, trim(argn(3:)))) then
       ! +++++  present 
       call get_command_argument(i+1, argv)
-      call set_param_string_{group_name}(params, trim(arg(3:)), trim(argv))
+      call set_param_string_{group_name}(params, trim(argn(3:)), trim(argv))
       i = i+1
       if (present(iostat)) then
         iostat = 0
@@ -34,7 +45,7 @@ subroutine parse_command_argument_{group_name} (params,i, iostat)
       if (present(iostat)) then
         iostat=1
       else
-        write(*,*) "ERROR: unknown parameter in {group_name} : --",trim(arg(3:))
+        write(*,*) "ERROR: unknown parameter in {group_name} : ",trim(argn)
         write(*,*) ""
         write(*,*) "-h or --help for HELP"
         stop
