@@ -275,7 +275,6 @@ class NmlIO(Feature):
     """
     name = "io_nml"
     public = ["read_nml", "write_nml"]
-    dependencies = ["type_conversion"]
 
     def append_group(self, group):
 
@@ -311,6 +310,7 @@ class CommandLine(Feature):
     name = "command_line"
     public = ["parse_command_argument", "print_help", "set_param_string", "has_param"]
     private = []
+    dependencies = ["type_conversion"]
 
     # 
     # Some templates additional to the .f90 files, for bits of code
@@ -370,7 +370,7 @@ endif
         list_help = ""
         for v in group.variables:
 
-            v_map = dict(name=v.name, group=v.group, type=v.format(), help=v.help)
+            v_map = dict(name=v.name, group=v.group, type=v.format(), help=v.help.replace('"',"'"))
             # has_params routines
             list_has_cases += "case ('{name}', '{group}%{name}')".format(name=v.name, group=v.group)+'\n'
             if v.array:
@@ -494,7 +494,8 @@ def main():
         mod.append_group(group)
 
     if args.all:
-        args.io_mod = args.command_line = args.set_param = True
+        # args.io_mod = args.command_line = args.set_param = True
+        args.io_nml = args.command_line = args.set_get_param = True
 
     # Add features to the group
     if args.io_nml:
@@ -512,6 +513,11 @@ def main():
             print(indent, group.name,":",group.type_name," imported from "+group.mod_name)
         else:
             print(indent, group.name,":",group.type_name)
+
+    print("...included features (see --help):")
+    print("   --io-nml:",args.io_nml)
+    print("   --command-line:",args.command_line)
+    print("   --set-get-param:",args.set_get_param)
 
     code = mod.format()
 

@@ -16,7 +16,7 @@
     logical1   = False
     integer1   = 11               ! Comment about integer1
     integer2   = 12               ! Another comment for integer2
-    string2    = "yes"
+    string2    = "yes"            ! nasty " sign in comment
     intarr1    = 1 2 3 4 5 6  7
     double1    = 52.5
     dblarr1    = 1.0 2.0 3.0 4.0  5e5

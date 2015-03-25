@@ -1,11 +1,11 @@
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Automatically generated module by nml2f90
-! Create Date : 2015-03-25 19:55:32.955948
+! Create Date : 2015-03-25 20:07:48.563946
 ! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py
 ! namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0.0.0.dev-1086fc3
+! version: 0.0.0.dev-fec8421
 !
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -252,7 +252,7 @@ module ioparams
     logical :: logical1
     integer(kind=ip) :: integer1 ! Comment about integer1
     integer(kind=ip) :: integer2 ! Another comment for integer2
-    character(len=clen) :: string2
+    character(len=clen) :: string2 ! nasty " sign in comment
     integer(kind=ip), dimension(7) :: intarr1
     real(kind=dp) :: double1
     real(kind=dp), dimension(5) :: dblarr1
@@ -918,9 +918,11 @@ endif
 
 if (def) then
     write(valuestr, *) params%string2
-    write(io, *) "--string2  (default: ",trim(adjustl(valuestr))," )"
+    write(io, *) "--string2 nasty ' sign in comment (default: & 
+",trim(adjustl(valuestr))," )"
 else
-    write(io, *) "--string2  (type: character(len=clen) :: string2)"
+    write(io, *) "--string2 nasty ' sign in comment (type: & 
+character(len=clen) :: string2)"
 endif
 
 if (def) then
