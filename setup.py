@@ -75,7 +75,7 @@ setup(name='nml2f90',
       # basic stuff here
       py_modules = ['nml2f90'],
       packages = ['nml2f90'],
-      package_data = {'nml2f90':['templates/*.f90']},
+      package_data = {'nml2f90':['templates/*.f90', 'libraries/*f90']},
       scripts = ['scripts/nml2f90'],
       long_description=long_description,
       url='https://github.com/perrette/nml-to-f90',

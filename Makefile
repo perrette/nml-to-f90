@@ -19,13 +19,6 @@ usage:
 objdir = .obj
 libdir = ..
 
-netcdf_inc = /opt/local/include
-netcdf_lib = /opt/local/lib
-netcdf_inc_ifort = /home/robinson/apps/netcdf/netcdf/include
-netcdf_lib_ifort = /home/robinson/apps/netcdf/netcdf/lib
-netcdf_inc = /usr/include
-netcdf_lib = /usr/lib
-
 # Command-line options at make call
 ifort ?= 0
 debug ?= 0 
@@ -38,8 +31,7 @@ endif
 
 ifeq ($(ifort),1)
 	## IFORT OPTIONS ##
-	FLAGS        = -module $(objdir) -L$(objdir) -I$(netcdf_inc_ifort)
-	LFLAGS		 = -L$(netcdf_lib_ifort) -lnetcdf
+	FLAGS        = -module $(objdir) -L$(objdir)
 
 	ifeq ($(debug), 1)
 	    DFLAGS   = -C -traceback -ftrapuv -fpe0 -check all -vec-report0
@@ -49,8 +41,8 @@ ifeq ($(ifort),1)
 	endif
 else
 	## GFORTRAN OPTIONS ##
-	FLAGS        = -I$(objdir) -J$(objdir) -I$(netcdf_inc)
-	LFLAGS		 = -L$(netcdf_lib) -lnetcdff -lnetcdf
+	FLAGS        = -I$(objdir) -J$(objdir)
+	LFLAGS		 = 
 
 	ifeq ($(debug), 1)
 	    DFLAGS   = -w -p -ggdb -ffpe-trap=invalid,zero,overflow,underflow \
@@ -73,7 +65,7 @@ test: $(objdir)/ioparams.o $(objdir)/test.o
 	@echo " "
 
 src: nml2f90/nml2f90.py
-	python -m nml2f90.nml2f90 namelist.nml ioparams
+	python -m nml2f90.nml2f90 namelist.nml ioparams --io-nml --command-line --verbose
 	@echo " "
 	@echo "  ioparams.f90 is ready."
 	@echo " "

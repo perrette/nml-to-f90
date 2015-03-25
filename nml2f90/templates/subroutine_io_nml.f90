@@ -10,13 +10,13 @@ subroutine read_nml_{group_name} (iounit, params)
     namelist / {group_name} / {list_of_variables}
 
     ! initialize variables
-    {list_of_init}
+    {assign_namelist}
 
     ! read all
     read(unit=iounit, nml={group_name}) 
 
     ! assign back to type
-    {list_of_assign}
+    {assign_type}
 end subroutine
 
 subroutine write_nml_{group_name} (iounit, params)
@@ -31,7 +31,7 @@ subroutine write_nml_{group_name} (iounit, params)
     namelist / {group_name} / {list_of_variables}
 
     ! initialize variables
-    {list_of_init}
+    {assign_namelist}
 
     ! write_all
     write(unit=iounit, nml={group_name}) 
