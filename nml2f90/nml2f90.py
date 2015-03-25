@@ -110,6 +110,7 @@ class Group(object):
     """ Definition of a derived type
     """
     def __init__(self, name, type_name, mod_name=None):
+        assert '!' not in name, "comment in group name !"
         self.name = name
         self.type_name = type_name
         self.mod_name = mod_name
@@ -216,10 +217,16 @@ class Module(object):
         short_code = ""
         wrap_opt = dict(break_long_words=False, break_on_hyphens=False)
         for line in code.split("\n"):
-            if line.strip().startswith("!"):
-                short_code += " & \n  ! ".join(textwrap.wrap(line, **wrap_opt)) +"\n"
+            sublines = textwrap.wrap(line, **wrap_opt)
+            if "!" in line: 
+                for i, subl in enumerate(sublines):
+                    if "!" in subl:
+                        short_code += "\n! ".join(sublines[i:]) +'\n'# only comment, long line ok 
+                        break
+                    else:
+                        short_code += subl+' &\n'
             else:
-                short_code += " & \n".join(textwrap.wrap(line, **wrap_opt)) +"\n"
+                short_code += " & \n".join(sublines) +"\n"
         code = short_code
 
         return code
@@ -287,7 +294,7 @@ class NmlIO(Feature):
             group_name = group.name,
             type_name = group.type_name,
             variable_definitions = "\n    ".join(variable_definitions),
-            list_of_variables = " &\n".join(textwrap.wrap(", ".join(list_of_variables))),
+            list_of_variables = ", ".join(list_of_variables),
             assign_namelist = "\n    ".join(assign_namelist),
             assign_type = "\n    ".join(assign_type),
         ) + '\n'
@@ -451,14 +458,13 @@ def main():
     # group.add_argument("--map-param", type=json.loads, help='user-defined param-level mapping, in json')
     # group.add_argument("--json", type=lambda s: json.loads(open(s)), help='read spec from json file instead of namelist')
     group = parser.add_argument_group("fortran features to be provided in the generated module:")
-    # group.add_argument("--full", help="do include get_param, set_param functions")
+    group.add_argument("--all", action="store_true", help="include all features")
     group.add_argument("--io-nml", action="store_true", help="read_nml, write_nml")
     group.add_argument("--command-line", action="store_true", help="parse_command_argument, print_help")
-    group.add_argument("--set-get-param", action="store_true", help="get_param, set_param functions")
+    group.add_argument("--set-get-param", action="store_true", help="get_param, set_param")
 
     args = parser.parse_args()
-    print(args)
-    print("group features:",group)
+    # print(args)
 
     # module name and source code file name
     io_mod = args.module
@@ -468,8 +474,7 @@ def main():
     else: 
         io_file = io_mod + ".f90"
 
-    print("Convert "+args.namelist+" to "+io_file)
-    print("...new module: "+io_mod)
+    print("Generate",io_file,"with", io_mod, "module from", args.namelist)
 
     # read namelist
     params = Namelist.read(args.namelist)
@@ -477,16 +482,19 @@ def main():
     # Create module
     mod = Module(name=io_mod, verbose=args.verbose, char_len=args.char_len, int_kind=args.int_kind, real_kind=args.real_kind)
 
-    for g, params in groupby(params, lambda x: x.group):
+    for g, grouped_params in groupby(params, lambda x: x.group):
 
         # construct a group of variables
         group = Group(name=g, type_name=args.type_prefix+g+args.type_suffix, mod_name=None)
-        for p in params:
+        for p in grouped_params:
             v = Variable(name=p.name, value=p.value, group=p.group, help=p.help, units=p.units)
             group.append_variable(v)
 
         # append the groups to the module
         mod.append_group(group)
+
+    if args.all:
+        args.io_mod = args.command_line = args.set_param = True
 
     # Add features to the group
     if args.io_nml:
@@ -496,7 +504,14 @@ def main():
     if args.set_get_param:
         mod.append_feature("set_get_param")
 
-    print("...with types: "+", ".join([group.name for group in mod.groups]))
+    print("...detected namelist groups and corresponding types were generated:")
+    for group in mod.groups:
+        indent = "  "
+        # print(indent, group.name,":",group.type_name," defined in "+(group.mod_name or io_mod))
+        if group.mod_name is not None:
+            print(indent, group.name,":",group.type_name," imported from "+group.mod_name)
+        else:
+            print(indent, group.name,":",group.type_name)
 
     code = mod.format()
 

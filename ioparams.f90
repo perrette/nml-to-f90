@@ -1,11 +1,11 @@
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Automatically generated module by nml2f90
-! Create Date : 2015-03-25 18:56:14.775096
-! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py & 
-  ! namelist.nml ioparams --io-nml --command-line --set-get-param -v
+! Create Date : 2015-03-25 19:55:32.955948
+! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py
+! namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0.0.0.dev-c58479a
+! version: 0.0.0.dev-1086fc3
 !
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -420,8 +420,7 @@ subroutine read_nml_group2 (iounit, params)
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, & 
-integer2, string2, intarr1, &
-double1, dblarr1, logarr1
+integer2, string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -470,8 +469,7 @@ subroutine write_nml_group2 (iounit, params)
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, & 
-integer2, string2, intarr1, &
-double1, dblarr1, logarr1
+integer2, string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1

@@ -10,7 +10,7 @@
     string2    = "no"
 /
 
-&group2
+&group2  ! group comment is ignored
     string1    = "sometext2.txt"
     stringarr1 = "a" "bb" "ccc"
     logical1   = False

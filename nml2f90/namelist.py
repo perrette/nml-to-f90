@@ -127,6 +127,11 @@ def _parse_nml(string, ignore_comments=False):
     for i, group_block in enumerate(group_blocks):
         group_lines = group_block.split('\n')
         group_name = group_lines.pop(0).strip()
+        # check for comments
+        if "!" in group_name:
+            i = group_name.index("!")
+            group_name = group_name[:i].strip()
+            group_help = group_name[i+1:].strip()
 
         # some lines are continuation of previous lines: filter
         joined_lines = []
