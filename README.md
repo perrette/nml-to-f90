@@ -93,7 +93,7 @@ around of course !)
 And the command-line argument parsing for whole type of course, which 
 remains a useful feature.  This feature is still a work-in-progress.
 
-Note this concerns ioparams.f90's internals and not change the way you use 
+Note this concerns ioparams.f90's internals and does not change the way you use 
 ioparams' `read_nml`, `parse_command_argument`, `print_help`. For now, 
 the `write_nml` is not available with this option.
 
@@ -102,6 +102,8 @@ the `write_nml` is not available with this option.
 The safer way of using nml2f90 is probably:
 
     nml2f90 namelist.nml --src src/*f90 --lib-nml
+
+and make sure [nml.f90](https://github.com/alex-robinson/nml) is compiled before ioparams.f90
 
 ## Caveats
 
