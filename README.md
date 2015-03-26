@@ -65,6 +65,15 @@ fortran source code, and tell nml2f90 to just look into the source code (parse i
 to retrieve the actual type, via the `--src` argument:
 
     nml2f90 namelist.nml --src src/*f90 --io-nml
+    
+Note the types found in the source code will simply be imported `use <mod>, only:<type>`
+and not redefined in ioparams.f90. You will probably need to provide
+more information concerning the naming conventions for mapping between
+group (namelist blocks) and type names. See options `--type-prefix`, `--type-suffix`
+and `--type-map` (`nml2f90 -h` for help).
+
+You may also want to create interfaces for other types not defined 
+in the namelist. Use `--include-groups` for that.
 
 ## Use nml.f90 to make the code more re-usable and more robust
 
@@ -101,7 +110,7 @@ the `write_nml` is not available with this option.
 
 The safer way of using nml2f90 is probably:
 
-    nml2f90 namelist.nml --src src/*f90 --lib-nml
+    nml2f90 namelist.nml --src src/*f90 --lib-nml --command-line
 
 and make sure [nml.f90](https://github.com/alex-robinson/nml) is compiled before ioparams.f90
 
