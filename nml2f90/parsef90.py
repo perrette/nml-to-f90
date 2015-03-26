@@ -2,7 +2,9 @@
 """
 from __future__ import print_function
 import re
+import warnings
 from .ioparams import Variable, Group, Module
+from .namelist import _parse_value
 
 # Regular expression to find modules and type:
 # ...first form: use with findall to get a tuple of all modules
@@ -106,7 +108,17 @@ def parse_line(string):
     variables = []
     for v in parse_varnames(namesdef):
         vsize = size or v['size'] 
-        var = Variable(name=v['name'], value=v['value'], dtype=dtype, attrs=attrs, size=vsize)
+        
+        if v['value'] is not None:
+            try:
+                val = _parse_value(v['value']) # parse to python value
+            except:
+                warnings.warn("Failed to parse {}: {}".format(v["name"], v["value"]))
+                val = None
+        else:
+            val = None
+
+        var = Variable(name=v['name'], value=val, dtype=dtype, attrs=attrs, size=vsize)
         variables.append(var) 
     return variables
 
@@ -141,7 +153,7 @@ def parse_type(string, type_name, group_name=None, mod_name=None):
                 pass # not found
             searched_modules.append(mod_name)
         if type_content is None:
-            raise ValueError("Type "+type_name+" not found in modules "+", ".join(searched_modules))
+            raise ValueError("Type "+type_name+" not found. Searched modules: {}".format(searched_modules))
         print("type",type_name,"found in module",mod_name)
 
     else:

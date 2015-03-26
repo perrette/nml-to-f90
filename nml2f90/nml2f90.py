@@ -7,10 +7,12 @@ contains corresponding parameter types and I/O, setter/getter routines.
 from __future__ import print_function
 import os
 import argparse
+import warnings
 from itertools import groupby
 from .namelist import Namelist
 from .ioparams import (Module, Group, Variable,
                                MODULE, CHAR_LEN, REAL_KIND, INTEGER_KIND)
+from .parsef90 import parse_type
 
 def main():
 
@@ -25,6 +27,7 @@ def main():
     parser.add_argument("-v","--verbose", action="store_true", help="Make ioparams.f90 more verbose")
     parser.add_argument("--type-suffix", default='_t', help="suffix for mapping from group_name to type name")
     parser.add_argument("--type-prefix", default='', help="prefix for mapping from group_name to type name")
+    parser.add_argument("--src", nargs="*",default=[],help="source code to be parsed, from which to import types instead of creating them")
     # group = parser.add_argument_group("user-defined correspondance between python and fortran")
     # group.add_argument("--map-group", type=json.loads, help='user-defined group-level mapping, in json, e.g. {"group_name":"group1", "type_name":"mytype"}')
     # group.add_argument("--map-param", type=json.loads, help='user-defined param-level mapping, in json')
@@ -51,6 +54,15 @@ def main():
     # read namelist
     params = Namelist.read(args.namelist)
 
+    # read source code and accumulate into a single block
+    if len(args.src) > 0:
+        import glob
+        files = glob.glob(" ".join(args.src))
+        code = ""
+        for nm in files:
+            with open(nm) as f:
+                code += f.read()
+
     # Create module
     mod = Module(name=io_mod, verbose=args.verbose, char_len=args.char_len, int_kind=args.int_kind, real_kind=args.real_kind)
 
@@ -58,9 +70,20 @@ def main():
 
         # construct a group of variables
         group = Group(name=g, type_name=args.type_prefix+g+args.type_suffix, mod_name=None)
+
         for p in grouped_params:
             v = Variable(name=p.name, value=p.value, group=p.group, help=p.help, units=p.units)
             group.append_variable(v)
+
+        # check wether the type is defined in the source code
+        if len(args.src) > 0:
+            try:
+                # search for type and parse it
+                group_orig = parse_type(code, type_name=group.type_name, mod_name=group.mod_name, group_name=group.name)
+                # update group properties
+                group.update(group_orig)
+            except Exception as error:
+                warnings.warn(error.message)
 
         # append the groups to the module
         mod.append_group(group)

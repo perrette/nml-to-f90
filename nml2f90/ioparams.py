@@ -1,6 +1,7 @@
 from __future__ import print_function, absolute_import
 import sys, os, json
 from itertools import groupby
+import warnings
 from collections import OrderedDict as odict
 import datetime
 import textwrap
@@ -92,20 +93,23 @@ class Variable(object):
             dtype = dtype + ", dimension({})".format(size)
         return dtype
 
-    def format(self, dynamic=False, indent=0, include_comment=False):
+    def format(self, dynamic=False, indent=0, include_comment=False, include_value=False):
         vardef = indent*" "+self.format_type(dynamic)+" :: "+self.name
+        # if include_value and self.value:
+        #     vardef += " = " +  _format_value(self.value) # written for namelist, probably need to adapt for source code
         if include_comment and self.help:
             vardef += " ! "+self.help
         return vardef
+
+    def update(self, other):
+        """ update from other variable, e.g. derived from source code """
+        self.dtype = other.dtype
+        self.attrs = other.attrs
+        assert self.size == other.size, "sizes do not match:"
+        self.help = other.help or self.help
+        self.units = other.units or self.units
+        self.value = other.value or self.value
     
-    def to_param(self):
-        return Param(self.name, self.value, self.group, self.help, self.units)
-
-    # # parse piece of f90 code
-    # def parsef90(self):
-
-
-
 class Group(object):
     """ Definition of a derived type
     """
@@ -127,11 +131,21 @@ class Group(object):
         content = indent*" "+self.content.rstrip()
         return "\n".join([header, content, footer])
 
-    def to_params(self):
-        params = Params()
+    def update(self, other, append_variable=False):
+        """ update fields from another group (e.g. parsed from source)
+
+        other: other Group instance with same type
+        append_variable: if True, append new variables from other
+            (default to False)
+        """
+        assert self.type_name == other.type_name, "types differ !"
+        self.mod_name = other.mod_name  # module name is defined
+
         for v in self.variables:
-            params.append( v.to_param() )
-        return params
+            matches = [vo for vo in other.variables if vo.name == v.name]
+            assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, v.name)
+            assert len(matches) == 1  # > 1 would make no sense, just in case
+            v.update(matches[0])
 
 class Module(object):
     """ The ioparams fortan module
