@@ -69,16 +69,49 @@ def parse_vartype(string):
         size = int(d["size"])
     return d["dtype"], d["attrs"], size
 
-def parse_varnames(string):
+def parse_varnames(string, dtype=None, size=None):
     """ right-hand size of "::" 
     returns a list of dict with keys "name", "value", "size"
-    >>> parse_varname("a(36)=45, b")
-    [{'name': 'a', 'value': '45', 'size': '36'}, {'name': 'b', 'value': None, 'size': None}]
+    >>> parse_varnames("a=3") == [{'help': None, 'name': 'a', 'value': 3, 'size': None}]
+    True
+    >>> parse_varnames("a=-3.65_d0") == [{'help': None, 'name': 'a', 'value': -3.65, 'size': None}]
+    True
+    >>> parse_varnames("a(36)=.true., b !lol") == [{'help': 'lol', 'name': 'a', 'value': True, 'size': 36}, {'help': 'lol', 'name': 'b', 'value': None, 'size': None}]
+    True
     """
-    name_re = "(?P<name>\w+)(\((?P<size>\d+)\))*(=(?P<value>\w+))*(!(?P<help>))*"
+    name_re = "(?P<name>\w+)(\((?P<size>\d+)\))*(=(?P<value>.+?),)*"
+    # first remove comments and spaces
+    if "!" in string:
+        comment = string[string.index("!")+1:].strip()
+        string = string[:string.index("!")]
+    else:
+        comment = None
+    string = string.strip().replace(" ","")+',' # add final comma to ease parsing...
+
     variables = []
-    for m in re.finditer(name_re, string.replace(" ","")):
-        variables.append(m.groupdict())
+    for m in re.finditer(name_re, string):
+        v  = m.groupdict()
+
+        # merge size
+        assert not (size and v['size']) # cannot provide dimension on each size of =
+        v["size"] = size or v['size']
+        if v["size"] is not None:
+            v["size"] = int(v["size"])
+
+        # convert types
+        if v['value'] is not None:
+            if dtype in ('real','int',None) and '_' in v['value']:
+                v['value'] = v['value'][:v['value'].index('_')] # remove int and real precision, e.g. ._d0
+            try:
+                val = _parse_value(v['value']) # parse to python value
+            except:
+                warnings.warn("Failed to parse {}: {!r}".format(v["name"], v["value"]))
+                val = None
+            v['value'] = val
+
+        v['help'] = comment
+
+        variables.append(v)
     return variables
 
 def parse_line(string):
@@ -106,21 +139,8 @@ def parse_line(string):
 
     # var1 = val1
     variables = []
-    for v in parse_varnames(namesdef):
-        assert not (size and v['size'])
-        if size is None and v['size'] is not None:
-            size = int(v['size'])
-        
-        if v['value'] is not None:
-            try:
-                val = _parse_value(v['value']) # parse to python value
-            except:
-                warnings.warn("Failed to parse {}: {}".format(v["name"], v["value"]))
-                val = None
-        else:
-            val = None
-
-        var = Variable(name=v['name'], value=val, dtype=dtype, attrs=attrs, size=size)
+    for v in parse_varnames(namesdef, dtype, size):
+        var = Variable(name=v['name'], value=v['value'], dtype=dtype, attrs=attrs, size=v['size'])
         variables.append(var) 
     return variables
 
