@@ -18,7 +18,7 @@ from .parsef90 import parse_type
 def main():
 
     # Generate command line arguments
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, prog="nml2f90")
             # formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("namelist", help="input namelist")
     parser.add_argument("module", default=MODULE, nargs="?",help="module name to be created")
@@ -29,7 +29,8 @@ def main():
 
     group = parser.add_argument_group("map namelist blocks to type name")
     group.add_argument("--src", nargs="*",default=[],help="source code to be parsed, from which to import types instead of creating them")
-    # group.add_argument("--include-groups", nargs="*",default=[],help="include additional groups that are not in the namelist")
+    group.add_argument("--include-groups", nargs="*",default=[],help="include additional groups that are not in the namelist (requires --src ...)")
+    group.add_argument("--exclude-groups", nargs="*",default=[],help="exclude groups even though they are in the namelist")
     group.add_argument("--type-suffix", default='_t', help="suffix")
     group.add_argument("--type-prefix", default='', help="prefix")
     group.add_argument("--type-map", type=json.loads, default={}, help='dict {group:type} in json format (override suffix and prefix above if key present)')
@@ -57,22 +58,30 @@ def main():
     params = Namelist.read(args.namelist)
 
     # read source code and accumulate into a single block
+    code = ""
     if len(args.src) > 0:
-        code = ""
         for nm in args.src:
             with open(nm) as f:
                 code += f.read()
+
+    def _get_type_name(group_name):
+        " build type name from group name "
+        if group_name in args.type_map:
+            type_name = args.type_map[group_name]
+        else:
+            type_name = args.type_prefix+group_name+args.type_suffix
+        return type_name
 
     # Create module
     mod = Module(name=io_mod, verbose=args.verbose, char_len=args.char_len, int_kind=args.int_kind, real_kind=args.real_kind)
 
     for g, grouped_params in groupby(params, lambda x: x.group):
 
+        if g in args.exclude_groups:
+            continue
+
         # map type name
-        if g in args.type_map:
-            type_name = args.type_map[g]
-        else:
-            type_name = args.type_prefix+g+args.type_suffix
+        type_name = _get_type_name(g)
 
         # construct a group of variables
         group = Group(name=g, type_name=type_name, mod_name=None)
@@ -94,8 +103,17 @@ def main():
         # append the groups to the module
         mod.append_group(group)
 
-    # include additional groups
-    # args.include_group
+    # include additional groups that are not in the namelist, but for which
+    # command-line features are desired.
+    included_groups = [group.name for group in mod.groups]
+    for g in args.include_groups:
+        if len(args.src) == 0:
+            # warnings.warn("No source files have been provided. See --src options.")
+            raise Exception("Source files must be provided via --src *f90 if --include-groups is passed. See --help options.")
+        if g not in included_groups:
+            type_name = _get_type_name(g)
+            group = parse_type(code, type_name=type_name, group_name=g)
+            mod.append_group(group)
 
     if args.all:
         # args.io_mod = args.command_line = args.set_param = True
