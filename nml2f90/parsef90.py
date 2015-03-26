@@ -8,28 +8,30 @@ from .ioparams import Variable, Group, Module
 # ...first form: use with findall to get a tuple of all modules
 # ...template form: format to find a specific module or group by name
 # (the template form is the most useful one here)
-MODULE_RE = r' *module +(?P<name>\w+) *\n(?P<defs>.*?)contains *\n(?P<body>.*?)end *module'
-MODULE_RE_TEMPLATE = r' *module +{name} *\n(?P<defs>.*?)contains *\n(?P<body>.*?)end *module'
 TYPE_RE = r'type( +| *:: *)(?P<name>) *\n(?P<defs>.*?)\n *end *type'
 TYPE_RE_TEMPLATE = r'type( +| *:: *){name} *\n(?P<defs>.*?)\n *end *type'
 
 def findall_modules(source):
     " return a list of tuples (name, defs, body) "
-    return re.findall(MODULE_RE, source, re.DOTALL)
+    module_re = r' *module +(?P<name>\w+) *\n(?P<defs>.*?)contains *\n(?P<body>.*?)end *module'
+    return re.findall(module_re, source, re.DOTALL)
 
 def search_module(name, source):
     " return a dict with keys 'defs' and 'body'"
-    m = re.search(MODULE_RE_TEMPLATE.format(name=name), source, re.DOTALL)
+    module_re_template = r' *module +{name} *\n(?P<defs>.*?)contains *\n(?P<body>.*?)end *module'
+    m = re.search(module_re_template.format(name=name), source, re.DOTALL)
     if m is None:
         raise ValueError("Module "+name+" was not found")
     return m.groupdict()
 
 def search_type(name, source):
-    " search for a specific type definitions "
+    """ search for a specific type definitions 
+    return type body (as raw text)
+    """
     m = re.search(TYPE_RE_TEMPLATE.format(name=name), source, re.DOTALL)
     if m is None:
         raise ValueError("Type "+name+" was not found")
-    return m.groupdict()
+    return m.groupdict()["defs"]
 
 def _clean_code(string):
     lines = []
@@ -65,13 +67,13 @@ def parse_vartype(string):
         size = int(d["size"])
     return d["dtype"], d["attrs"], size
 
-def parse_varname(string):
+def parse_varnames(string):
     """ right-hand size of "::" 
     returns a list of dict with keys "name", "value", "size"
     >>> parse_varname("a(36)=45, b")
     [{'name': 'a', 'value': '45', 'size': '36'}, {'name': 'b', 'value': None, 'size': None}]
     """
-    name_re = "(?P<name>\w+)(\((?P<size>\d+)\))*(=(?P<value>\w+))*"
+    name_re = "(?P<name>\w+)(\((?P<size>\d+)\))*(=(?P<value>\w+))*(!(?P<help>))*"
     variables = []
     for m in re.finditer(name_re, string.replace(" ","")):
         variables.append(m.groupdict())
@@ -92,7 +94,7 @@ def parse_line(string):
 
     # type :: variables
     try:
-        typedef, variables = string.split("::")
+        typedef, namesdef = string.split("::")
     except:
         print(string)
         raise ValueError("Error when parsing source code. `::` missing in variable definition")
@@ -100,74 +102,65 @@ def parse_line(string):
     # Un-build fortran type
     dtype, attrs, size = parse_vartype(typedef)
 
-    # var1, var2
-    var_defs = variables.split(",")
-
     # var1 = val1
     variables = []
-    for i, v in enumerate(var_defs):
-        if '=' in v:
-            v, val = v.split("=")
-        else:
-            val = None
-        var = Variable(name=v, value=val, dtype=dtype, attrs=attrs, size=size)
-        # var = Variable(name=v, value=val, dtype=dtype, attrs=attrs, array=array, size=size)
+    for v in parse_varnames(namesdef):
+        vsize = size or v['size'] 
+        var = Variable(name=v['name'], value=v['value'], dtype=dtype, attrs=attrs, size=vsize)
         variables.append(var) 
-
     return variables
 
-def parse_type(string):
-    """ parse type content (inside type end type)
-    """
-    variables = []
-    for line in string.splitlines():
-        variables.extend( parse_line(line) )
-    return variables
+def parse_type(string, type_name, group_name=None, mod_name=None):
+    """ Define a Group object from source code
 
-def parse_module(string, prefix='', suffix='_t'):
-    """ parse module content (inside module end module)
-    prefix and suffix: determine group name from type name...
-    """
-    matches = re.findall('(?<=type)( +| *:: *)(\w+) *\n(.*?)\n(?=end type)', string, re.DOTALL)
-    types = []
-    for _, name, content in matches:
-        m = re.search("(?<={prefix})(.*)(?={suffix})".format(prefix=prefix,suffix=suffix),name) # for now
-        if m is not None:
-            group_name = m.group()
-        else:
-            group_name = name+'_group'
-        typ = Group(group_name,type_name=name)
-        for var in parse_type(content):
-            typ.append_variable(var)
-        types.append(typ)
-        # variables = parse_type(content)
-    return types
+    Parameters
+    ----------
+    type_name : type name to search
+    mod_name : optional
+        module name where the type belongs
+        (will be searched in all modules if not provided)
+    group_name : optional
+        'name' attribute of the returned Group
+        (can be set later)
 
-def parse_file(string):
-    # first remove empty lines and comments, for a start...
-    string = _clean_code(string)
-    matches = re.findall('(?<=module) +(\w+) *\n(.*?)\n(?=end module)', string, re.DOTALL)
-    modules = []
-    for name, content in matches:
-        mod = Module(name)
-        for group in parse_module(content):
-            mod.append_group(group)
-        modules.append(mod)
-    return modules
+    string : code to parse
 
-def parse_modules(string):
-    """ return all modules from a bunch of source code
+    Returns
+    -------
+    Group object
     """
-    # first remove empty lines and comments, for a start...
-    string = _clean_code(string)
-    matches = re.findall(' *module +(?<name>\w+) *\n(?<content>.*?)contains *\n *end *module', string, re.DOTALL)
-    modules = []
-    for name, content in matches:
-        mod = Module(name)
-        for group in parse_module(content):
-            mod.append_group(group)
-        modules.append(mod)
-    return modules
+    if mod_name is None:
+        # search type in all modules
+        type_content = None
+        searched_modules = []
+        for mod_name, defs, body in findall_modules(string):
+            try:
+                type_content = search_type(type_name, defs)
+                break
+            except:
+                pass # not found
+            searched_modules.append(mod_name)
+        if type_content is None:
+            raise ValueError("Type "+type_name+" not found in modules "+", ".join(searched_modules))
+        print("type",type_name,"found in module",mod_name)
+
+    else:
+        # search for specific type
+        d = search_module(mod_name, string)
+        type_content = search_type(type_name, d["defs"])
+
+    # Create Group instance
+    group = Group(name=group_name, mod_name=mod_name, type_name=type_name)
+
+    # Fill up the variables
+    for line in type_content.splitlines():
+        if line.strip() == "": continue
+        if line.strip().startswith("!"): continue
+        for v in parse_line(line):
+            v.group = group_name
+            group.append_variable(v)
+
+    return group
 
 def main():
     import argparse
@@ -178,10 +171,11 @@ def main():
     with open(args.sourcefile) as f:
         code = f.read()
 
-    modules = parse_file(code)
-    for mod in modules:
-        # print(mod)
-        print(mod.format())
+    group1 = parse_type(code, group_name="group1", type_name="group1_t")
+    group2 = parse_type(code, group_name="group2", type_name="group2_t")
+
+    print(group1.format())
+    print(group2.format())
 
 if __name__ == "__main__":
     main()
