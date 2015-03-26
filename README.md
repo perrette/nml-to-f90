@@ -52,6 +52,63 @@ Get all options of nml2f90 by typing:
 
     nml2f90 --help  
 
+## Parse fortran source code for more precise results
+
+They are a couple of caveats with the basic namelist to fortran conversion:
+
+- character strings all have the same length (default to 256)
+- certain types may be lost via conversion to python (e.g. all "real" converted to double precision)
+  or simply more error-prone procedure (say a '.' is missing, but you did mean a float)
+
+So I found for myself more re-insuring to have the variables defined in my regular 
+fortran source code, and tell nml2f90 to just look into the source code (parse it) 
+to retrieve the actual type, via the `--src` argument:
+
+    nml2f90 namelist.nml --src src/*f90 --io-nml
+
+## Use nml.f90 to make the code more re-usable and more robust
+
+The --io-nml option creates type-specific interfaces to read from and
+write to namelist format using the built-in namelist capability.
+
+A caveat is that it requires determining the type of the various 
+variables when creating the routines (have a look at the generated 
+ioparams.f90), which may be error prone (see parsing of source code 
+for a solution) and generates much boiler-plate code. The second
+reason is of greater concern IMO, because it makes the generated
+code harder to understand (not too big of an issue as long as 
+nml2f90 is around, or as long as there is no bug to be tracked down!).
+
+An elegant solution is offered by Alex Robinson's [nml.f90](https://github.com/alex-robinson/nml)
+library, which parses (read-only) the namelist and allows calls like
+
+    call nml_read(filename,"group1","name1",group1%name1)
+
+Passing the option `--lib-nml` will make nml2f90 use that
+kind of calls instead of fortran build-in `namelist` solution.
+It assumes nml.f90 is present on the compilation path. That way
+nml2f90 becomes no more than a nice helper to avoid writing repetitive code, 
+but it involves no commitment in the future...(as long as you keep nml.f90 
+around of course !)
+And the command-line argument parsing for whole type of course, which 
+remains a useful feature.  This feature is still a work-in-progress.
+
+Note this concerns ioparams.f90's internals and not change the way you use 
+ioparams' `read_nml`, `parse_command_argument`, `print_help`. For now, 
+the `write_nml` is not available with this option.
+
+## Summary of advices for sustainable using
+
+The safer way of using nml2f90 is probably:
+
+    nml2f90 namelist.nml --src src/*f90 --lib-nml
+
+## Caveats
+
+- each namelist block must be defined in the same fortran type, i.e. one type per block.
+- as a corrolary, no derived types nor portions of array can be present in the 
+  namelist with the % syntax 
+
 ## Install (with administrator rights)
 
 Clone this repository, and at the root execute:
@@ -69,48 +126,6 @@ into your code directory and compile your main program with:
     gfortran -o example.x ioparams.f90 example.f90
 
 That's it !
-
-## Caveats
-
-- character strings have the same length (default to 256)
-- certain types may be lost via conversion to python (e.g. all "real" converted to double precision)
-- no derived types can be present in the namelist with the % syntax (this would 
-  defy the point of this module...)
-
-## Perspectives, ideas for the development of this project
-
-- Try to make the code as un-invasive and flexible as possible, so that it
-  only provides additional functionality with as few tradeoffs as possible:
-
-    - parse source code to re-use existing type definitions (as only - argably
-      desirable - tradeoff, enforce "dimension(n)" and "::" notation, to
-      ease parsing)
-
-    - use existing object (even without source code) to retrieve the types,
-      provided their name, making use of the fortran built-innamelist 
-      functionality to write a dummy namelist. Requires generating the 
-      following small program, parse the dummy namelist so written, and 
-      generate types (and possibly namelist) from that.
-      Difficulty: needs compiling, requires additional info about the compiler
-      used by the user.
-     
-            program writedummynamelist
-
-            use mod1, only: group1_t  ! from template
-            use mod2, only: group2_t  ! from template 
-
-            type(group1_t) :: group1  ! from template
-            type(group2_t) :: group2  ! from template
-
-            integer :: iounit = 88
-
-            namelist /dummynamelist/ group1, group2 ! from template
-
-            open(iounit, file="dummy.nml")
-            write(iounit, dummynamelist)
-            close(iounit)
-
-            end program
 
 ## Credits
 
