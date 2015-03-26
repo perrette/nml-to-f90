@@ -6,6 +6,7 @@ contains corresponding parameter types and I/O, setter/getter routines.
 """
 from __future__ import print_function
 import os
+import json
 import argparse
 import warnings
 from itertools import groupby
@@ -25,13 +26,14 @@ def main():
     parser.add_argument("--real-kind", type=int, default=REAL_KIND, help="floating point precision (default: %(default)s)")
     parser.add_argument("--int-kind", type=int, default=INTEGER_KIND, help="integer precision (default: %(default)s)")
     parser.add_argument("-v","--verbose", action="store_true", help="Make ioparams.f90 more verbose")
-    parser.add_argument("--type-suffix", default='_t', help="suffix for mapping from group_name to type name")
-    parser.add_argument("--type-prefix", default='', help="prefix for mapping from group_name to type name")
-    parser.add_argument("--src", nargs="*",default=[],help="source code to be parsed, from which to import types instead of creating them")
-    # group = parser.add_argument_group("user-defined correspondance between python and fortran")
-    # group.add_argument("--map-group", type=json.loads, help='user-defined group-level mapping, in json, e.g. {"group_name":"group1", "type_name":"mytype"}')
-    # group.add_argument("--map-param", type=json.loads, help='user-defined param-level mapping, in json')
-    # group.add_argument("--json", type=lambda s: json.loads(open(s)), help='read spec from json file instead of namelist')
+
+    group = parser.add_argument_group("map namelist blocks to type name")
+    group.add_argument("--src", nargs="*",default=[],help="source code to be parsed, from which to import types instead of creating them")
+    # group.add_argument("--include-groups", nargs="*",default=[],help="include additional groups that are not in the namelist")
+    group.add_argument("--type-suffix", default='_t', help="suffix")
+    group.add_argument("--type-prefix", default='', help="prefix")
+    group.add_argument("--type-map", type=json.loads, default={}, help='dict {group:type} in json format (override suffix and prefix above if key present)')
+
     group = parser.add_argument_group("fortran features to be provided in the generated module:")
     group.add_argument("--all", action="store_true", help="include all features")
     group.add_argument("--io-nml", action="store_true", help="read_nml, write_nml")
@@ -56,10 +58,8 @@ def main():
 
     # read source code and accumulate into a single block
     if len(args.src) > 0:
-        import glob
-        files = glob.glob(" ".join(args.src))
         code = ""
-        for nm in files:
+        for nm in args.src:
             with open(nm) as f:
                 code += f.read()
 
@@ -68,8 +68,14 @@ def main():
 
     for g, grouped_params in groupby(params, lambda x: x.group):
 
+        # map type name
+        if g in args.type_map:
+            type_name = args.type_map[g]
+        else:
+            type_name = args.type_prefix+g+args.type_suffix
+
         # construct a group of variables
-        group = Group(name=g, type_name=args.type_prefix+g+args.type_suffix, mod_name=None)
+        group = Group(name=g, type_name=type_name, mod_name=None)
 
         for p in grouped_params:
             v = Variable(name=p.name, value=p.value, group=p.group, help=p.help, units=p.units)
@@ -87,6 +93,9 @@ def main():
 
         # append the groups to the module
         mod.append_group(group)
+
+    # include additional groups
+    # args.include_group
 
     if args.all:
         # args.io_mod = args.command_line = args.set_param = True

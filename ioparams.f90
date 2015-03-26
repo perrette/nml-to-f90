@@ -1,11 +1,11 @@
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Automatically generated module by nml2f90
-! Create Date : 2015-03-25 20:38:10.662868
+! Create Date : 2015-03-26 22:13:23.697472
 ! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py
 ! namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0.0.0.dev-ba8c8cc
+! version: 0.0.0.dev-91fcb46
 !
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

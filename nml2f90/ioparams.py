@@ -105,7 +105,10 @@ class Variable(object):
         """ update from other variable, e.g. derived from source code """
         self.dtype = other.dtype
         self.attrs = other.attrs
-        assert self.size == other.size, "sizes do not match:"
+        if self.size != other.size: 
+            print("self: {!r}, other: {!r}".format(self.size, other.size))
+            raise ValueError("Sizes do not match.")
+
         self.help = other.help or self.help
         self.units = other.units or self.units
         self.value = other.value or self.value
@@ -145,7 +148,11 @@ class Group(object):
             matches = [vo for vo in other.variables if vo.name == v.name]
             assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, v.name)
             assert len(matches) == 1  # > 1 would make no sense, just in case
-            v.update(matches[0])
+            try:
+                v.update(matches[0])
+            except Exception as error:
+                print("group name:",self.name, "type name:",self.type_name)
+                raise
 
 class Module(object):
     """ The ioparams fortan module
@@ -176,7 +183,7 @@ class Module(object):
         if group.mod_name is None:
             self.definition += group.format() + '\n\n'
         else:
-            self.imports += "use {}; only: {}".format(group.mod_name, group.type_name) + '\n'
+            self.imports += "use {}, only: {}".format(group.mod_name, group.type_name) + '\n'
         self.public += self._make_public_declarations([group.type_name])
 
     def include_lib(self, lib):

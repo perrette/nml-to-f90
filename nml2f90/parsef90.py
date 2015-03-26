@@ -107,7 +107,9 @@ def parse_line(string):
     # var1 = val1
     variables = []
     for v in parse_varnames(namesdef):
-        vsize = size or v['size'] 
+        assert not (size and v['size'])
+        if size is None and v['size'] is not None:
+            size = int(v['size'])
         
         if v['value'] is not None:
             try:
@@ -118,7 +120,7 @@ def parse_line(string):
         else:
             val = None
 
-        var = Variable(name=v['name'], value=val, dtype=dtype, attrs=attrs, size=vsize)
+        var = Variable(name=v['name'], value=val, dtype=dtype, attrs=attrs, size=size)
         variables.append(var) 
     return variables
 
