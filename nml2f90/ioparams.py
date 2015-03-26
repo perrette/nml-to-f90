@@ -28,11 +28,11 @@ class Variable(object):
         # precision?
         if attrs is None:
             if dtype == "real":
-                attrs = {"kind":"dp"}  # e.g. kind=8 ; "float" is a module-wide parameter (default to REAL_KIND)
+                attrs = "kind=dp" 
             elif dtype == "integer":
-                attrs = {"kind":"ip"} # e.g. kind=4, "int" is a module-wide parameter
+                attrs = "kind=ip"
             elif dtype == "character":
-                attrs = {"len":"clen"} # e.g. len=4 ; same, assume that clen is defined is module
+                attrs = "len=clen"
 
         # array?
         if size is not None:
@@ -76,10 +76,12 @@ class Variable(object):
         """ make fortran type from variable map
         """
         dtype = self.dtype
-        if self.attrs is not None:
+        attrs = self.attrs
+        if attrs is not None:
             if self.dtype == "character" and dynamic: 
-                self.attrs = {"len":"*"}
-            dtype = self.dtype+"("+",".join(["{}={}".format(k,self.attrs[k]) for k in self.attrs])+')'
+                attrs = "len=*"
+            dtype = self.dtype+"("+attrs+')'
+            # dtype = self.dtype+"("+",".join(["{}={}".format(k,self.attrs[k]) for k in self.attrs])+')'
 
         if self.array:
             if dynamic:
@@ -98,6 +100,10 @@ class Variable(object):
     
     def to_param(self):
         return Param(self.name, self.value, self.group, self.help, self.units)
+
+    # # parse piece of f90 code
+    # def parsef90(self):
+
 
 
 class Group(object):
