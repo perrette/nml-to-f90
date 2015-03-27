@@ -24,7 +24,7 @@ libdir = ..
 
 # Command-line options at make call
 ifort ?= 0
-debug ?= 0 
+debug ?= 1
 
 ifeq ($(ifort),1)
     FC = ifort 
@@ -32,27 +32,30 @@ else
     FC = gfortran
 endif 
 
-ifeq ($(ifort),1)
-	## IFORT OPTIONS ##
-	FLAGS        = -module $(objdir) -L$(objdir)
-
-	ifeq ($(debug), 1)
-	    DFLAGS   = -C -traceback -ftrapuv -fpe0 -check all -vec-report0
-	    # -w 
-	else
-	    DFLAGS   = -vec-report0 -O3
-	endif
-else
-	## GFORTRAN OPTIONS ##
-	FLAGS        = -I$(objdir) -J$(objdir)
-	LFLAGS		 = 
-
-	ifeq ($(debug), 1)
-	    DFLAGS   = -w -p -ggdb -ffpe-trap=invalid,zero,overflow,underflow \
-	               -fbacktrace -fcheck=all -fbackslash
-	else
-	    DFLAGS   = -O3 -fbackslash
-	endif
+ifeq ($(ifort)$(debug),11)
+    ## IFORT OPTIONS DEBUG ##
+    LFLAGS		 = 
+    FLAGS        = -module $(objdir) -L$(objdir)
+    DFLAGS   = -C -traceback -ftrapuv -fpe0 -check all -vec-report0
+	# -w 
+endif
+ifeq ($(ifort)$(debug),10)
+    ## IFORT OPTIONS NO-DEBUG ##
+    LFLAGS		 = 
+    FLAGS        = -module $(objdir) -L$(objdir)
+    DFLAGS   = -vec-report0 -O3
+endif
+ifeq ($(ifort)$(debug),01)
+    ## GFORTRAN OPTIONS ##
+    LFLAGS		 = 
+    FLAGS        = -I$(objdir) -J$(objdir)
+    DFLAGS   = -w -p -ggdb -ffpe-trap=invalid,zero,overflow,underflow \
+	       -fbacktrace -fcheck=all -fbackslash
+endif
+ifeq ($(ifort)$(debug),00)
+    LFLAGS		 = 
+    FLAGS        = -I$(objdir) -J$(objdir)
+    DFLAGS   = -O3 -fbackslash
 endif
 
 ## Individual libraries or modules ##
