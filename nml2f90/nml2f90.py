@@ -37,7 +37,9 @@ def main():
 
     group = parser.add_argument_group("fortran features to be provided in the generated module:")
     group.add_argument("--all", action="store_true", help="include all features")
-    group.add_argument("--io-nml", action="store_true", help="read_nml, write_nml")
+    subgroup = group.add_mutually_exclusive_group()
+    subgroup.add_argument("--io-nml", action="store_true", help="read_nml, write_nml")
+    subgroup.add_argument("--lib-nml", action="store_true", help="read_nml: alternative to --io-nml using external lib nml.f90 (https://github.com/alex-robinson/nml)")
     group.add_argument("--command-line", action="store_true", help="parse_command_argument, print_help")
     group.add_argument("--set-get-param", action="store_true", help="get_param, set_param")
 
@@ -122,6 +124,8 @@ def main():
     # Add features to the group
     if args.io_nml:
         mod.append_feature("io_nml")
+    if args.lib_nml:
+        mod.append_feature("lib_nml")
     if args.command_line:
         mod.append_feature("command_line")
     if args.set_get_param:
@@ -137,7 +141,7 @@ def main():
             print(indent, group.name,":",group.type_name)
 
     print("...included features (see --help):")
-    print("   --io-nml:",args.io_nml)
+    print("   --io-nml:",args.io_nml or args.lib_nml)
     print("   --command-line:",args.command_line)
     print("   --set-get-param:",args.set_get_param)
 

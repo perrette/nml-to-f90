@@ -13,6 +13,8 @@ usage:
 	@echo " make src      : compile the source code from namelist"
 	@echo " make example  : compile the example program"
 	@echo " make test     : compile the test program (somewhat more exhaustive)"
+	@echo " make test_nml : like example but using nml.f90 library"
+	@echo " make test_nml_src : compile ioparams.f90 for test_nml"
 	@echo " make clean    : cleans object and executable files"
 	@echo ""
 
@@ -54,6 +56,9 @@ else
 endif
 
 ## Individual libraries or modules ##
+$(objdir)/nml.o: lib/nml.f90
+	$(FC) $(DFLAGS) $(FLAGS) -c -o $@ $<
+
 $(objdir)/%.o: %.f90
 	$(FC) $(DFLAGS) $(FLAGS) -c -o $@ $<
 
@@ -69,6 +74,18 @@ test: $(objdir)/ioparams.o $(objdir)/test.o
 	$(FC) $(DFLAGS) $(FLAGS) -o test.x $^ $(LFLAGS)
 	@echo " "
 	@echo "    test.x is ready."
+	@echo " "
+
+test_nml: $(objdir)/nml.o $(objdir)/ioparams.o $(objdir)/test_nml.o
+	$(FC) $(DFLAGS) $(FLAGS) -o test_nml.x $^ $(LFLAGS)
+	@echo " "
+	@echo "    test_nml.x is ready."
+	@echo " "
+
+test_nml_src: nml2f90/nml2f90.py
+	python -m nml2f90.nml2f90 namelist.nml --lib-nml --command-line
+	@echo " "
+	@echo "  ioparams.f90 is ready."
 	@echo " "
 
 src: nml2f90/nml2f90.py

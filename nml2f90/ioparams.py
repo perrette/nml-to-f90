@@ -186,15 +186,19 @@ class Module(object):
             self.imports += "use {}, only: {}".format(group.mod_name, group.type_name) + '\n'
         self.public += self._make_public_declarations([group.type_name])
 
-    def include_lib(self, lib):
+    def include_lib(self, lib, external=False):
         self.included_lib.append(lib)
-        self.imports += "use "+lib +", dp_conflict => dp\n"
-        self.libcode +=  open(os.path.join(libraries_dir, lib+".f90")).read() + "\n"
+        self.imports += "use "+lib +"\n"
+        # also include source code
+        if not external:
+            self.libcode +=  open(os.path.join(libraries_dir, lib+".f90")).read() + "\n"
 
     def append_feature(self, name):
 
         if name == "io_nml":
             feature = NmlIO()
+        elif name == "lib_nml":
+            feature = NmlLib()
         elif name == "command_line":
             feature = CommandLine()
         elif name == "set_get_param":
@@ -215,6 +219,9 @@ class Module(object):
         for lib in feature.dependencies:
             if lib not in self.included_lib:
                 self.include_lib(lib)
+        for lib in feature.external_dependencies:
+            if lib not in self.included_lib:
+                self.include_lib(lib, external=True)
 
         self.features.append(feature) # for the record
 
@@ -240,9 +247,8 @@ class Module(object):
         # now include libraries as separate module in the code
 
         # Now make sure that every line is < 80 character
-        maxl = 78
         short_code = ""
-        wrap_opt = dict(break_long_words=False, break_on_hyphens=False)
+        wrap_opt = dict(break_long_words=False, break_on_hyphens=False, width=78)
         for line in code.split("\n"):
             sublines = textwrap.wrap(line, **wrap_opt)
             if "!" in line: 
@@ -290,6 +296,7 @@ class Feature(object):
     name = ""
     public = [] # to include as public (assume an interface for each)
     dependencies = []
+    external_dependencies = []
     def __init__(self):
         self.template = open(os.path.join(template_dir, "subroutine_"+self.name+".f90")).read()
         self.content = ""
@@ -323,6 +330,34 @@ class NmlIO(Feature):
             list_of_variables = ", ".join(list_of_variables),
             assign_namelist = "\n    ".join(assign_namelist),
             assign_type = "\n    ".join(assign_type),
+        ) + '\n'
+
+        # add procedure to be included in the interface
+        for interface in self.interfaces:
+            interface.append_procedure(interface.name+'_'+group.name)
+
+class NmlLib(Feature):
+    """ Human-readable Namelist I/O
+    """
+    name = "lib_nml"
+    public = ["read_nml","write_nml"]
+    external_dependencies = ["nml"]
+
+    def append_group(self, group):
+
+        # For each parameter type, build a map specific to this routine
+        list_of_nml_read_calls = ""
+        list_of_nml_write_calls = ""
+
+        for v in group.variables:
+            list_of_nml_read_calls += "    call nml_read('', '{group}', '{name}', params%{name}, io=iounit, init=.true.)".format(name=v.name,group=group.name)+'\n'
+            list_of_nml_write_calls += "    call nml_print('{name}', params%{name}, io=iounit)".format(name=v.name,group=group.name)+'\n'
+
+        self.content += self.template.format(
+            group_name = group.name,
+            type_name = group.type_name,
+            list_of_nml_read_calls = list_of_nml_read_calls,
+            list_of_nml_write_calls = list_of_nml_write_calls,
         ) + '\n'
 
         # add procedure to be included in the interface

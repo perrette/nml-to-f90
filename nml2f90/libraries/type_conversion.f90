@@ -6,7 +6,7 @@ module type_conversion
 !
 ! =============================================================
 
-  integer, parameter :: dp = kind(0.d0)
+  integer, parameter :: Float = kind(0.d0)
 
     interface string_to_array
       module procedure :: string_to_array_integer
@@ -61,7 +61,7 @@ module type_conversion
       implicit none 
 
       character(len=*), intent(IN) :: string 
-      real(dp) :: value(:)
+      real(Float) :: value(:)
       character(len=256) :: tmpvec(size(value))
       character(len=256) :: tmpstr, fmt 
       integer, optional :: iostat
