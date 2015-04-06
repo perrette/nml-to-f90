@@ -14,7 +14,7 @@ program test_io_params
   integer :: iounit = 88
   double precision :: test_dp
   logical :: test_l
-  integer :: test_int, test_int_arr(10)
+  integer :: test_int, test_int_arr(7)
   character(len=50) :: test_s
 
   integer :: i, iostat, iostats(2), stat
@@ -90,22 +90,16 @@ program test_io_params
     case ('-h', '--help') 
       call print_help(group1, default=.false.)
       call print_help(group2)
+      stop
     case default
       call parse_command_argument(group1, i, iostat=iostat)
-      if (iostat/=0) call parse_command_argument(group2, i, iostat=iostat)
-      if (iostat/=0) then
-        call print_help(group1)
-        call print_help(group2)
-        call get_command_argument(i, arg)
-        write(*,*) 
-        write(*,*) ">>>> ERROR: none or several parameters matched: ",trim(arg)
-        write(*,*) 
-        stop
-      else
-        i = i+1
+      if (iostat==0) cycle ! re-start from loop start
+      call parse_command_argument(group2, i, iostat=iostat)
+      if (iostat==0) cycle ! re-start from loop start
+      if (iostat /= 0) then
+        stop("Invalid parameter. Use -h or --help for help.")
       endif
     end select
-    i = i+1
   end do
 
   ! Print namelist to screen

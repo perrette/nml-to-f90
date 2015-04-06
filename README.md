@@ -34,7 +34,6 @@ In its simplest form, this would be:
     i = 1
     do while(i <= command_argument_count())
         call parse_command_argument(par1, i)
-        i = i+2
     enddo
 
 See example.f90 for an interactive variant of this snippet, and and test.f90 

@@ -22,14 +22,14 @@ program example
   i = 1
   do while(i <= command_argument_count())
     call parse_command_argument(par1, i, iostat)
-    if (iostat==0) continue
+    if (iostat==0) cycle
     call parse_command_argument(ctr, i, iostat, arg=arg)
+    if (iostat == -1) stop  ! help
+    ! if (arg == "--help".or.arg == "-h") stop
     if (iostat/=0) then
       write(*,'("Parameter not found: ",A20,". Type -h for help")') trim(arg)
       stop
     endif
-    if (arg == "--help".or.arg == "-h") stop
-    i = i + 2
   enddo
 
   write(*,*) 

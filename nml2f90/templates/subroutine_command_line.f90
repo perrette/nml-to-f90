@@ -4,9 +4,13 @@ subroutine parse_command_argument_{group_name} (params,i, iostat, arg)
     ! Input:
     !   params : the paramter type
     !   i : integer, positional argument of the parameter name
+    !       is incremented if parameter is found
     ! Output:
-    !   iostat : integer, optional : 0 if success, 1 otherwise (if not
-    !       provided, an error is thrown in case of failure)
+    !   iostat : integer, optional
+    !       -1 : --help was printed
+    !       0  : param found
+    !       1  : error when reading
+    !       If not provided, execution stop if iostat /= 0
     !   arg : character, optional : the ith command line argument
     !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -23,11 +27,16 @@ subroutine parse_command_argument_{group_name} (params,i, iostat, arg)
     ! Print HELP ?
     if (argn == '--help' .or. argn=='-h') then
       call print_help_{group_name}(params)
-      if (present(iostat)) iostat = 0
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
       return
     endif
 
     if (argn(1:2)  /= "--") then
+      print*, "i=",i, "; Got: ",trim(argn)
       stop("ERROR: type-specific command line &
         arguments must start with '--'")
     endif
@@ -36,14 +45,14 @@ subroutine parse_command_argument_{group_name} (params,i, iostat, arg)
       ! +++++  present 
       call get_command_argument(i+1, argv)
       call set_param_string_{group_name}(params, trim(argn(3:)), trim(argv))
-      i = i+1
+      i = i+2
       if (present(iostat)) then
         iostat = 0
       endif
     else
       ! +++++  no found
       if (present(iostat)) then
-        iostat=1
+        iostat = 1
       else
         write(*,*) "ERROR: unknown parameter in {group_name} : ",trim(argn)
         write(*,*) ""

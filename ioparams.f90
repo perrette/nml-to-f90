@@ -1,13 +1,12 @@
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Automatically generated module by nml2f90
-! Create Date : 2015-03-27 12:07:01.929856
-! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py namelist.nml
-! --lib-nml --command-line
+! Create Date : 2015-04-07 01:29:25.193250
+! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0.0.0.dev-4591d6e
-!
-! Features included : lib_nml, command_line
+! version: 0.0.0.dev-d0d9e1e
+!  
+! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 module type_conversion
@@ -212,8 +211,7 @@ end module
 module ioparams
 
 
-  use nml
-use type_conversion
+  use type_conversion
 
 
   implicit none
@@ -228,12 +226,14 @@ use type_conversion
   public :: print_help
   public :: set_param_string
   public :: has_param
+  public :: set_param
+  public :: get_param
 
 
   integer, parameter :: dp = 8
   integer, parameter :: ip = 4
   integer, parameter :: clen = 256
-  logical :: VERBOSE = .false.
+  logical :: VERBOSE = .true.
 
   type :: group1_t
     character(len=clen) :: string1
@@ -297,6 +297,38 @@ use type_conversion
     module procedure :: has_param_control
   end interface
 
+  interface set_param
+    module procedure :: set_param_group1_character
+    module procedure :: set_param_group1_character_arr
+    module procedure :: set_param_group1_integer
+    module procedure :: set_param_group1_logical
+    module procedure :: set_param_group2_character
+    module procedure :: set_param_group2_character_arr
+    module procedure :: set_param_group2_integer
+    module procedure :: set_param_group2_integer_arr
+    module procedure :: set_param_group2_logical
+    module procedure :: set_param_group2_logical_arr
+    module procedure :: set_param_group2_real
+    module procedure :: set_param_group2_real_arr
+    module procedure :: set_param_control_logical
+  end interface
+
+  interface get_param
+    module procedure :: get_param_group1_character
+    module procedure :: get_param_group1_character_arr
+    module procedure :: get_param_group1_integer
+    module procedure :: get_param_group1_logical
+    module procedure :: get_param_group2_character
+    module procedure :: get_param_group2_character_arr
+    module procedure :: get_param_group2_integer
+    module procedure :: get_param_group2_integer_arr
+    module procedure :: get_param_group2_logical
+    module procedure :: get_param_group2_logical_arr
+    module procedure :: get_param_group2_real
+    module procedure :: get_param_group2_real_arr
+    module procedure :: get_param_control_logical
+  end interface
+
 
 
 contains
@@ -308,22 +340,34 @@ contains
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    ! Calls to nml_real
-    ! call nml_read("","group1","name1",group1%name1))
-    call nml_read('', 'group1', 'string1', params%string1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group1', 'stringarr1', params%stringarr1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group1', 'logical1', params%logical1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group1', 'integer1', params%integer1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group1', 'integer2', params%integer2, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group1', 'string2', params%string2, io=iounit, & 
-init=.true.)
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
+    logical :: logical1
+    integer(kind=ip) :: integer1
+    integer(kind=ip) :: integer2
+    character(len=clen) :: string2
 
+    namelist / group1 / string1, stringarr1, logical1, integer1, integer2, & 
+string2
 
+    ! initialize variables
+    string1 = params%string1
+    stringarr1 = params%stringarr1
+    logical1 = params%logical1
+    integer1 = params%integer1
+    integer2 = params%integer2
+    string2 = params%string2
+
+    ! read all
+    read(unit=iounit, nml=group1)
+
+    ! assign back to type
+    params%string1 = string1
+    params%stringarr1 = stringarr1
+    params%logical1 = logical1
+    params%integer1 = integer1
+    params%integer2 = integer2
+    params%string2 = string2
 end subroutine
 
 subroutine write_nml_group1 (iounit, params)
@@ -333,16 +377,26 @@ subroutine write_nml_group1 (iounit, params)
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
 
-    write(iounit,*) "&group1"
-    call nml_print('string1', params%string1, io=iounit)
-    call nml_print('stringarr1', params%stringarr1, io=iounit)
-    call nml_print('logical1', params%logical1, io=iounit)
-    call nml_print('integer1', params%integer1, io=iounit)
-    call nml_print('integer2', params%integer2, io=iounit)
-    call nml_print('string2', params%string2, io=iounit)
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
+    logical :: logical1
+    integer(kind=ip) :: integer1
+    integer(kind=ip) :: integer2
+    character(len=clen) :: string2
 
-    write(iounit,*) "/"
+    namelist / group1 / string1, stringarr1, logical1, integer1, integer2, & 
+string2
 
+    ! initialize variables
+    string1 = params%string1
+    stringarr1 = params%stringarr1
+    logical1 = params%logical1
+    integer1 = params%integer1
+    integer2 = params%integer2
+    string2 = params%string2
+
+    ! write_all
+    write(unit=iounit, nml=group1)
 end subroutine
 
 subroutine read_nml_group2 (iounit, params)
@@ -352,30 +406,46 @@ subroutine read_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    ! Calls to nml_real
-    ! call nml_read("","group1","name1",group1%name1))
-    call nml_read('', 'group2', 'string1', params%string1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'stringarr1', params%stringarr1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'logical1', params%logical1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'integer1', params%integer1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'integer2', params%integer2, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'string2', params%string2, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'intarr1', params%intarr1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'double1', params%double1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'dblarr1', params%dblarr1, io=iounit, & 
-init=.true.)
-    call nml_read('', 'group2', 'logarr1', params%logarr1, io=iounit, & 
-init=.true.)
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
+    logical :: logical1
+    integer(kind=ip) :: integer1
+    integer(kind=ip) :: integer2
+    character(len=clen) :: string2
+    integer(kind=ip), dimension(7) :: intarr1
+    real(kind=dp) :: double1
+    real(kind=dp), dimension(5) :: dblarr1
+    logical, dimension(5) :: logarr1
 
+    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, & 
+string2, intarr1, double1, dblarr1, logarr1
 
+    ! initialize variables
+    string1 = params%string1
+    stringarr1 = params%stringarr1
+    logical1 = params%logical1
+    integer1 = params%integer1
+    integer2 = params%integer2
+    string2 = params%string2
+    intarr1 = params%intarr1
+    double1 = params%double1
+    dblarr1 = params%dblarr1
+    logarr1 = params%logarr1
+
+    ! read all
+    read(unit=iounit, nml=group2)
+
+    ! assign back to type
+    params%string1 = string1
+    params%stringarr1 = stringarr1
+    params%logical1 = logical1
+    params%integer1 = integer1
+    params%integer2 = integer2
+    params%string2 = string2
+    params%intarr1 = intarr1
+    params%double1 = double1
+    params%dblarr1 = dblarr1
+    params%logarr1 = logarr1
 end subroutine
 
 subroutine write_nml_group2 (iounit, params)
@@ -385,20 +455,34 @@ subroutine write_nml_group2 (iounit, params)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
 
-    write(iounit,*) "&group2"
-    call nml_print('string1', params%string1, io=iounit)
-    call nml_print('stringarr1', params%stringarr1, io=iounit)
-    call nml_print('logical1', params%logical1, io=iounit)
-    call nml_print('integer1', params%integer1, io=iounit)
-    call nml_print('integer2', params%integer2, io=iounit)
-    call nml_print('string2', params%string2, io=iounit)
-    call nml_print('intarr1', params%intarr1, io=iounit)
-    call nml_print('double1', params%double1, io=iounit)
-    call nml_print('dblarr1', params%dblarr1, io=iounit)
-    call nml_print('logarr1', params%logarr1, io=iounit)
+    character(len=clen) :: string1
+    character(len=clen), dimension(3) :: stringarr1
+    logical :: logical1
+    integer(kind=ip) :: integer1
+    integer(kind=ip) :: integer2
+    character(len=clen) :: string2
+    integer(kind=ip), dimension(7) :: intarr1
+    real(kind=dp) :: double1
+    real(kind=dp), dimension(5) :: dblarr1
+    logical, dimension(5) :: logarr1
 
-    write(iounit,*) "/"
+    namelist / group2 / string1, stringarr1, logical1, integer1, integer2, & 
+string2, intarr1, double1, dblarr1, logarr1
 
+    ! initialize variables
+    string1 = params%string1
+    stringarr1 = params%stringarr1
+    logical1 = params%logical1
+    integer1 = params%integer1
+    integer2 = params%integer2
+    string2 = params%string2
+    intarr1 = params%intarr1
+    double1 = params%double1
+    dblarr1 = params%dblarr1
+    logarr1 = params%logarr1
+
+    ! write_all
+    write(unit=iounit, nml=group2)
 end subroutine
 
 subroutine read_nml_control (iounit, params)
@@ -408,12 +492,18 @@ subroutine read_nml_control (iounit, params)
     integer, intent(in) :: iounit
     type(control_t), intent(inout) :: params
 
-    ! Calls to nml_real
-    ! call nml_read("","group1","name1",group1%name1))
-    call nml_read('', 'control', 'print_nml', params%print_nml, io=iounit, & 
-init=.true.)
+    logical :: print_nml
 
+    namelist / control / print_nml
 
+    ! initialize variables
+    print_nml = params%print_nml
+
+    ! read all
+    read(unit=iounit, nml=control)
+
+    ! assign back to type
+    params%print_nml = print_nml
 end subroutine
 
 subroutine write_nml_control (iounit, params)
@@ -423,11 +513,15 @@ subroutine write_nml_control (iounit, params)
     integer, intent(in) :: iounit
     type(control_t), intent(inout) :: params
 
-    write(iounit,*) "&control"
-    call nml_print('print_nml', params%print_nml, io=iounit)
+    logical :: print_nml
 
-    write(iounit,*) "/"
+    namelist / control / print_nml
 
+    ! initialize variables
+    print_nml = params%print_nml
+
+    ! write_all
+    write(unit=iounit, nml=control)
 end subroutine
 
 
@@ -437,9 +531,13 @@ subroutine parse_command_argument_group1 (params,i, iostat, arg)
     ! Input:
     !   params : the paramter type
     !   i : integer, positional argument of the parameter name
+    !       is incremented if parameter is found
     ! Output:
-    !   iostat : integer, optional : 0 if success, 1 otherwise (if not
-    !       provided, an error is thrown in case of failure)
+    !   iostat : integer, optional
+    !       -1 : --help was printed
+    !       0  : param found
+    !       1  : error when reading
+    !       If not provided, execution stop if iostat /= 0
     !   arg : character, optional : the ith command line argument
     !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -456,11 +554,16 @@ subroutine parse_command_argument_group1 (params,i, iostat, arg)
     ! Print HELP ?
     if (argn == '--help' .or. argn=='-h') then
       call print_help_group1(params)
-      if (present(iostat)) iostat = 0
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
       return
     endif
 
     if (argn(1:2)  /= "--") then
+      print*, "i=",i, "; Got: ",trim(argn)
       stop("ERROR: type-specific command line &
         arguments must start with '--'")
     endif
@@ -469,14 +572,14 @@ subroutine parse_command_argument_group1 (params,i, iostat, arg)
       ! +++++  present
       call get_command_argument(i+1, argv)
       call set_param_string_group1(params, trim(argn(3:)), trim(argv))
-      i = i+1
+      i = i+2
       if (present(iostat)) then
         iostat = 0
       endif
     else
       ! +++++  no found
       if (present(iostat)) then
-        iostat=1
+        iostat = 1
       else
         write(*,*) "ERROR: unknown parameter in group1 : ",trim(argn)
         write(*,*) ""
@@ -696,9 +799,13 @@ subroutine parse_command_argument_group2 (params,i, iostat, arg)
     ! Input:
     !   params : the paramter type
     !   i : integer, positional argument of the parameter name
+    !       is incremented if parameter is found
     ! Output:
-    !   iostat : integer, optional : 0 if success, 1 otherwise (if not
-    !       provided, an error is thrown in case of failure)
+    !   iostat : integer, optional
+    !       -1 : --help was printed
+    !       0  : param found
+    !       1  : error when reading
+    !       If not provided, execution stop if iostat /= 0
     !   arg : character, optional : the ith command line argument
     !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -715,11 +822,16 @@ subroutine parse_command_argument_group2 (params,i, iostat, arg)
     ! Print HELP ?
     if (argn == '--help' .or. argn=='-h') then
       call print_help_group2(params)
-      if (present(iostat)) iostat = 0
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
       return
     endif
 
     if (argn(1:2)  /= "--") then
+      print*, "i=",i, "; Got: ",trim(argn)
       stop("ERROR: type-specific command line &
         arguments must start with '--'")
     endif
@@ -728,14 +840,14 @@ subroutine parse_command_argument_group2 (params,i, iostat, arg)
       ! +++++  present
       call get_command_argument(i+1, argv)
       call set_param_string_group2(params, trim(argn(3:)), trim(argv))
-      i = i+1
+      i = i+2
       if (present(iostat)) then
         iostat = 0
       endif
     else
       ! +++++  no found
       if (present(iostat)) then
-        iostat=1
+        iostat = 1
       else
         write(*,*) "ERROR: unknown parameter in group2 : ",trim(argn)
         write(*,*) ""
@@ -1052,9 +1164,13 @@ subroutine parse_command_argument_control (params,i, iostat, arg)
     ! Input:
     !   params : the paramter type
     !   i : integer, positional argument of the parameter name
+    !       is incremented if parameter is found
     ! Output:
-    !   iostat : integer, optional : 0 if success, 1 otherwise (if not
-    !       provided, an error is thrown in case of failure)
+    !   iostat : integer, optional
+    !       -1 : --help was printed
+    !       0  : param found
+    !       1  : error when reading
+    !       If not provided, execution stop if iostat /= 0
     !   arg : character, optional : the ith command line argument
     !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1071,11 +1187,16 @@ subroutine parse_command_argument_control (params,i, iostat, arg)
     ! Print HELP ?
     if (argn == '--help' .or. argn=='-h') then
       call print_help_control(params)
-      if (present(iostat)) iostat = 0
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
       return
     endif
 
     if (argn(1:2)  /= "--") then
+      print*, "i=",i, "; Got: ",trim(argn)
       stop("ERROR: type-specific command line &
         arguments must start with '--'")
     endif
@@ -1084,14 +1205,14 @@ subroutine parse_command_argument_control (params,i, iostat, arg)
       ! +++++  present
       call get_command_argument(i+1, argv)
       call set_param_string_control(params, trim(argn(3:)), trim(argv))
-      i = i+1
+      i = i+2
       if (present(iostat)) then
         iostat = 0
       endif
     else
       ! +++++  no found
       if (present(iostat)) then
-        iostat=1
+        iostat = 1
       else
         write(*,*) "ERROR: unknown parameter in control : ",trim(argn)
         write(*,*) ""
@@ -1187,6 +1308,551 @@ function has_param_control (params, name) result(has_param)
     end select
 end function
 
+
+
+subroutine set_param_group1_character (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: value
+
+    select case (name)
+
+    case ('string1', 'group1%string1')
+        params%string1 = value
+
+    case ('string2', 'group1%string2')
+        params%string2 = value
+
+        case default
+          write(*,*) "ERROR set_param for group1: unknown type member: & 
+character(len=*) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group1_character (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), intent(out) :: value
+
+    select case (name)
+
+    case ('string1', 'group1%string1')
+        value = params%string1
+
+    case ('string2', 'group1%string2')
+        value = params%string2
+
+        case default
+          write(*,*) "ERROR get_param for group1: unknown type member & 
+character(len=*) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group1_character_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), dimension(:), intent(in) :: value
+
+    select case (name)
+
+    case ('stringarr1', 'group1%stringarr1')
+        params%stringarr1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group1: unknown type member: & 
+character(len=*), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group1_character_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), dimension(:), intent(out) :: value
+
+    select case (name)
+
+    case ('stringarr1', 'group1%stringarr1')
+        value = params%stringarr1
+
+        case default
+          write(*,*) "ERROR get_param for group1: unknown type member & 
+character(len=*), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group1_integer (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer(kind=ip), intent(in) :: value
+
+    select case (name)
+
+    case ('integer1', 'group1%integer1')
+        params%integer1 = value
+
+    case ('integer2', 'group1%integer2')
+        params%integer2 = value
+
+        case default
+          write(*,*) "ERROR set_param for group1: unknown type member: & 
+integer(kind=ip) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group1_integer (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer(kind=ip), intent(out) :: value
+
+    select case (name)
+
+    case ('integer1', 'group1%integer1')
+        value = params%integer1
+
+    case ('integer2', 'group1%integer2')
+        value = params%integer2
+
+        case default
+          write(*,*) "ERROR get_param for group1: unknown type member & 
+integer(kind=ip) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group1_logical (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, intent(in) :: value
+
+    select case (name)
+
+    case ('logical1', 'group1%logical1')
+        params%logical1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group1: unknown type member: logical & 
+:: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group1_logical (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group1 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group1_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, intent(out) :: value
+
+    select case (name)
+
+    case ('logical1', 'group1%logical1')
+        value = params%logical1
+
+        case default
+          write(*,*) "ERROR get_param for group1: unknown type member logical & 
+:: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_character (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: value
+
+    select case (name)
+
+    case ('string1', 'group2%string1')
+        params%string1 = value
+
+    case ('string2', 'group2%string2')
+        params%string2 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+character(len=*) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_character (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), intent(out) :: value
+
+    select case (name)
+
+    case ('string1', 'group2%string1')
+        value = params%string1
+
+    case ('string2', 'group2%string2')
+        value = params%string2
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member & 
+character(len=*) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_character_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), dimension(:), intent(in) :: value
+
+    select case (name)
+
+    case ('stringarr1', 'group2%stringarr1')
+        params%stringarr1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+character(len=*), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_character_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    character(len=*), dimension(:), intent(out) :: value
+
+    select case (name)
+
+    case ('stringarr1', 'group2%stringarr1')
+        value = params%stringarr1
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member & 
+character(len=*), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_integer (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer(kind=ip), intent(in) :: value
+
+    select case (name)
+
+    case ('integer1', 'group2%integer1')
+        params%integer1 = value
+
+    case ('integer2', 'group2%integer2')
+        params%integer2 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+integer(kind=ip) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_integer (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer(kind=ip), intent(out) :: value
+
+    select case (name)
+
+    case ('integer1', 'group2%integer1')
+        value = params%integer1
+
+    case ('integer2', 'group2%integer2')
+        value = params%integer2
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member & 
+integer(kind=ip) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_integer_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer(kind=ip), dimension(:), intent(in) :: value
+
+    select case (name)
+
+    case ('intarr1', 'group2%intarr1')
+        params%intarr1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+integer(kind=ip), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_integer_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    integer(kind=ip), dimension(:), intent(out) :: value
+
+    select case (name)
+
+    case ('intarr1', 'group2%intarr1')
+        value = params%intarr1
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member & 
+integer(kind=ip), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_logical (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, intent(in) :: value
+
+    select case (name)
+
+    case ('logical1', 'group2%logical1')
+        params%logical1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: logical & 
+:: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_logical (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, intent(out) :: value
+
+    select case (name)
+
+    case ('logical1', 'group2%logical1')
+        value = params%logical1
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member logical & 
+:: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_logical_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, dimension(:), intent(in) :: value
+
+    select case (name)
+
+    case ('logarr1', 'group2%logarr1')
+        params%logarr1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+logical, dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_logical_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, dimension(:), intent(out) :: value
+
+    select case (name)
+
+    case ('logarr1', 'group2%logarr1')
+        value = params%logarr1
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member logical, & 
+dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_real (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    real(kind=dp), intent(in) :: value
+
+    select case (name)
+
+    case ('double1', 'group2%double1')
+        params%double1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+real(kind=dp) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_real (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    real(kind=dp), intent(out) :: value
+
+    select case (name)
+
+    case ('double1', 'group2%double1')
+        value = params%double1
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member & 
+real(kind=dp) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_group2_real_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    real(kind=dp), dimension(:), intent(in) :: value
+
+    select case (name)
+
+    case ('dblarr1', 'group2%dblarr1')
+        params%dblarr1 = value
+
+        case default
+          write(*,*) "ERROR set_param for group2: unknown type member: & 
+real(kind=dp), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_group2_real_arr (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the group2 type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(group2_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    real(kind=dp), dimension(:), intent(out) :: value
+
+    select case (name)
+
+    case ('dblarr1', 'group2%dblarr1')
+        value = params%dblarr1
+
+        case default
+          write(*,*) "ERROR get_param for group2: unknown type member & 
+real(kind=dp), dimension(:) :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine set_param_control_logical (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the control type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(control_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, intent(in) :: value
+
+    select case (name)
+
+    case ('print_nml', 'control%print_nml')
+        params%print_nml = value
+
+        case default
+          write(*,*) "ERROR set_param for control: unknown type member: & 
+logical :: ",trim(name)
+            stop
+    end select
+end subroutine
+
+subroutine get_param_control_logical (params, name, value)
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    ! Set one field of the control type
+    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type(control_t), intent(inout) :: params
+    character(len=*), intent(in) :: name
+    logical, intent(out) :: value
+
+    select case (name)
+
+    case ('print_nml', 'control%print_nml')
+        value = params%print_nml
+
+        case default
+          write(*,*) "ERROR get_param for control: unknown type member logical & 
+:: ",trim(name)
+            stop
+    end select
+end subroutine
 
 
 
