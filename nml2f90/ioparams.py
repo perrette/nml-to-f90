@@ -247,19 +247,23 @@ class Module(object):
         # now include libraries as separate module in the code
 
         # Now make sure that every line is < 80 character
+        # except those which are pure comment
         short_code = ""
         wrap_opt = dict(break_long_words=False, break_on_hyphens=False, width=78)
         for line in code.split("\n"):
-            sublines = textwrap.wrap(line, **wrap_opt)
-            if "!" in line: 
-                for i, subl in enumerate(sublines):
-                    if "!" in subl:
-                        short_code += "\n! ".join(sublines[i:]) +'\n'# only comment, long line ok 
-                        break
-                    else:
-                        short_code += subl+' &\n'
+            if line.startswith('!'):
+                short_code += line + '\n'
             else:
-                short_code += " & \n".join(sublines) +"\n"
+                sublines = textwrap.wrap(line, **wrap_opt)
+                if "!" in line: 
+                    for i, subl in enumerate(sublines):
+                        if "!" in subl:
+                            short_code += "\n! ".join(sublines[i:]) +'\n'# only comment, long line ok 
+                            break
+                        else:
+                            short_code += subl+' &\n'
+                else:
+                    short_code += " & \n".join(sublines) +"\n"
         code = short_code
 
         return code
