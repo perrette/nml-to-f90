@@ -44,8 +44,7 @@ def main():
     group.add_argument("--set-get-param", nargs='*', help="get_param, set_param")
 
     args = parser.parse_args()
-    print(args)
-    # print(args.testf)
+    # print(args)
 
     # module name and source code file name
     io_mod = args.module

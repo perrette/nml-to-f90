@@ -133,7 +133,7 @@ class Group(object):
         self.mod_name = other.mod_name  # module name is defined
 
         for v in self.variables:
-            matches = [vo for vo in other.variables if vo.name == v.name]
+            matches = [vo for vo in self.variables if vo.name == v.name]
             assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, v.name)
             assert len(matches) == 1  # > 1 would make no sense, just in case
 
