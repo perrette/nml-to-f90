@@ -80,12 +80,13 @@ def parse_varnames(string, dtype=None, size=None):
     True
     """
     name_re = "(?P<name>\w+)(\((?P<size>\d+)\))*(=(?P<value>.+?),)*"
-    # first remove comments and spaces
-    if "!" in string:
-        comment = string[string.index("!")+1:].strip()
-        string = string[:string.index("!")]
-    else:
-        comment = None
+    # already removed in the caller
+    # # first remove comments and spaces
+    # if "!" in string:
+    #     comment = string[string.index("!")+1:].strip()
+    #     string = string[:string.index("!")]
+    # else:
+    #     comment = None
     string = string.strip().replace(" ","")+',' # add final comma to ease parsing...
 
     variables = []
@@ -109,7 +110,7 @@ def parse_varnames(string, dtype=None, size=None):
                 val = None
             v['value'] = val
 
-        v['help'] = comment
+        # v['help'] = comment
 
         variables.append(v)
     return variables
@@ -125,7 +126,7 @@ def parse_line(string):
         comment = string[i+1:]
         string = string[:i]
     else:
-        comment = None
+        comment = ""
 
     # type :: variables
     try:
@@ -140,7 +141,7 @@ def parse_line(string):
     # var1 = val1
     variables = []
     for v in parse_varnames(namesdef, dtype, size):
-        var = Variable(name=v['name'], value=v['value'], dtype=dtype, attrs=attrs, size=v['size'])
+        var = Variable(name=v['name'], value=v['value'], dtype=dtype, attrs=attrs, size=v['size'], help=comment)
         variables.append(var) 
     return variables
 
