@@ -188,7 +188,7 @@ class Module(object):
         if not external:
             self.libcode +=  open(os.path.join(libraries_dir, lib+".f90")).read() + "\n"
 
-    def append_feature(self, name):
+    def append_feature(self, name, only=None):
 
         if name == "io_nml":
             feature = NmlIO()
@@ -201,7 +201,12 @@ class Module(object):
         else:
             raise ValueError("Unknown feature: "+name)
 
-        for group in self.groups:
+        if only is None:
+            groups = self.groups
+        else:
+            groups = [g for g in self.groups if g.name in only]
+
+        for group in groups:
             feature.append_group(group)
 
         self.description += feature.name + '\n' + '+'*20 + '\n'
@@ -300,6 +305,7 @@ class Feature(object):
         self.template = open(os.path.join(template_dir, "subroutine_"+self.name+".f90")).read()
         self.content = ""
         self.interfaces = []
+        self.group_names = []
         for k in self.public:
             self.interfaces.append(Interface(k))
 
@@ -335,6 +341,8 @@ class NmlIO(Feature):
         for interface in self.interfaces:
             interface.append_procedure(interface.name+'_'+group.name)
 
+        self.group_names.append(group.name)
+
 class NmlLib(Feature):
     """ Human-readable Namelist I/O
     """
@@ -363,6 +371,7 @@ class NmlLib(Feature):
         for interface in self.interfaces:
             interface.append_procedure(interface.name+'_'+group.name)
 
+        self.group_names.append(group.name)
 #
 #
 class CommandLine(Feature):
@@ -453,6 +462,8 @@ endif
         for interface in self.interfaces:
             interface.append_procedure(interface.name+'_'+group.name)
 
+        self.group_names.append(group.name)
+
 class SetGetParam(Feature):
     """Interface that covers all derived types and the type
     of contained variables to generically set or get parameter values:
@@ -500,4 +511,6 @@ class SetGetParam(Feature):
             # add procedure to be included in the interface
             for interface in self.interfaces:
                 interface.append_procedure(interface.name+'_'+group.name+'_'+t)
+
+        self.group_names.append(group.name)
 
