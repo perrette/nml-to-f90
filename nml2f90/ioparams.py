@@ -101,18 +101,6 @@ class Variable(object):
             vardef += " ! "+self.help
         return vardef
 
-    def update(self, other):
-        """ update from other variable, e.g. derived from source code """
-        self.dtype = other.dtype
-        self.attrs = other.attrs
-        if self.size != other.size: 
-            print("self: {!r}, other: {!r}".format(self.size, other.size))
-            raise ValueError("Sizes do not match.")
-
-        self.help = other.help or self.help
-        self.units = other.units or self.units
-        self.value = other.value or self.value
-    
 class Group(object):
     """ Definition of a derived type
     """
@@ -148,11 +136,18 @@ class Group(object):
             matches = [vo for vo in other.variables if vo.name == v.name]
             assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, v.name)
             assert len(matches) == 1  # > 1 would make no sense, just in case
-            try:
-                v.update(matches[0])
-            except Exception as error:
+
+            other = matches[0]
+            v.dtype = other.dtype
+            v.attrs = other.attrs
+            if v.size != other.size: 
                 print("group name:",self.name, "type name:",self.type_name)
-                raise
+                print("v: {!r}, other: {!r}".format(v.size, other.size))
+                raise ValueError("Sizes do not match.")
+
+            v.help = other.help or v.help
+            v.units = other.units or v.units
+            v.value = other.value or v.value
 
 class Module(object):
     """ The ioparams fortan module
