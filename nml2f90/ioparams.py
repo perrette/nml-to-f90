@@ -418,9 +418,9 @@ write(nameshort, *) "{name}"
 if (def) then
     write(valuestr, *) params%{name}
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
-    write(io, '("--",A{len},"{help} (default: ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+    write(io, '("  --",A{len},"{help} (default: ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, '("--",A{len},"{help}")') adjustl(nameshort)
+    write(io, '("  --",A{len},"{help}")') adjustl(nameshort)
 endif
 """
     # !write(io, *) "--{name}"," {help} (default: ",trim(adjustl(valuestr))," )"
@@ -431,11 +431,10 @@ write(nameshort, *) "{name}"
 if (def) then
     write(valuestr, *) params%{name}(1) ! only first element
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
-    write(io, '("--",A{len},"{help} (default: &
+    write(io, '("  --",A{len},"{help} (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), trim(adjustl(valuestr)), size(params%{name})
 else
-    ! write(io, *) "--{name} {help} (type: {type})"
-    write(io, '("--",A{len},"{help}")') adjustl(nameshort)
+    write(io, '("  --",A{len},"{help}")') adjustl(nameshort)
 endif
 """
 
