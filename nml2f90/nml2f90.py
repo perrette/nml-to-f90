@@ -11,8 +11,11 @@ import argparse
 import warnings
 from itertools import groupby
 from .namelist import Namelist
+from . import ioparams
 from .ioparams import (Module, Group, Variable,
-                               MODULE, CHAR_LEN, REAL_KIND, INTEGER_KIND)
+                       MODULE, CHAR_LEN, REAL_KIND, INTEGER_KIND,
+                       SPACE_NAME_HELP,
+                       )
 from .parsef90 import parse_type
 
 def main():
@@ -26,6 +29,7 @@ def main():
     parser.add_argument("--real-kind", type=int, default=REAL_KIND, help="floating point precision (default: %(default)s)")
     parser.add_argument("--int-kind", type=int, default=INTEGER_KIND, help="integer precision (default: %(default)s)")
     parser.add_argument("-v","--verbose", action="store_true", help="Make ioparams.f90 more verbose")
+    parser.add_argument("--name-len", default=SPACE_NAME_HELP, help="Size of param name in command-line help")
 
     group = parser.add_argument_group("map namelist blocks to type name")
     group.add_argument("--src", nargs="*",default=[],help="source code to be parsed, from which to import types instead of creating them")
@@ -45,6 +49,9 @@ def main():
 
     args = parser.parse_args()
     # print(args)
+
+    # module-wide
+    ioparams.SPACE_NAME_HELP = args.name_len
 
     # module name and source code file name
     io_mod = args.module

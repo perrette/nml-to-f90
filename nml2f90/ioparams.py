@@ -20,6 +20,8 @@ INTEGER_KIND = 4
 CHAR_LEN = 256
 MODULE = "ioparams"
 
+SPACE_NAME_HELP = 20  # character for help printing
+
 class Variable(object):
     def __init__(self, name=None, value=None, units="", help="", attrs=None, dtype=None, group=None, size=None):
 
@@ -415,10 +417,10 @@ case ('{name}', '{group}%{name}')
 write(nameshort, *) "{name}"
 if (def) then
     write(valuestr, *) params%{name}
-    write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--",A20,"{help} (default: ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+    write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
+    write(io, '("--",A{len},"{help} (default: ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, '("--",A20,"{help}")') adjustl(nameshort)
+    write(io, '("--",A{len},"{help}")') adjustl(nameshort)
 endif
 """
     # !write(io, *) "--{name}"," {help} (default: ",trim(adjustl(valuestr))," )"
@@ -428,12 +430,12 @@ endif
 write(nameshort, *) "{name}"
 if (def) then
     write(valuestr, *) params%{name}(1) ! only first element
-    write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--",A20,"{help} (default: &
+    write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
+    write(io, '("--",A{len},"{help} (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), trim(adjustl(valuestr)), size(params%{name})
 else
     ! write(io, *) "--{name} {help} (type: {type})"
-    write(io, '("--",A20,"{help}")') adjustl(nameshort)
+    write(io, '("--",A{len},"{help}")') adjustl(nameshort)
 endif
 """
 
@@ -445,7 +447,7 @@ endif
         list_help = ""
         for v in group.variables:
 
-            v_map = dict(name=v.name, group=v.group, type=v.format(), help=v.help.replace('"'," "))
+            v_map = dict(name=v.name, group=v.group, type=v.format(), help=v.help.replace('"'," ").replace("'",' '), len=SPACE_NAME_HELP)
             # has_params routines
             list_has_cases += "case ('{name}', '{group}%{name}')".format(name=v.name, group=v.group)+'\n'
             if v.array:
