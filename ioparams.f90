@@ -1,10 +1,10 @@
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Automatically generated module by nml2f90
-! Create Date : 2015-04-07 01:29:25.193250
+! Create Date : 2015-04-07 04:28:35.167463
 ! History: /home/perrette/github/nml-to-f90/nml2f90/nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0.0.0.dev-d0d9e1e
+! version: 0.0.0.dev-0133a42
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -600,6 +600,7 @@ subroutine print_help_group1(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
+  character(len=20) :: nameshort
   if (present(iounit)) then
     io = iounit
   else
@@ -613,54 +614,67 @@ subroutine print_help_group1(params, iounit, default)
   write(io, *) " "
   write(io, *) "+++++++++++++++++      group1      ++++++++++++++++++"
 
+write(nameshort, *) "string1"
 if (def) then
     write(valuestr, *) params%string1
-    write(io, *) "--string1  (default: ",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20," (default: ",A'//trim(valuelen)//',")")') & 
+adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--string1  (type: character(len=clen) :: string1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "stringarr1"
 if (def) then
     write(valuestr, *) params%stringarr1(1) ! only first element
     write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--stringarr1  (default: &
-        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
-            trim(adjustl(valuestr)), size(params%stringarr1)
+    write(io, '("--",A20," (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
+trim(adjustl(valuestr)), size(params%stringarr1)
 else
-    write(io, *) "--stringarr1  (type: character(len=clen), dimension(3) :: & 
-stringarr1)"
+    ! write(io, *) "--stringarr1  (type: character(len=clen), dimension(3) ::
+! stringarr1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "logical1"
 if (def) then
     write(valuestr, *) params%logical1
-    write(io, *) "--logical1  (default: ",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20," (default: ",A'//trim(valuelen)//',")")') & 
+adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--logical1  (type: logical :: logical1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "integer1"
 if (def) then
     write(valuestr, *) params%integer1
-    write(io, *) "--integer1 Comment about integer1 (default: & 
-",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20,"Comment about integer1 (default: & 
+",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--integer1 Comment about integer1 (type: integer(kind=ip) :: & 
-integer1)"
+    write(io, '("--",A20,"Comment about integer1")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "integer2"
 if (def) then
     write(valuestr, *) params%integer2
-    write(io, *) "--integer2 Another comment for integer2 (default: & 
-",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20,"Another comment for integer2 (default: & 
+",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--integer2 Another comment for integer2 (type: & 
-integer(kind=ip) :: integer2)"
+    write(io, '("--",A20,"Another comment for integer2")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "string2"
 if (def) then
     write(valuestr, *) params%string2
-    write(io, *) "--string2  (default: ",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20," (default: ",A'//trim(valuelen)//',")")') & 
+adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--string2  (type: character(len=clen) :: string2)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
 end subroutine
@@ -868,6 +882,7 @@ subroutine print_help_group2(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
+  character(len=20) :: nameshort
   if (present(iounit)) then
     io = iounit
   else
@@ -881,94 +896,114 @@ subroutine print_help_group2(params, iounit, default)
   write(io, *) " "
   write(io, *) "+++++++++++++++++      group2      ++++++++++++++++++"
 
+write(nameshort, *) "string1"
 if (def) then
     write(valuestr, *) params%string1
-    write(io, *) "--string1  (default: ",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20," (default: ",A'//trim(valuelen)//',")")') & 
+adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--string1  (type: character(len=clen) :: string1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "stringarr1"
 if (def) then
     write(valuestr, *) params%stringarr1(1) ! only first element
     write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--stringarr1  (default: &
-        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
-            trim(adjustl(valuestr)), size(params%stringarr1)
+    write(io, '("--",A20," (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
+trim(adjustl(valuestr)), size(params%stringarr1)
 else
-    write(io, *) "--stringarr1  (type: character(len=clen), dimension(3) :: & 
-stringarr1)"
+    ! write(io, *) "--stringarr1  (type: character(len=clen), dimension(3) ::
+! stringarr1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "logical1"
 if (def) then
     write(valuestr, *) params%logical1
-    write(io, *) "--logical1  (default: ",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20," (default: ",A'//trim(valuelen)//',")")') & 
+adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--logical1  (type: logical :: logical1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "integer1"
 if (def) then
     write(valuestr, *) params%integer1
-    write(io, *) "--integer1 Comment about integer1 (default: & 
-",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20,"Comment about integer1 (default: & 
+",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--integer1 Comment about integer1 (type: integer(kind=ip) :: & 
-integer1)"
+    write(io, '("--",A20,"Comment about integer1")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "integer2"
 if (def) then
     write(valuestr, *) params%integer2
-    write(io, *) "--integer2 Another comment for integer2 (default: & 
-",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20,"Another comment for integer2 (default: & 
+",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--integer2 Another comment for integer2 (type: & 
-integer(kind=ip) :: integer2)"
+    write(io, '("--",A20,"Another comment for integer2")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "string2"
 if (def) then
     write(valuestr, *) params%string2
-    write(io, *) "--string2 nasty ' sign in comment (default: & 
-",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20,"nasty   sign in comment (default: & 
+",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--string2 nasty ' sign in comment (type: character(len=clen) & 
-:: string2)"
+    write(io, '("--",A20,"nasty   sign in comment")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "intarr1"
 if (def) then
     write(valuestr, *) params%intarr1(1) ! only first element
     write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--intarr1  (default: &
-        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
-            trim(adjustl(valuestr)), size(params%intarr1)
+    write(io, '("--",A20," (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
+trim(adjustl(valuestr)), size(params%intarr1)
 else
-    write(io, *) "--intarr1  (type: integer(kind=ip), dimension(7) :: & 
-intarr1)"
+    ! write(io, *) "--intarr1  (type: integer(kind=ip), dimension(7) ::
+! intarr1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "double1"
 if (def) then
     write(valuestr, *) params%double1
-    write(io, *) "--double1  (default: ",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20," (default: ",A'//trim(valuelen)//',")")') & 
+adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--double1  (type: real(kind=dp) :: double1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "dblarr1"
 if (def) then
     write(valuestr, *) params%dblarr1(1) ! only first element
     write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--dblarr1  (default: &
-        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
-            trim(adjustl(valuestr)), size(params%dblarr1)
+    write(io, '("--",A20," (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
+trim(adjustl(valuestr)), size(params%dblarr1)
 else
-    write(io, *) "--dblarr1  (type: real(kind=dp), dimension(5) :: dblarr1)"
+    ! write(io, *) "--dblarr1  (type: real(kind=dp), dimension(5) :: dblarr1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
+write(nameshort, *) "logarr1"
 if (def) then
     write(valuestr, *) params%logarr1(1) ! only first element
     write(valuelen, *) len(trim(adjustl(valuestr)))
-    write(io, '("--logarr1  (default: &
-        [",A'//trim(valuelen)//',", ...], size=",I2,")")') &
-            trim(adjustl(valuestr)), size(params%logarr1)
+    write(io, '("--",A20," (default: &
+        [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
+trim(adjustl(valuestr)), size(params%logarr1)
 else
-    write(io, *) "--logarr1  (type: logical, dimension(5) :: logarr1)"
+    ! write(io, *) "--logarr1  (type: logical, dimension(5) :: logarr1)"
+    write(io, '("--",A20,"")') adjustl(nameshort)
 endif
 
 end subroutine
@@ -1233,6 +1268,7 @@ subroutine print_help_control(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
+  character(len=20) :: nameshort
   if (present(iounit)) then
     io = iounit
   else
@@ -1246,13 +1282,15 @@ subroutine print_help_control(params, iounit, default)
   write(io, *) " "
   write(io, *) "+++++++++++++++++      control      ++++++++++++++++++"
 
+write(nameshort, *) "print_nml"
 if (def) then
     write(valuestr, *) params%print_nml
-    write(io, *) "--print_nml print read namelist to string? (default: & 
-",trim(adjustl(valuestr))," )"
+    write(valuelen, *) len(trim(adjustl(valuestr)))
+    write(io, '("--",A20,"print read namelist to string? (default: & 
+",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
-    write(io, *) "--print_nml print read namelist to string? (type: logical :: & 
-print_nml)"
+    write(io, '("--",A20,"print read namelist to string?")') & 
+adjustl(nameshort)
 endif
 
 end subroutine
