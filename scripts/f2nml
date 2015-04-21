@@ -1,0 +1,2 @@
+#!/bin/bash
+python2.7 -m nml2f90.f2nml "$@"
