@@ -80,9 +80,12 @@ def _remove_trailing_kind(v):
         v_stripped = "["+",".join(_remove_trailing_kind(vi) for vi in values) +"]"
     return v_stripped
 
-def _parse_value_f90(v):
+def _parse_value_f90(v, dtype=None):
     " reuse parsing from namelist.py but remove _dp or _d0 first !"
-    return _parse_value_nml(_remove_trailing_kind(v))
+    if dtype is not None and (dtype == "real" or dtype == "integer"):
+        v = _remove_trailing_kind(v)
+    # print(dtype)
+    return _parse_value_nml(v)
 
 def parse_varnames(string, dtype=None, size=None):
     """ right-hand size of "::" 
@@ -90,16 +93,16 @@ def parse_varnames(string, dtype=None, size=None):
 
     Examples
 
+    >>> parse_varnames("a='my_name'") == [{'name': 'a', 'value': 'my_name', 'size': None}]
+    True
     >>> parse_varnames("a=3") == [{'name': 'a', 'value': 3, 'size': None}]
     True
-    >>> parse_varnames("a=-3.65_d0") == [{'name': 'a', 'value': -3.65, 'size': None}]
+    >>> parse_varnames("a=-3.65_d0",dtype="real") == [{'name': 'a', 'value': -3.65, 'size': None}]
     True
     >>> parse_varnames("a(36)=.true., b") == [{ 'name': 'a', 'value': True, 'size': 36}, {'name': 'b', 'value': None, 'size': None}]
     True
-
-    >>> parse_varnames("a=[1,2,3]")
-    [{'name': 'a', 'value': [1, 2, 3], 'size': None}]
-
+    >>> parse_varnames("a=[1,2,3]") == [{'name': 'a', 'value': [1, 2, 3], 'size': None}]
+    True
     >>> parse_varnames("a = [1,2,3], b = 4, c = ['a','b']") == [{'name': 'a', 'value': [1, 2, 3], 'size': None}, {'name': 'b', 'value': 4, 'size': None}, {'name': 'c', 'value': ['a', 'b'], 'size': None}]
     True
     """
@@ -131,9 +134,9 @@ def parse_varnames(string, dtype=None, size=None):
 
             try:
                 if v['value'].startswith('[') and v['value'].endswith(']'): # array
-                    val = [_parse_value_f90(vv) for vv in v['value'][1:-1].split(',')]
+                    val = [_parse_value_f90(vv, dtype) for vv in v['value'][1:-1].split(',')]
                 else:
-                    val = _parse_value_f90(v['value'])
+                    val = _parse_value_f90(v['value'], dtype)
             except:
                 warnings.warn("Failed to parse {}: {!r}".format(v["name"], v["value"]))
                 val = None
