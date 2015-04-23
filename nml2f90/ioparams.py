@@ -1,6 +1,7 @@
 from __future__ import print_function, absolute_import
 import sys, os, json
 from itertools import groupby
+import logging
 import warnings
 from collections import OrderedDict as odict
 import datetime
@@ -165,22 +166,25 @@ class Group(object):
         assert self.type_name == other.type_name, "types differ !"
         self.mod_name = other.mod_name  # module name is defined
 
-        for v in self.variables:
-            matches = [vo for vo in self.variables if vo.name == v.name]
+        for o in other.variables:
+            matches = [v for v in self.variables if o.name == v.name]
             assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, v.name)
             assert len(matches) == 1  # > 1 would make no sense, just in case
 
-            other = matches[0]
-            v.dtype = other.dtype
-            v.attrs = other.attrs
-            if v.size != other.size: 
+            v = matches[0]
+            # print("Update group",self.name,"variable",v.name,v.dtype,"==>",o.dtype)
+            if o.dtype != v.dtype:
+                logging.info("Update dtype for {}: {} => {}".format(v.name, v.dtype, o.dtype))
+            v.dtype = o.dtype
+            v.attrs = o.attrs
+            if v.size != o.size: 
                 print("group name:",self.name, "type name:",self.type_name)
-                print("v: {!r}, other: {!r}".format(v.size, other.size))
+                print("v: {!r}, other: {!r}".format(v.size, o.size))
                 raise ValueError("Sizes do not match.")
 
-            v.help = other.help or v.help
-            v.units = other.units or v.units
-            v.value = other.value or v.value
+            v.help = o.help or v.help
+            v.units = o.units or v.units
+            v.value = o.value or v.value
 
     def to_nml(self):
         """ Return a Namelist object matching the type
