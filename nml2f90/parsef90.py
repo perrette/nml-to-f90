@@ -4,7 +4,7 @@ from __future__ import print_function
 import re
 import warnings
 from .ioparams import Variable, Group, Module
-from .namelist import _parse_value
+from .namelist import _parse_value as _parse_value_nml
 
 # Regular expression to find modules and type:
 # ...first form: use with findall to get a tuple of all modules
@@ -69,25 +69,49 @@ def parse_vartype(string):
         size = int(d["size"])
     return d["dtype"], d["attrs"], size
 
+def _remove_trailing_kind(v):
+    if '_' not in v: 
+        return v
+    m = re.search("\[(.*)\]", v) # array?
+    if m is None: # not an array
+        v_stripped = v[:v.index('_')] # remove int and real precision, e.g. ._d0
+    else:
+        values = m.group(1).split(',') 
+        v_stripped = "["+",".join(_remove_trailing_kind(vi) for vi in values) +"]"
+    return v_stripped
+
+def _parse_value_f90(v):
+    " reuse parsing from namelist.py but remove _dp or _d0 first !"
+    return _parse_value_nml(_remove_trailing_kind(v))
+
 def parse_varnames(string, dtype=None, size=None):
     """ right-hand size of "::" 
     returns a list of dict with keys "name", "value", "size"
-    >>> parse_varnames("a=3") == [{'help': None, 'name': 'a', 'value': 3, 'size': None}]
+
+    Examples
+
+    >>> parse_varnames("a=3") == [{'name': 'a', 'value': 3, 'size': None}]
     True
-    >>> parse_varnames("a=-3.65_d0") == [{'help': None, 'name': 'a', 'value': -3.65, 'size': None}]
+    >>> parse_varnames("a=-3.65_d0") == [{'name': 'a', 'value': -3.65, 'size': None}]
     True
-    >>> parse_varnames("a(36)=.true., b !lol") == [{'help': 'lol', 'name': 'a', 'value': True, 'size': 36}, {'help': 'lol', 'name': 'b', 'value': None, 'size': None}]
+    >>> parse_varnames("a(36)=.true., b") == [{ 'name': 'a', 'value': True, 'size': 36}, {'name': 'b', 'value': None, 'size': None}]
+    True
+
+    >>> parse_varnames("a=[1,2,3]")
+    [{'name': 'a', 'value': [1, 2, 3], 'size': None}]
+
+    >>> parse_varnames("a = [1,2,3], b = 4, c = ['a','b']") == [{'name': 'a', 'value': [1, 2, 3], 'size': None}, {'name': 'b', 'value': 4, 'size': None}, {'name': 'c', 'value': ['a', 'b'], 'size': None}]
     True
     """
     name_re = "(?P<name>\w+)(\((?P<size>\d+)\))*(=(?P<value>.+?),)*"
-    # already removed in the caller
-    # # first remove comments and spaces
-    # if "!" in string:
-    #     comment = string[string.index("!")+1:].strip()
-    #     string = string[:string.index("!")]
-    # else:
-    #     comment = None
     string = string.strip().replace(" ","")+',' # add final comma to ease parsing...
+
+    # need to replace array constructs, otherwise it messes with commas
+    # a=[1,2],b=["a","b"] becomes a={0},b={1} and arrays=['[1,2]','["a","b"]']
+    arrays = []
+    for i, s in enumerate(re.findall("\[(.+?)\]", string)):
+        arrays.append(s) # do not include '[' and ']'
+        string = string.replace(s, '{'+str(i)+'}')
 
     variables = []
     for m in re.finditer(name_re, string):
@@ -101,10 +125,15 @@ def parse_varnames(string, dtype=None, size=None):
 
         # convert types
         if v['value'] is not None:
-            if dtype in ('real','int',None) and '_' in v['value']:
-                v['value'] = v['value'][:v['value'].index('_')] # remove int and real precision, e.g. ._d0
+
+            # replace back array values if len(arrays) > 0
+            v['value'] = v['value'].format(*arrays) # '[1,2]'
+
             try:
-                val = _parse_value(v['value']) # parse to python value
+                if v['value'].startswith('[') and v['value'].endswith(']'): # array
+                    val = [_parse_value_f90(vv) for vv in v['value'][1:-1].split(',')]
+                else:
+                    val = _parse_value_f90(v['value'])
             except:
                 warnings.warn("Failed to parse {}: {!r}".format(v["name"], v["value"]))
                 val = None
