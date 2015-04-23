@@ -59,7 +59,7 @@ def parse_vartype(string):
     """
     # left-hand side of "::"
     type_re = "(?P<dtype>\w+)(\((?P<attrs>.*?)\))*(,dimension\((?P<size>.+?)\))*"
-    m = re.search(type_re, string.replace(" ",""))
+    m = re.search(type_re, string.replace("double precision","real(8)").replace(" ",""))
     if m is None:
         raise ValueError("Failed to parse var type : "+string)
     d = m.groupdict()

@@ -7,6 +7,7 @@ import datetime
 import textwrap
 
 from .version import version as __version__
+from .namelist import Namelist, Param
 
 # +++++++++++++++++++++++++++++++++++++++++
 # load templates
@@ -21,6 +22,26 @@ CHAR_LEN = 256
 MODULE = "ioparams"
 
 SPACE_NAME_HELP = 20  # character for help printing
+
+def _get_default_type_value(dtype):
+    if dtype == "real":
+        value = 0.
+    elif dtype == "integer":
+        value = 0
+    elif dtype == "character":
+        value = ""
+    elif dtype == "logical":
+        value = False
+    else:
+        raise ValueError("unrecognized type: "+dtype)
+    return value
+
+def _get_default_value(dtype, size):
+    val = _get_default_type_value(dtype)
+    if size is None:
+        return val
+    else:
+        return  [val]*size
 
 class Variable(object):
     def __init__(self, name=None, value=None, units="", help="", attrs=None, dtype=None, group=None, size=None):
@@ -103,6 +124,16 @@ class Variable(object):
             vardef += " ! "+self.help
         return vardef
 
+    def to_param(self):
+        """ Return a Param object and assign default value if undefined.
+        """
+        if self.value is None:
+            value = _get_default_value(self.dtype, self.size)
+            warnings.warn("No default value found for {} :: {}, assume default to {}.".format(self.group, self.name, value))
+        else:
+            value = self.value
+        return Param(self.name, value, self.group, self.help, self.units)
+
 class Group(object):
     """ Definition of a derived type
     """
@@ -150,6 +181,14 @@ class Group(object):
             v.help = other.help or v.help
             v.units = other.units or v.units
             v.value = other.value or v.value
+
+    def to_nml(self):
+        """ Return a Namelist object matching the type
+        """
+        nml = Namelist()
+        for v in self.variables:
+            nml.append(v.to_param())
+        return nml
 
 class Module(object):
     """ The ioparams fortan module
@@ -276,6 +315,15 @@ class Module(object):
         for name in names:
             decl += "public :: "+name+'\n'
         return decl
+
+    def to_nml(self):
+        """ return a Namelist object with all parameters contained in the Module
+        """
+        nml = Namelist()
+        for g in self.groups:
+            nml.extend( g.to_nml() )
+        return nml
+
 
 def _indent_bloc(block, indent=2, initial_indent=0):
     " indent all lines but first line "

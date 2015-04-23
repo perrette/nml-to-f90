@@ -176,11 +176,14 @@ def _format_nml(params):
         lines.append("&%s" % group_name)
         for param in group_params:
             if isinstance(param.value, list):
-                line = "  %s = %s" % (param.name, " ".join([_format_value(v) for v in param.value]))
+                nmstr = "{:15}".format(param.name)
+                line = " %s = %s" % (nmstr, " ".join([_format_value(v) for v in param.value]))
             else:
-                line = "  %s = %s" % (param.name, _format_value(param.value))
+                nmstr = "{:15}".format(param.name)
+                line = " %s = %s" % (nmstr, _format_value(param.value))
+            line = "{:30}".format(line)
             if param.help:
-                line += '! '+param.help
+                line += ' ! '+param.help
             lines.append(line)
         lines.append("/\n")
     return "\n".join(lines)
