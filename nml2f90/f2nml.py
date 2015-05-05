@@ -13,7 +13,7 @@ import datetime
 from itertools import groupby
 from .namelist import Namelist, Param
 from . import ioparams
-from .ioparams import Group, Variable
+from .ioparams import Group, Variable, get_call_string
 from .parsef90 import parse_type
 from .version import version as __version__
 
@@ -66,11 +66,10 @@ def main():
     # add header
     header = ""
     header += "! ======================================================================\n"
-    header += "! Namelist originally generated from source code using `f2nml` utility \n"
+    header += "! Namelist automatically generated from source code using `f2nml` utility \n"
     header += "! Download : https://github.com/perrette/nml-to-f90\n"
-    header += "! Version : {}\n".format(__version__)
-    header += "! Date : {}\n".format(datetime.datetime.today()) # parsed file (e.g. namelist) for the generation of the module
-    header += "! Command : {}\n".format(" ".join(sys.argv))
+    header += "! nml2f90 version : {}\n".format(__version__)
+    header += "! Command : {}\n".format(get_call_string())
     header += "! ======================================================================\n\n"
     stringnml = header + stringnml
 

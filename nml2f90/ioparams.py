@@ -4,11 +4,16 @@ from itertools import groupby
 import logging
 import warnings
 from collections import OrderedDict as odict
-import datetime
+# import datetime
 import textwrap
 
 from .version import version as __version__
 from .namelist import Namelist, Param
+
+def get_call_string():
+    " return command-line string of the call "
+    caller = os.path.basename(sys.argv[0]) # remove prefix (e.g. /home/.../..)
+    return " ".join([caller]+sys.argv[1:]) 
 
 # +++++++++++++++++++++++++++++++++++++++++
 # load templates
@@ -284,8 +289,8 @@ class Module(object):
             definition=_indent_bloc(self.definition, indent),
             content=self.content,
             version=__version__,
-            date=str(datetime.datetime.today()), # parsed file (e.g. namelist) for the generation of the module
-            command_call=" ".join(sys.argv), # parsed file (e.g. namelist) for the generation of the module
+            # date=str(datetime.datetime.today()), # parsed file (e.g. namelist) for the generation of the module
+            command_call=get_call_string(),
             features=", ".join([feature.name for feature in self.features]),
             libraries = self.libcode,
         )

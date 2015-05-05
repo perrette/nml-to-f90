@@ -1,6 +1,5 @@
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Automatically generated module by nml2f90
-! Create Date : {date}
 ! History: {command_call}
 !
 ! https://github.com/perrette/nml-to-f90
