@@ -4,10 +4,10 @@ from __future__ import print_function
 
 class Param(object):
     def __init__(self, name="", value=None, group="", help="", units="", **kwargs):
-        self.name = name
+        self.name = name.lower()  # keep lower case (fortran-written namelist have upper case otherwise !
         self.value = value
-        self.group = group
-        self.help = help  # .e.g. "blabla ({units})"
+        self.group = group.lower()
+        self.help = help.strip()  # .e.g. "blabla ({units})"
         self.units = units
         if (len(kwargs) > 0):
             warnings.warn("unknown parameters to Param were ignored: "+", ".join(kwargs.keys()))
@@ -22,7 +22,7 @@ class Param(object):
         return self.key == other.key
 
     def __repr__(self):
-        return "Param(name=%r, value=%r, group=%r)" % (self.name, self.value, self.group)
+        return "Param(group=%r, name=%r, value=%r)" % (self.group, self.name, self.value)
 
 class Params(list):
     """ list of parameters
@@ -33,11 +33,11 @@ class Params(list):
         for p in self:
             if not isinstance(p, Param):
                 print(type(p),":",p)
-                raise TypeError("Params can only contain Param instances")
+                raise TypeError("Expected Param, got: {}".format(type(p)))
 
     def append(self, param):
         if not isinstance(param, Param):
-            raise TypeError("Params can only contain Param instances")
+            raise TypeError("Expected Param, got: {}".format(type(param)))
         list.append(self, param)
 
     def to_nml(self):
