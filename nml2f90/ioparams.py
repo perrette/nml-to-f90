@@ -173,7 +173,7 @@ class Group(object):
 
         for o in other.variables:
             matches = [v for v in self.variables if o.name == v.name]
-            assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, v.name)
+            assert len(matches) > 0 , "variable not found in source code in type {} : {}".format(self.type_name, o.name)
             assert len(matches) == 1  # > 1 would make no sense, just in case
 
             v = matches[0]
