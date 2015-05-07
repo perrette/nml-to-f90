@@ -4,9 +4,9 @@ from __future__ import print_function
 
 class Param(object):
     def __init__(self, name="", value=None, group="", help="", units="", **kwargs):
-        self.name = name.lower()  # keep lower case (fortran-written namelist have upper case otherwise !
+        self.name = name
         self.value = value
-        self.group = group.lower()
+        self.group = group
         self.help = help.strip()  # .e.g. "blabla ({units})"
         self.units = units
         if (len(kwargs) > 0):
