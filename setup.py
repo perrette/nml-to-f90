@@ -63,6 +63,23 @@ if not ISRELEASED:
 else:
     FULLVERSION += QUALIFIER
 
+def write_version_py(filename=None):
+    cnt = """\
+version = '%s'
+short_version = '%s'
+"""
+    if not filename:
+        #filename = os.path.join(
+        #    os.path.dirname(__file__), 'dimarray', 'version.py')
+        filename = os.path.join('nml2f90', 'version.py')
+
+    with open(filename, 'w') as a:
+        a.write(cnt % (FULLVERSION, VERSION))
+
+# Write version.py to dimarray
+if write_version:
+    write_version_py()
+
 #
 # Actually important part
 #
@@ -83,19 +100,3 @@ setup(name='nml2f90',
       )
 
 
-def write_version_py(filename=None):
-    cnt = """\
-version = '%s'
-short_version = '%s'
-"""
-    if not filename:
-        #filename = os.path.join(
-        #    os.path.dirname(__file__), 'dimarray', 'version.py')
-        filename = os.path.join('nml2f90', 'version.py')
-
-    with open(filename, 'w') as a:
-        a.write(cnt % (FULLVERSION, VERSION))
-
-# Write version.py to dimarray
-if write_version:
-    write_version_py()
