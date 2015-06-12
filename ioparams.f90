@@ -690,18 +690,8 @@ subroutine set_param_string_group1 (params, name, string)
     select case (name)
 
 case ('string1', 'group1%string1')
-    read(string, *, iostat=IOSTAT) params%string1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string1 = ", params%string1
-
-    if (IOSTAT /= 0) then
-        if (trim(string) == "") then
-            write(*,*) "ERROR: missing parameter value for --group1%string1"
-        else
-            write(*,*) "ERROR converting string to character(len=clen) :: & 
-string1: --group1%string1 ",trim(string)
-        endif
-        stop
-    endif
+    params%string1 = trim(string)
+    if (VERBOSE) write(*,*) "group1%string1 = ", params%string1
 
 case ('stringarr1', 'group1%stringarr1')
     call string_to_array(string, params%stringarr1, iostat=iostat)
@@ -763,18 +753,8 @@ integer2: --group1%integer2 ",trim(string)
     endif
 
 case ('string2', 'group1%string2')
-    read(string, *, iostat=IOSTAT) params%string2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%string2 = ", params%string2
-
-    if (IOSTAT /= 0) then
-        if (trim(string) == "") then
-            write(*,*) "ERROR: missing parameter value for --group1%string2"
-        else
-            write(*,*) "ERROR converting string to character(len=clen) :: & 
-string2: --group1%string2 ",trim(string)
-        endif
-        stop
-    endif
+    params%string2 = trim(string)
+    if (VERBOSE) write(*,*) "group1%string2 = ", params%string2
 
     case default
       write(*,*) "ERROR set_param_string for group1: unknown member :: & 
@@ -1015,18 +995,8 @@ subroutine set_param_string_group2 (params, name, string)
     select case (name)
 
 case ('string1', 'group2%string1')
-    read(string, *, iostat=IOSTAT) params%string1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string1 = ", params%string1
-
-    if (IOSTAT /= 0) then
-        if (trim(string) == "") then
-            write(*,*) "ERROR: missing parameter value for --group2%string1"
-        else
-            write(*,*) "ERROR converting string to character(len=clen) :: & 
-string1: --group2%string1 ",trim(string)
-        endif
-        stop
-    endif
+    params%string1 = trim(string)
+    if (VERBOSE) write(*,*) "group2%string1 = ", params%string1
 
 case ('stringarr1', 'group2%stringarr1')
     call string_to_array(string, params%stringarr1, iostat=iostat)
@@ -1088,18 +1058,8 @@ integer2: --group2%integer2 ",trim(string)
     endif
 
 case ('string2', 'group2%string2')
-    read(string, *, iostat=IOSTAT) params%string2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%string2 = ", params%string2
-
-    if (IOSTAT /= 0) then
-        if (trim(string) == "") then
-            write(*,*) "ERROR: missing parameter value for --group2%string2"
-        else
-            write(*,*) "ERROR converting string to character(len=clen) :: & 
-string2: --group2%string2 ",trim(string)
-        endif
-        stop
-    endif
+    params%string2 = trim(string)
+    if (VERBOSE) write(*,*) "group2%string2 = ", params%string2
 
 case ('intarr1', 'group2%intarr1')
     call string_to_array(string, params%intarr1, iostat=iostat)

@@ -463,6 +463,12 @@ case ('{name}', '{group}%{name}')
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "{group}%{name} = ", params%{name}
 """+ template_set_check
 
+    template_set_string_case_char = """
+case ('{name}', '{group}%{name}')
+    params%{name} = trim(string)
+    if (VERBOSE) write(*,*) "{group}%{name} = ", params%{name}
+"""
+
     # set_param_string (array version)
     template_set_string_case_array = """
 case ('{name}', '{group}%{name}')
@@ -510,7 +516,10 @@ endif
                 list_set_cases += self.template_set_string_case_array.format(**v_map)
                 list_help += self.template_help_array.format(**v_map)
             else:
-                list_set_cases += self.template_set_string_case.format(**v_map)
+                if v.dtype == "character":
+                    list_set_cases += self.template_set_string_case_char.format(**v_map)
+                else:
+                    list_set_cases += self.template_set_string_case.format(**v_map)
                 list_help += self.template_help.format(**v_map)
 
         self.content += self.template.format(
