@@ -36,6 +36,8 @@ In its simplest form, this would be:
         call parse_command_argument(par1, i)
     enddo
 
+__NOTE__: the script interface will be simplified soon (see [issue #1](https://github.com/perrette/nml-to-f90/issues/1))
+
 See example.f90 for an interactive variant of this snippet, and and test.f90 
 for a more complete suite of tests for various functions in ioparams.
 
