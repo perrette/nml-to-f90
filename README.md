@@ -94,7 +94,7 @@ library, which parses (read-only) the namelist and allows calls like
 
     call nml_read(filename,"group1","name1",group1%name1)
 
-Passing the option `--lib-nml` will make nml2f90 use that
+Passing the option `--io-nml-nml` will make nml2f90 use that
 kind of calls internally instead of fortran build-in `namelist` solution.
 It assumes nml.f90 is present on the compilation path. That way
 nml2f90 becomes no more than a nice helper to avoid writing repetitive code, 
@@ -107,13 +107,13 @@ Note this concerns ioparams.f90's internals and does not change the way you use
 ioparams' `read_nml`, `parse_command_argument`, `print_help`. For now, 
 the `write_nml` is not available with this option.
 
-If`--lib-nml` is passed, there is no need to indicate `--io-nml`.
+If`--io-nml-nml` is passed, there is no need to indicate `--io-nml`.
 
 ## Summary of advices for sustainable using
 
 The safer way of using nml2f90 is probably:
 
-    nml2f90 namelist.nml --src src/*f90 --lib-nml --command-line
+    nml2f90 namelist.nml --src src/*f90 --io-nml-nml --command-line
 
 and make sure [nml.f90](https://github.com/alex-robinson/nml) is compiled before ioparams.f90
 

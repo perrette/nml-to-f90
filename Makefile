@@ -86,7 +86,7 @@ test_nml: $(objdir)/nml.o $(objdir)/ioparams.o $(objdir)/test_nml.o
 	@echo " "
 
 test_nml_src: nml2f90/nml2f90.py
-	python -m nml2f90.nml2f90 namelist.nml --lib-nml --command-line
+	python -m nml2f90.nml2f90 namelist.nml --io-nml-nml --command-line
 	@echo " "
 	@echo "  ioparams.f90 is ready."
 	@echo " "

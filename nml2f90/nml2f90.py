@@ -43,7 +43,7 @@ def main():
     group.add_argument("--all", action="store_true", help="include all features")
     subgroup = group.add_mutually_exclusive_group()
     subgroup.add_argument("--io-nml", nargs="*", help="read_nml, write_nml")
-    subgroup.add_argument("--lib-nml", nargs='*', help="read_nml: alternative to --io-nml using external lib nml.f90 (https://github.com/alex-robinson/nml)")
+    subgroup.add_argument("--io-nml-nml", nargs='*', help="read_nml: alternative to --io-nml using external lib nml.f90 (https://github.com/alex-robinson/nml)")
     group.add_argument("--command-line", nargs='*', help="parse_command_argument, print_help")
     group.add_argument("--set-get-param", nargs='*', help="get_param, set_param")
 
@@ -131,8 +131,8 @@ def main():
     # Add features to the group
     if args.io_nml is not None:
         mod.append_feature("io_nml", args.io_nml or None)
-    if args.lib_nml is not None:
-        mod.append_feature("lib_nml", args.lib_nml or None)
+    if args.io_nml_nml is not None:
+        mod.append_feature("io_nml_nml", args.io_nml_nml or None)
     if args.command_line is not None:
         mod.append_feature("command_line", args.command_line or None)
     if args.set_get_param is not None:

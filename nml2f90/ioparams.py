@@ -242,7 +242,7 @@ class Module(object):
 
         if name == "io_nml":
             feature = NmlIO()
-        elif name == "lib_nml":
+        elif name == "io_nml_nml":
             feature = NmlLib()
         elif name == "command_line":
             feature = CommandLine()
@@ -405,7 +405,7 @@ class NmlIO(Feature):
 class NmlLib(Feature):
     """ Human-readable Namelist I/O
     """
-    name = "lib_nml"
+    name = "io_nml_nml"
     public = ["read_nml","write_nml"]
     external_dependencies = ["nml"]
 
