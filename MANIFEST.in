@@ -1,0 +1,2 @@
+include versioneer.py
+include nml2f90/_version.py
