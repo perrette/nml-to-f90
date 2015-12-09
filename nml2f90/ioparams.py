@@ -22,6 +22,7 @@ template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'templates
 libraries_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'libraries'))
 template_module = open(os.path.join(template_dir, "module_ioparams.f90")).read()
 
+FORTRAN_INDENT = 2*" "
 REAL_KIND = 8
 INTEGER_KIND = 4
 CHAR_LEN = 256
@@ -205,7 +206,7 @@ class Module(object):
     def __init__(self, name=MODULE, verbose=False, char_len=CHAR_LEN, real_kind=REAL_KIND, int_kind=INTEGER_KIND):
         self.name = name
         self.description = self.__doc__
-        self.imports = ""
+        self.imports = []
         self.public = ""
         self.definition =  ""
         self.content = ""
@@ -228,12 +229,12 @@ class Module(object):
         if group.mod_name is None:
             self.definition += group.format() + '\n\n'
         else:
-            self.imports += "use {}, only: {}".format(group.mod_name, group.type_name) + '\n'
+            self.imports.append("use {}, only: {}".format(group.mod_name, group.type_name))
         self.public += self._make_public_declarations([group.type_name])
 
     def include_lib(self, lib, external=False):
         self.included_lib.append(lib)
-        self.imports += "use "+lib +"\n"
+        self.imports.append("use "+lib +"\n")
         # also include source code
         if not external:
             self.libcode +=  open(os.path.join(libraries_dir, lib+".f90")).read() + "\n"
@@ -280,7 +281,7 @@ class Module(object):
         code = self.template.format(
             module_name=self.name, 
             description="", 
-            imports=self.imports, 
+            imports=("\n" + FORTRAN_INDENT).join(self.imports),
             public=_indent_bloc(self.public, indent),
             char_len=self.char_len,
             real_kind=self.real_kind,
