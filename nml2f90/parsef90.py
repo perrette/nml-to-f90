@@ -155,7 +155,9 @@ def parse_line(string):
     # comments
     if "!" in string:
         i = string.index("!")
-        comment = string[i+1:]
+        comment = string[i+1:] 
+        # !! commments, e.g. FORD documentation
+        comment = comment.lstrip('!').strip()
         string = string[:i]
     else:
         comment = ""
