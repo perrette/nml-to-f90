@@ -73,7 +73,7 @@ subroutine print_help_{group_name}(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
-  character(len=20) :: nameshort
+  character(len=2000) :: nameshort
   if (present(iounit)) then
     io = iounit
   else
