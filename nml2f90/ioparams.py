@@ -7,8 +7,8 @@ from collections import OrderedDict as odict
 # import datetime
 import textwrap
 
-from .version import version as __version__
 from .namelist import Namelist, Param
+from . import __version__
 
 def get_call_string():
     " return command-line string of the call "
