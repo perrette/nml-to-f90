@@ -20,71 +20,82 @@ module type_conversion
 
   contains
 
-    subroutine string_to_array_string_deprecated (string, value, iostat)
-      !! this used to deal with white space as separator, but it was error prone
-      implicit none 
-
-      character(len=*), intent(IN) :: string 
-      character(len=*) :: value(:)
-      character(len=256) :: tmpvec(size(value))
-      character(len=256) :: tmpstr, fmt 
+    subroutine signal_error(iostat)
       integer, optional :: iostat
-      integer :: stat, n, q, q1, q2, j 
-
-      tmpstr = trim(adjustl(string))
-      n      = len_trim(tmpstr)+2
-
-      tmpvec(:) = "" 
-
-      q1 = 1 
-      do q = 1, size(tmpvec)
-        q2 = index(tmpstr(q1:n)," ") + q1
-        if (q2 .gt. q1 .and. q2 .le. n) then 
-          tmpvec(q) = tmpstr(q1:q2-1)
-          q1 = q2
-
-          ! Make sure gaps of more than one space are properly handled
-          do j = 1, 1000
-            if (tmpstr(q1:q1) == " ") q1 = q1+1
-            if (q1 .ge. n) exit 
-          end do 
-
-          ! Remove quotes around string if they exist 
-          call remove_quotes_comma(tmpvec(q))
-
-          read(tmpvec(q), *, iostat=iostat) value(q)
-
-        end if 
-      end do 
+      if(present(iostat)) then
+        iostat = -1
+        return
+      else
+        stop
+      endif
     end subroutine
 
     subroutine string_to_array_string (string, value, iostat)
 
-      implicit none 
-
-      character(len=*), intent(IN) :: string 
-      character(len=*) :: value(:)
+      character(len=*), intent(in) :: string
+      character(len=*), intent(out) :: value(:)
       character(len=256) :: tmpvec(size(value))
       character(len=256) :: tmpstr
       integer, optional :: iostat
       integer :: stat, q, q2
 
       tmpstr = trim(adjustl(string))
-      tmpvec(:) = "" 
 
       do q=1,size(tmpvec)
         q2 = index(tmpstr,',')
         if (q2 == 0) then
           q2 = len(tmpstr)+1
+
           if (q /= size(tmpvec)) then
-            write(*,*) "expected array of size",size(tmpvec),', got:', q
-            iostat = -1
+            write(*,*) "command-line :: expected array of size",size(tmpvec),', got:', q
+            call signal_error(iostat)
+            return 
+          endif
+
+        else
+
+          if (q == size(tmpvec)) then
+            write(*,*) "command-line :: array size exceeded",size(tmpvec)
+            call signal_error(iostat)
             return
           endif
+
         endif
-        tmpvec(q) = tmpstr(:q2-1)
+        call strip_brackets(trim(tmpstr(:q2-1)), tmpvec(q))
+        read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat)) then
+          if (iostat /= 0) return
+        endif
         tmpstr = tmpstr(q2+1:)
       enddo
+
+    end subroutine
+
+    subroutine strip_brackets(s1, s2)
+      character(len=*), intent(in) :: s1
+      character(len=256), intent(out) :: s2
+
+      s2 = s1
+      
+      if (len_trim(s1) < 2) return
+
+      ! head
+      if (s2(1:2) == "(/") then
+        s2 = s2(3:)
+      elseif (s2(1:1) == "[") then
+        s2 = s2(2:)
+      elseif (s2(1:1) == "(") then
+        s2 = s2(2:)
+      endif
+
+      ! tail
+      if (s2(len_trim(s2)-1:) == "/)") then
+        s2 = s2(:len_trim(s2)-2)
+      elseif (s2(len_trim(s2):len_trim(s2)) == "]") then
+        s2 = s2(:len_trim(s2)-1)
+      elseif (s2(len_trim(s2):len_trim(s2)) == ")") then
+        s2 = s2(:len_trim(s2)-1)
+      endif
 
     end subroutine
 
@@ -92,15 +103,22 @@ module type_conversion
 
       implicit none 
 
-      character(len=*), intent(IN) :: string 
-      integer :: value(:)
+      character(len=*), intent(in) :: string 
+      integer, intent(out) :: value(:)
       integer, optional :: iostat
       character(len=256) :: tmpvec(size(value))
+      integer :: q
 
       call string_to_array_string (string, tmpvec, iostat)
+      if (present(iostat))then
+        if (iostat /=0) return
+      endif
 
       do q=1,size(tmpvec)
         read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat))then
+          if (iostat /=0) return
+        endif
       enddo
 
     end subroutine
@@ -109,15 +127,22 @@ module type_conversion
 
       implicit none 
 
-      character(len=*), intent(IN) :: string 
-      real(Float) :: value(:)
+      character(len=*), intent(in) :: string 
+      real(Float), intent(out) :: value(:)
       integer, optional :: iostat
       character(len=256) :: tmpvec(size(value))
+      integer :: q
 
       call string_to_array_string (string, tmpvec, iostat)
+      if (present(iostat))then
+        if (iostat /=0) return
+      endif
 
       do q=1,size(tmpvec)
         read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat))then
+          if (iostat /=0) return
+        endif
       enddo
 
     end subroutine
@@ -126,15 +151,22 @@ module type_conversion
 
       implicit none 
 
-      character(len=*), intent(IN) :: string 
-      logical :: value(:)
+      character(len=*), intent(in) :: string 
+      logical, intent(out) :: value(:)
       integer, optional :: iostat
       character(len=256) :: tmpvec(size(value))
+      integer :: q
 
       call string_to_array_string (string, tmpvec, iostat)
+      if (present(iostat))then
+        if (iostat /=0) return
+      endif
 
       do q=1,size(tmpvec)
         read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat))then
+          if (iostat /=0) return
+        endif
       enddo
 
     end subroutine

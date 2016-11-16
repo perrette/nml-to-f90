@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0.0.0.dev-2588a63
+! version: 0+untagged.90.g670141a.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -14,194 +14,173 @@ module type_conversion
 ! Type conversion functions (Courtesy of Alex Robinson's nml module)
 ! ==> useful to read array (lists) from command list argument)
 !
+! UPDATE M.P. 20161116: string_to_array :: assume comma-separated values
+!
 ! =============================================================
 
   integer, parameter :: Float = kind(0.d0)
 
     interface string_to_array
+      !! array as comma-separated values
+      module procedure :: string_to_array_string
       module procedure :: string_to_array_integer
       module procedure :: string_to_array_double
-      module procedure :: string_to_array_string
       module procedure :: string_to_array_logical
     end interface
 
   contains
 
+    subroutine signal_error(iostat)
+      integer, optional :: iostat
+      if(present(iostat)) then
+        iostat = -1
+        return
+      else
+        stop
+      endif
+    end subroutine
+
+    subroutine string_to_array_string (string, value, iostat)
+
+      character(len=*), intent(in) :: string
+      character(len=*), intent(out) :: value(:)
+      character(len=256) :: tmpvec(size(value))
+      character(len=256) :: tmpstr
+      integer, optional :: iostat
+      integer :: stat, q, q2
+
+      tmpstr = trim(adjustl(string))
+
+      do q=1,size(tmpvec)
+        q2 = index(tmpstr,',')
+        if (q2 == 0) then
+          q2 = len(tmpstr)+1
+
+          if (q /= size(tmpvec)) then
+            write(*,*) "command-line :: expected array of & 
+size",size(tmpvec),', got:', q
+            call signal_error(iostat)
+            return
+          endif
+
+        else
+
+          if (q == size(tmpvec)) then
+            write(*,*) "command-line :: array size exceeded",size(tmpvec)
+            call signal_error(iostat)
+            return
+          endif
+
+        endif
+        call strip_brackets(trim(tmpstr(:q2-1)), tmpvec(q))
+        read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat)) then
+          if (iostat /= 0) return
+        endif
+        tmpstr = tmpstr(q2+1:)
+      enddo
+
+    end subroutine
+
+    subroutine strip_brackets(s1, s2)
+      character(len=*), intent(in) :: s1
+      character(len=256), intent(out) :: s2
+
+      s2 = s1
+
+      if (len_trim(s1) < 2) return
+
+      ! head
+      if (s2(1:2) == "(/") then
+        s2 = s2(3:)
+      elseif (s2(1:1) == "[") then
+        s2 = s2(2:)
+      elseif (s2(1:1) == "(") then
+        s2 = s2(2:)
+      endif
+
+      ! tail
+      if (s2(len_trim(s2)-1:) == "/)") then
+        s2 = s2(:len_trim(s2)-2)
+      elseif (s2(len_trim(s2):len_trim(s2)) == "]") then
+        s2 = s2(:len_trim(s2)-1)
+      elseif (s2(len_trim(s2):len_trim(s2)) == ")") then
+        s2 = s2(:len_trim(s2)-1)
+      endif
+
+    end subroutine
 
     subroutine string_to_array_integer (string, value, iostat)
 
       implicit none
 
-      character(len=*), intent(IN) :: string
-      integer :: value(:)
-      character(len=256) :: tmpvec(size(value))
-      character(len=256) :: tmpstr, fmt
+      character(len=*), intent(in) :: string
+      integer, intent(out) :: value(:)
       integer, optional :: iostat
-      integer :: stat, n, q, q1, q2, j
+      character(len=256) :: tmpvec(size(value))
+      integer :: q
 
-      tmpstr = trim(adjustl(string))
-      n      = len_trim(tmpstr)+2
+      call string_to_array_string (string, tmpvec, iostat)
+      if (present(iostat))then
+        if (iostat /=0) return
+      endif
 
-      tmpvec(:) = ""
+      do q=1,size(tmpvec)
+        read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat))then
+          if (iostat /=0) return
+        endif
+      enddo
 
-      q1 = 1
-      do q = 1, size(tmpvec)
-        q2 = index(tmpstr(q1:n)," ") + q1
-        if (q2 .gt. q1 .and. q2 .le. n) then
-          tmpvec(q) = tmpstr(q1:q2-1)
-          q1 = q2
-
-          ! Make sure gaps of more than one space are properly handled
-          do j = 1, 1000
-            if (tmpstr(q1:q1) == " ") q1 = q1+1
-            if (q1 .ge. n) exit
-          end do
-
-          ! Remove quotes around string if they exist
-          call remove_quotes_comma(tmpvec(q))
-
-          read(tmpvec(q), *, iostat=iostat) value(q)
-
-        end if
-      end do
     end subroutine
 
     subroutine string_to_array_double (string, value, iostat)
 
       implicit none
 
-      character(len=*), intent(IN) :: string
-      real(Float) :: value(:)
-      character(len=256) :: tmpvec(size(value))
-      character(len=256) :: tmpstr, fmt
+      character(len=*), intent(in) :: string
+      real(Float), intent(out) :: value(:)
       integer, optional :: iostat
-      integer :: stat, n, q, q1, q2, j
+      character(len=256) :: tmpvec(size(value))
+      integer :: q
 
-      tmpstr = trim(adjustl(string))
-      n      = len_trim(tmpstr)+2
+      call string_to_array_string (string, tmpvec, iostat)
+      if (present(iostat))then
+        if (iostat /=0) return
+      endif
 
-      tmpvec(:) = ""
+      do q=1,size(tmpvec)
+        read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat))then
+          if (iostat /=0) return
+        endif
+      enddo
 
-      q1 = 1
-      do q = 1, size(tmpvec)
-        q2 = index(tmpstr(q1:n)," ") + q1
-        if (q2 .gt. q1 .and. q2 .le. n) then
-          tmpvec(q) = tmpstr(q1:q2-1)
-          q1 = q2
-
-          ! Make sure gaps of more than one space are properly handled
-          do j = 1, 1000
-            if (tmpstr(q1:q1) == " ") q1 = q1+1
-            if (q1 .ge. n) exit
-          end do
-
-          ! Remove quotes around string if they exist
-          call remove_quotes_comma(tmpvec(q))
-
-          read(tmpvec(q), *, iostat=iostat) value(q)
-
-        end if
-      end do
     end subroutine
 
     subroutine string_to_array_logical (string, value, iostat)
 
       implicit none
 
-      character(len=*), intent(IN) :: string
-      logical :: value(:)
-      character(len=256) :: tmpvec(size(value))
-      character(len=256) :: tmpstr, fmt
+      character(len=*), intent(in) :: string
+      logical, intent(out) :: value(:)
       integer, optional :: iostat
-      integer :: stat, n, q, q1, q2, j
-
-      tmpstr = trim(adjustl(string))
-      n      = len_trim(tmpstr)+2
-
-      tmpvec(:) = ""
-
-      q1 = 1
-      do q = 1, size(tmpvec)
-        q2 = index(tmpstr(q1:n)," ") + q1
-        if (q2 .gt. q1 .and. q2 .le. n) then
-          tmpvec(q) = tmpstr(q1:q2-1)
-          q1 = q2
-
-          ! Make sure gaps of more than one space are properly handled
-          do j = 1, 1000
-            if (tmpstr(q1:q1) == " ") q1 = q1+1
-            if (q1 .ge. n) exit
-          end do
-
-          ! Remove quotes around string if they exist
-          call remove_quotes_comma(tmpvec(q))
-
-          read(tmpvec(q), *, iostat=iostat) value(q)
-
-        end if
-      end do
-    end subroutine
-    subroutine string_to_array_string (string, value, iostat)
-
-      implicit none
-
-      character(len=*), intent(IN) :: string
-      character(len=*) :: value(:)
       character(len=256) :: tmpvec(size(value))
-      character(len=256) :: tmpstr, fmt
-      integer, optional :: iostat
-      integer :: stat, n, q, q1, q2, j
+      integer :: q
 
-      tmpstr = trim(adjustl(string))
-      n      = len_trim(tmpstr)+2
+      call string_to_array_string (string, tmpvec, iostat)
+      if (present(iostat))then
+        if (iostat /=0) return
+      endif
 
-      tmpvec(:) = ""
+      do q=1,size(tmpvec)
+        read(tmpvec(q), *, iostat=iostat) value(q)
+        if (present(iostat))then
+          if (iostat /=0) return
+        endif
+      enddo
 
-      q1 = 1
-      do q = 1, size(tmpvec)
-        q2 = index(tmpstr(q1:n)," ") + q1
-        if (q2 .gt. q1 .and. q2 .le. n) then
-          tmpvec(q) = tmpstr(q1:q2-1)
-          q1 = q2
-
-          ! Make sure gaps of more than one space are properly handled
-          do j = 1, 1000
-            if (tmpstr(q1:q1) == " ") q1 = q1+1
-            if (q1 .ge. n) exit
-          end do
-
-          ! Remove quotes around string if they exist
-          call remove_quotes_comma(tmpvec(q))
-
-          read(tmpvec(q), *, iostat=iostat) value(q)
-
-        end if
-      end do
     end subroutine
-
-    subroutine remove_quotes_comma(string)
-
-      implicit none
-      character(len=*), intent(INOUT) :: string
-      integer :: i, n
-
-      ! Eliminate quotes
-      n = len_trim(string)
-      do i = 1,n
-        if (string(i:i) == '"' .or. string(i:i) == "'") string(i:i) = " "
-      end do
-      string = trim(adjustl(string))
-
-      ! Remove final comma too
-      n = len_trim(string)
-      if (n > 0) then
-        if (string(n:n) == ",") string(n:n) = " "
-        string = trim(adjustl(string))
-      end if
-
-      return
-
-    end subroutine remove_quotes_comma
 
 end module
 
@@ -599,7 +578,7 @@ subroutine print_help_group1(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
-  character(len=20) :: nameshort
+  character(len=2000) :: nameshort
   if (present(iounit)) then
     io = iounit
   else
@@ -861,7 +840,7 @@ subroutine print_help_group2(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
-  character(len=20) :: nameshort
+  character(len=2000) :: nameshort
   if (present(iounit)) then
     io = iounit
   else
@@ -1223,7 +1202,7 @@ subroutine print_help_control(params, iounit, default)
   logical :: def
   character(len=2000) :: valuestr
   character(len=20) :: valuelen
-  character(len=20) :: nameshort
+  character(len=2000) :: nameshort
   if (present(iounit)) then
     io = iounit
   else

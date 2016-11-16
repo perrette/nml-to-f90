@@ -17,7 +17,7 @@ program test_io_params
   integer :: test_int, test_int_arr(7)
   character(len=50) :: test_s
 
-  integer :: i, iostat, iostats(2), stat
+  integer :: i, io, iostat, iostats(2), stat
   character(len=256) :: arg, argv
 
   filename = "namelist.nml" 
@@ -84,6 +84,7 @@ program test_io_params
   write(*,*) "----------------------------- "
   write(*,*) "Type ./test.x -h for help on how to do that."
   i = 1
+  io=0
   do while(i <= command_argument_count())
     call get_command_argument(i, arg)
     select case (arg)
@@ -92,13 +93,11 @@ program test_io_params
       call print_help(group2)
       stop
     case default
-      call parse_command_argument(group1, i, iostat=iostat)
-      if (iostat==0) cycle ! re-start from loop start
-      call parse_command_argument(group2, i, iostat=iostat)
-      if (iostat==0) cycle ! re-start from loop start
-      if (iostat /= 0) then
-        stop("Invalid parameter. Use -h or --help for help.")
-      endif
+      call parse_command_argument(group1, i, iostat=io)
+      if (io==0) cycle ! re-start from loop start
+      call parse_command_argument(group2, i, iostat=io)
+      if (io==0) cycle ! re-start from loop start
+      stop("Invalid parameter. Use -h or --help for help.")
     end select
   end do
 
