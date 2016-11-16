@@ -30,74 +30,66 @@ module type_conversion
       endif
     end subroutine
 
+    pure function strip_brackets(s1) result(s2)
+      character(len=*), intent(in) :: s1
+      character(len=256) :: s2
+
+      if (len_trim(s1) < 2) return
+
+      ! head
+      if (s1(1:2) == "(/" .and. s1(len_trim(s1)-1:) == "/)") then
+        s2 = adjustl(s1(3:len_trim(s1)-2))
+
+      elseif (s1(1:1) == "[" .and. s1(len_trim(s1):len_trim(s1)) == "]") then
+        s2 = adjustl(s1(2:len_trim(s1)-1))
+
+      elseif (s1(1:1) == "(" .and. s1(len_trim(s1):len_trim(s1)) == ")") then
+        s2 = adjustl(s1(2:len_trim(s1)-1))
+
+      else
+        s2 = s1
+
+      endif
+
+    end function
+
     subroutine string_to_array_string (string, value, iostat)
 
       character(len=*), intent(in) :: string
       character(len=*), intent(out) :: value(:)
-      character(len=256) :: tmpvec(size(value))
-      character(len=256) :: tmpstr
       integer, optional :: iostat
-      integer :: stat, q, q2
+      character(len=256) :: tmpstr
+      integer :: q, q2
 
-      tmpstr = trim(adjustl(string))
+      tmpstr = strip_brackets(trim(adjustl(string)))
 
-      do q=1,size(tmpvec)
+      do q=1,size(value)
         q2 = index(tmpstr,',')
         if (q2 == 0) then
           q2 = len(tmpstr)+1
 
-          if (q /= size(tmpvec)) then
-            write(*,*) "command-line :: expected array of size",size(tmpvec),', got:', q
+          if (q /= size(value)) then
+            write(*,*) "command-line :: expected array of size",size(value),', got:', q
             call signal_error(iostat)
             return 
           endif
 
         else
 
-          if (q == size(tmpvec)) then
-            write(*,*) "command-line :: array size exceeded",size(tmpvec)
+          if (q == size(value)) then
+            write(*,*) "command-line :: array size exceeded",size(value)
             call signal_error(iostat)
             return
           endif
 
         endif
-        call strip_brackets(trim(tmpstr(:q2-1)), tmpvec(q))
-        read(tmpvec(q), *, iostat=iostat) value(q)
+
+        read(tmpstr(:q2-1), *, iostat=iostat) value(q)
         if (present(iostat)) then
           if (iostat /= 0) return
         endif
         tmpstr = tmpstr(q2+1:)
       enddo
-
-    end subroutine
-
-    subroutine strip_brackets(s1, s2)
-      character(len=*), intent(in) :: s1
-      character(len=256), intent(out) :: s2
-
-      s2 = s1
-      
-      if (len_trim(s2) < 2) return
-
-      ! head
-      if (s2(1:2) == "(/") then
-        s2 = s2(3:)
-      elseif (s2(1:1) == "[") then
-        s2 = s2(2:)
-      elseif (s2(1:1) == "(") then
-        s2 = s2(2:)
-      endif
-
-      if (len_trim(s2) < 2) return
-
-      ! tail
-      if (s2(len_trim(s2)-1:) == "/)") then
-        s2 = s2(:len_trim(s2)-2)
-      elseif (s2(len_trim(s2):len_trim(s2)) == "]") then
-        s2 = s2(:len_trim(s2)-1)
-      elseif (s2(len_trim(s2):len_trim(s2)) == ")") then
-        s2 = s2(:len_trim(s2)-1)
-      endif
 
     end subroutine
 
