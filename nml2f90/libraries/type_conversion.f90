@@ -77,7 +77,7 @@ module type_conversion
 
       s2 = s1
       
-      if (len_trim(s1) < 2) return
+      if (len_trim(s2) < 2) return
 
       ! head
       if (s2(1:2) == "(/") then
@@ -87,6 +87,8 @@ module type_conversion
       elseif (s2(1:1) == "(") then
         s2 = s2(2:)
       endif
+
+      if (len_trim(s2) < 2) return
 
       ! tail
       if (s2(len_trim(s2)-1:) == "/)") then

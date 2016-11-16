@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.90.g670141a.dirty
+! version: 0+untagged.94.gaee365d.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -88,7 +88,7 @@ size",size(tmpvec),', got:', q
 
       s2 = s1
 
-      if (len_trim(s1) < 2) return
+      if (len_trim(s2) < 2) return
 
       ! head
       if (s2(1:2) == "(/") then
@@ -98,6 +98,8 @@ size",size(tmpvec),', got:', q
       elseif (s2(1:1) == "(") then
         s2 = s2(2:)
       endif
+
+      if (len_trim(s2) < 2) return
 
       ! tail
       if (s2(len_trim(s2)-1:) == "/)") then
