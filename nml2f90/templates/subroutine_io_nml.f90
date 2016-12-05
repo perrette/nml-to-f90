@@ -1,9 +1,10 @@
-subroutine read_nml_{group_name} (iounit, params)
+subroutine read_nml_{group_name} (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the {group_name} group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type({type_name}), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
 
     {variable_definitions}
 
@@ -13,7 +14,7 @@ subroutine read_nml_{group_name} (iounit, params)
     {assign_namelist}
 
     ! read all
-    read(unit=iounit, nml={group_name}) 
+    read(unit=iounit, nml={group_name}, iostat=iostat) 
 
     ! assign back to type
     {assign_type}
