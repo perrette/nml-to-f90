@@ -23,7 +23,7 @@ In its simplest form, this would be:
     implicit none
 
     type(group1_t) :: par1
-    integer :: iounit=88, i
+    integer :: iounit=88, iostat
 
     ! read namelist
     open(iounit, file="namelist.nml")
@@ -31,10 +31,16 @@ In its simplest form, this would be:
     close(iounit)
 
     ! parse command-line arguments and stop in case of error
-    i = 1
-    do while(i <= command_argument_count())
-        call parse_command_argument(par1, i)
-    enddo
+    call parse_command_argument(par1, iostat)
+    if (iostat == -2) then
+        stop  ! help
+    elseif (iostat == -1) then
+        stop
+    elseif (iostat > 0) then
+        write(*,*) "Unknown parameter(s)"
+        stop
+    endif
+
 
 __NOTE__: the script interface will be simplified soon (see [issue #1](https://github.com/perrette/nml-to-f90/issues/1))
 

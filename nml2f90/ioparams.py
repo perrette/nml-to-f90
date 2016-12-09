@@ -242,13 +242,13 @@ class Module(object):
     def append_feature(self, name, only=None):
 
         if name == "io_nml":
-            feature = NmlIO()
+            feature = NmlIO(self.name)
         elif name == "io_nml_nml":
-            feature = NmlLib()
+            feature = NmlLib(self.name)
         elif name == "command_line":
-            feature = CommandLine()
+            feature = CommandLine(self.name)
         elif name == "set_get_param":
-            feature = SetGetParam()
+            feature = SetGetParam(self.name)
         else:
             raise ValueError("Unknown feature: "+name)
 
@@ -361,7 +361,8 @@ class Feature(object):
     public = [] # to include as public (assume an interface for each)
     dependencies = []
     external_dependencies = []
-    def __init__(self):
+    def __init__(self, module_name):
+        self.module_name = module_name
         self.template = open(os.path.join(template_dir, "subroutine_"+self.name+".f90")).read()
         self.content = ""
         self.interfaces = []
@@ -529,6 +530,7 @@ endif
             list_help = list_help,
             group_name = group.name,
             type_name = group.type_name,
+            module_name = self.module_name,
         ) + '\n'
 
         # add procedure to be included in the interface

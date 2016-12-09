@@ -1,65 +1,115 @@
-subroutine parse_command_argument_{group_name} (params,i, iostat, arg)
+subroutine parse_command_argument_{group_name} (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
-    !   i : integer, positional argument of the parameter name
-    !       is incremented if parameter is found
     ! Output:
     !   iostat : integer, optional
-    !       -1 : --help was printed
-    !       0  : param found
-    !       1  : error when reading
+    !       number of arguments that have not been parsed
+    !        0 : all arguments were found
+    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       -1 : error when reading
+    !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
-    !   arg : character, optional : the ith command line argument
-    !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type({type_name}), intent(inout) :: params
-    integer, intent(inout) :: i
-    integer, optional :: iostat
-    character(len=*), optional :: arg
+    integer, intent(out), optional :: iostat
     character(len=512) :: argn, argv
+    logical :: missing_value
 
-    call get_command_argument(i, argn)
+    integer :: i, n, parsed, ioset
 
-    if (present(arg)) arg = trim(argn)
+    n = command_argument_count()
+    parsed = 0
 
-    ! Print HELP ?
-    if (argn == '--help' .or. argn=='-h') then
-      call print_help_{group_name}(params)
-      if (present(iostat)) then
-        iostat = -1
+    i = 1
+    do while (i <= n)
+      call get_command_argument(i, argn)
+
+      ! Print HELP ?
+      if (argn == '--help' .or. argn=='-h') then
+        call print_help_{group_name}(params)
+        if (present(iostat)) then
+          iostat = -2
+          return
+        else
+          stop
+        endif
+      endif
+
+      if (argn(1:2)  /= "--") then
+        if (.not.present(iostat)) then
+          write(*,*) "i=",i, "; Got: ",trim(argn)
+          stop("ERROR::{module_name} type-specific command line &
+            & arguments must start with '--'")
+        else
+          i = i + 1  ! check next argument
+          cycle
+        endif
+      endif
+
+      if (has_param_{group_name}(params, trim(argn(3:)))) then
+        ! +++++  present 
+
+        ! only "--name value" is tolerated
+        ! check if value is missing
+        missing_value = .false.
+        if (i+1 <= n) then
+          call get_command_argument(i+1, argv)
+          if ( len(argv) > 1) then
+            ! ...next argument starts with '--'
+            if (argv(1:2)  == "--" ) then
+              missing_value = .true.
+            endif
+          endif
+        else 
+          ! ...end of command line
+          missing_value = .true.
+        endif
+        
+        if (missing_value) then
+          write(*,*) "ERROR::{module_name}::{group_name}: &
+            & missing value for "//trim(argn(3:))
+          if (present(iostat)) then
+            iostat = -1
+            return
+          else
+            stop
+          endif
+        endif
+
+        call set_param_string_{group_name}(params, trim(argn(3:)), trim(argv), &
+          & iostat=iostat)
+
+        if (present(iostat)) then
+          if (iostat /= 0) then
+            return  ! error
+          endif
+        endif
+
+        parsed = parsed + 2
+
       else
-        stop
+        ! +++++  not found
+
+        if (.not. present(iostat)) then
+          write(*,*) "ERROR: unknown parameter in {group_name} : ",trim(argn)
+          write(*,*) ""
+          write(*,*) "-h or --help for HELP"
+          stop
+        endif
+
       endif
-      return
+
+      i = i + 2   ! only "--name value" is considered for now
+
+    enddo
+
+    ! At this point, any type error or --help message cases are already sorted out
+    if (present(iostat)) then
+      iostat = parsed
     endif
 
-    if (argn(1:2)  /= "--") then
-      print*, "i=",i, "; Got: ",trim(argn)
-      stop("ERROR: type-specific command line &
-        & arguments must start with '--'")
-    endif
-
-    if (has_param_{group_name}(params, trim(argn(3:)))) then
-      ! +++++  present 
-      call get_command_argument(i+1, argv)
-      call set_param_string_{group_name}(params, trim(argn(3:)), trim(argv))
-      i = i+2
-      if (present(iostat)) then
-        iostat = 0
-      endif
-    else
-      ! +++++  no found
-      if (present(iostat)) then
-        iostat = 1
-      else
-        write(*,*) "ERROR: unknown parameter in {group_name} : ",trim(argn)
-        write(*,*) ""
-        write(*,*) "-h or --help for HELP"
-        stop
-      endif
-    endif
 end subroutine
 
 subroutine print_help_{group_name}(params, iounit, default)
@@ -90,20 +140,29 @@ subroutine print_help_{group_name}(params, iounit, default)
   {list_help}
 end subroutine
 
-subroutine set_param_string_{group_name} (params, name, string)
+subroutine set_param_string_{group_name} (params, name, string, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the {group_name} type from a string argument
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type({type_name}), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
-    integer :: iostat
+    integer, intent(out), optional :: iostat
+
+    if (present(iostat)) then
+      iostat = 0
+    endif
 
     select case (name) 
     {list_set_cases}
     case default
-      write(*,*) "ERROR set_param_string for {group_name}: unknown member :: ",trim(name)
-      stop
+      write(*,*) "ERROR::{module_name}::{group_name}: &
+        & unknown member :: ", trim(name)
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
     end select
 end subroutine
 

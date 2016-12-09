@@ -6,7 +6,7 @@ program example
   implicit none
   type(group1_t) :: par1
   type(control_t) :: ctr
-  integer :: i, iostat
+  integer :: i, iostat, parsed
   character(len=256) :: arg
 
   ! read namelist
@@ -16,18 +16,16 @@ program example
   close(88)
 
   ! parse command-line arguments
-  i = 1
-  do while(i <= command_argument_count())
-    call parse_command_argument(par1, i, iostat)
-    if (iostat==0) continue
-    call parse_command_argument(ctr, i, iostat, arg=arg)
-    if (iostat/=0) then
-      write(*,'("Parameter not found: ",A20,". Type -h for help")') trim(arg)
-      stop
-    endif
-    if (arg == "--help".or.arg == "-h") stop
-    i = i + 2
-  enddo
+  parsed = 0
+  call parse_command_argument(par1, iostat)
+  parsed = parsed + check_iostat(iostat)
+  call parse_command_argument(ctr, iostat)
+  parsed = parsed + check_iostat(iostat)
+
+  if (iostat /= -2 .and. parsed < command_argument_count()) then
+    write(*,*) "Not all arguments were parsed"
+    stop
+  endif
 
   write(*,*) 
   if (ctr%print_nml) then
@@ -40,5 +38,19 @@ program example
   write(*,*) 
   write(*,*) "Nice ! Call with -h flag to get help on existing parameters."
   write(*,*) 
+
+contains
+
+    integer function check_iostat(iostat)
+      integer, intent(in) :: iostat
+      if (iostat == -1) then
+        write(*,*) "ERROR when parsing command-line param. Try -h or --help"
+        stop
+      else if (iostat > 0) then
+        check_iostat = iostat
+      else
+        check_iostat = 0
+      endif
+    end function
 
 end program

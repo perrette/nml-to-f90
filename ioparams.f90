@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.95.g6f826ed.dirty
+! version: 0+untagged.100.g17be7fc.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -80,7 +80,7 @@ module type_conversion
 
           if (q /= size(value)) then
             write(*,*) "command-line :: expected array of size",size(value),', & 
-got:', q
+ &got:', q
             call signal_error(iostat)
             return
           endif
@@ -305,12 +305,14 @@ module ioparams
 
 contains
 
-  subroutine read_nml_group1 (iounit, params)
+  subroutine read_nml_group1 (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the group1 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    logical :: nmlf90_verbose = .true.
 
     character(len=clen) :: string1
     character(len=clen), dimension(3) :: stringarr1
@@ -320,7 +322,7 @@ contains
     character(len=clen) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, & 
-string2
+ &string2
 
     ! initialize variables
     string1 = params%string1
@@ -331,7 +333,15 @@ string2
     string2 = params%string2
 
     ! read all
-    read(unit=iounit, nml=group1)
+    if (.not. present(iostat)) then
+      read(unit=iounit, nml=group1)
+    else
+      read(unit=iounit, nml=group1, iostat=iostat)
+      if (iostat /= 0 .and. nmlf90_verbose) then
+        write(*, *) "Failed to read namelist block: group1"
+      endif
+    endif
+
 
     ! assign back to type
     params%string1 = string1
@@ -357,7 +367,7 @@ subroutine write_nml_group1 (iounit, params)
     character(len=clen) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, & 
-string2
+ &string2
 
     ! initialize variables
     string1 = params%string1
@@ -371,12 +381,14 @@ string2
     write(unit=iounit, nml=group1)
 end subroutine
 
-subroutine read_nml_group2 (iounit, params)
+subroutine read_nml_group2 (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the group2 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    logical :: nmlf90_verbose = .true.
 
     character(len=clen) :: string1
     character(len=clen), dimension(3) :: stringarr1
@@ -390,7 +402,7 @@ subroutine read_nml_group2 (iounit, params)
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, integer2, & 
-string2, intarr1, double1, dblarr1, logarr1
+ &string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -405,7 +417,15 @@ string2, intarr1, double1, dblarr1, logarr1
     logarr1 = params%logarr1
 
     ! read all
-    read(unit=iounit, nml=group2)
+    if (.not. present(iostat)) then
+      read(unit=iounit, nml=group2)
+    else
+      read(unit=iounit, nml=group2, iostat=iostat)
+      if (iostat /= 0 .and. nmlf90_verbose) then
+        write(*, *) "Failed to read namelist block: group2"
+      endif
+    endif
+
 
     ! assign back to type
     params%string1 = string1
@@ -439,7 +459,7 @@ subroutine write_nml_group2 (iounit, params)
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, integer2, & 
-string2, intarr1, double1, dblarr1, logarr1
+ &string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -457,12 +477,14 @@ string2, intarr1, double1, dblarr1, logarr1
     write(unit=iounit, nml=group2)
 end subroutine
 
-subroutine read_nml_control (iounit, params)
+subroutine read_nml_control (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the control group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(control_t), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    logical :: nmlf90_verbose = .true.
 
     logical :: print_nml
 
@@ -472,7 +494,15 @@ subroutine read_nml_control (iounit, params)
     print_nml = params%print_nml
 
     ! read all
-    read(unit=iounit, nml=control)
+    if (.not. present(iostat)) then
+      read(unit=iounit, nml=control)
+    else
+      read(unit=iounit, nml=control, iostat=iostat)
+      if (iostat /= 0 .and. nmlf90_verbose) then
+        write(*, *) "Failed to read namelist block: control"
+      endif
+    endif
+
 
     ! assign back to type
     params%print_nml = print_nml
@@ -497,68 +527,120 @@ subroutine write_nml_control (iounit, params)
 end subroutine
 
 
-subroutine parse_command_argument_group1 (params,i, iostat, arg)
+subroutine parse_command_argument_group1 (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
-    !   i : integer, positional argument of the parameter name
-    !       is incremented if parameter is found
     ! Output:
     !   iostat : integer, optional
-    !       -1 : --help was printed
-    !       0  : param found
-    !       1  : error when reading
+    !       number of arguments that have not been parsed
+    !        0 : all arguments were found
+    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       -1 : error when reading
+    !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
-    !   arg : character, optional : the ith command line argument
-    !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group1_t), intent(inout) :: params
-    integer, intent(inout) :: i
-    integer, optional :: iostat
-    character(len=*), optional :: arg
+    integer, intent(out), optional :: iostat
     character(len=512) :: argn, argv
+    logical :: missing_value
 
-    call get_command_argument(i, argn)
+    integer :: i, n, parsed, ioset
 
-    if (present(arg)) arg = trim(argn)
+    n = command_argument_count()
+    parsed = 0
 
-    ! Print HELP ?
-    if (argn == '--help' .or. argn=='-h') then
-      call print_help_group1(params)
-      if (present(iostat)) then
-        iostat = -1
+    i = 1
+    do while (i <= n)
+      call get_command_argument(i, argn)
+
+      ! Print HELP ?
+      if (argn == '--help' .or. argn=='-h') then
+        call print_help_group1(params)
+        if (present(iostat)) then
+          iostat = -2
+          return
+        else
+          stop
+        endif
+      endif
+
+      if (argn(1:2)  /= "--") then
+        if (.not.present(iostat)) then
+          write(*,*) "i=",i, "; Got: ",trim(argn)
+          stop("ERROR::ioparams type-specific command line &
+            & arguments must start with '--'")
+        else
+          i = i + 1  ! check next argument
+          cycle
+        endif
+      endif
+
+      if (has_param_group1(params, trim(argn(3:)))) then
+        ! +++++  present
+
+        ! only "--name value" is tolerated
+        ! check if value is missing
+        missing_value = .false.
+        if (i+1 <= n) then
+          call get_command_argument(i+1, argv)
+          if ( len(argv) > 1) then
+            ! ...next argument starts with '--'
+            if (argv(1:2)  == "--" ) then
+              missing_value = .true.
+            endif
+          endif
+        else
+          ! ...end of command line
+          missing_value = .true.
+        endif
+
+        if (missing_value) then
+          write(*,*) "ERROR::ioparams::group1: &
+            & missing value for "//trim(argn(3:))
+          if (present(iostat)) then
+            iostat = -1
+            return
+          else
+            stop
+          endif
+        endif
+
+        call set_param_string_group1(params, trim(argn(3:)), trim(argv), &
+          & iostat=iostat)
+
+        if (present(iostat)) then
+          if (iostat /= 0) then
+            return  ! error
+          endif
+        endif
+
+        parsed = parsed + 2
+        i = i + 2   ! only "--name value" is considered for now
+
       else
-        stop
+        ! +++++  not found
+
+        if (.not. present(iostat)) then
+          write(*,*) "ERROR: unknown parameter in group1 : ",trim(argn)
+          write(*,*) ""
+          write(*,*) "-h or --help for HELP"
+          stop
+        endif
+
+        i = i + 1
+
       endif
-      return
+
+    enddo
+
+    ! At this point, any type error or --help message cases are already sorted
+! out
+    if (present(iostat)) then
+      iostat = parsed
     endif
 
-    if (argn(1:2)  /= "--") then
-      print*, "i=",i, "; Got: ",trim(argn)
-      stop("ERROR: type-specific command line &
-        arguments must start with '--'")
-    endif
-
-    if (has_param_group1(params, trim(argn(3:)))) then
-      ! +++++  present
-      call get_command_argument(i+1, argv)
-      call set_param_string_group1(params, trim(argn(3:)), trim(argv))
-      i = i+2
-      if (present(iostat)) then
-        iostat = 0
-      endif
-    else
-      ! +++++  no found
-      if (present(iostat)) then
-        iostat = 1
-      else
-        write(*,*) "ERROR: unknown parameter in group1 : ",trim(argn)
-        write(*,*) ""
-        write(*,*) "-h or --help for HELP"
-        stop
-      endif
-    endif
 end subroutine
 
 subroutine print_help_group1(params, iounit, default)
@@ -592,7 +674,7 @@ if (def) then
     write(valuestr, *) params%string1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
-adjustl(nameshort), trim(adjustl(valuestr))
+ &adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -603,7 +685,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
-trim(adjustl(valuestr)), size(params%stringarr1)
+ &trim(adjustl(valuestr)), size(params%stringarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -613,7 +695,7 @@ if (def) then
     write(valuestr, *) params%logical1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
-adjustl(nameshort), trim(adjustl(valuestr))
+ &adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -623,7 +705,7 @@ if (def) then
     write(valuestr, *) params%integer1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Comment about integer1 (default: & 
-",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+ &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Comment about integer1")') adjustl(nameshort)
 endif
@@ -633,10 +715,10 @@ if (def) then
     write(valuestr, *) params%integer2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Another comment for integer2 (default: & 
-",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+ &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Another comment for integer2")') & 
-adjustl(nameshort)
+ &adjustl(nameshort)
 endif
 
 write(nameshort, *) "string2"
@@ -644,21 +726,25 @@ if (def) then
     write(valuestr, *) params%string2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
-adjustl(nameshort), trim(adjustl(valuestr))
+ &adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
 
 end subroutine
 
-subroutine set_param_string_group1 (params, name, string)
+subroutine set_param_string_group1 (params, name, string, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type from a string argument
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group1_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
-    integer :: iostat
+    integer, intent(out), optional :: iostat
+
+    if (present(iostat)) then
+      iostat = 0
+    endif
 
     select case (name)
 
@@ -672,10 +758,10 @@ case ('stringarr1', 'group1%stringarr1')
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
---group1%stringarr1"
+ &--group1%stringarr1"
         else
             write(*,*) "ERROR converting string to character(len=clen), & 
-dimension(3) :: stringarr1: --group1%stringarr1 ",trim(string)
+ &dimension(3) :: stringarr1: --group1%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -683,14 +769,14 @@ dimension(3) :: stringarr1: --group1%stringarr1 ",trim(string)
 case ('logical1', 'group1%logical1')
     read(string, *, iostat=IOSTAT) params%logical1
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%logical1 = ", & 
-params%logical1
+ &params%logical1
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%logical1"
         else
             write(*,*) "ERROR converting string to logical :: logical1: & 
---group1%logical1 ",trim(string)
+ &--group1%logical1 ",trim(string)
         endif
         stop
     endif
@@ -698,14 +784,14 @@ params%logical1
 case ('integer1', 'group1%integer1')
     read(string, *, iostat=IOSTAT) params%integer1
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer1 = ", & 
-params%integer1
+ &params%integer1
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%integer1"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
-integer1: --group1%integer1 ",trim(string)
+ &integer1: --group1%integer1 ",trim(string)
         endif
         stop
     endif
@@ -713,14 +799,14 @@ integer1: --group1%integer1 ",trim(string)
 case ('integer2', 'group1%integer2')
     read(string, *, iostat=IOSTAT) params%integer2
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer2 = ", & 
-params%integer2
+ &params%integer2
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%integer2"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
-integer2: --group1%integer2 ",trim(string)
+ &integer2: --group1%integer2 ",trim(string)
         endif
         stop
     endif
@@ -730,9 +816,13 @@ case ('string2', 'group1%string2')
     if (VERBOSE) write(*,*) "group1%string2 = ", params%string2
 
     case default
-      write(*,*) "ERROR set_param_string for group1: unknown member :: & 
-",trim(name)
-      stop
+      write(*,*) "ERROR::ioparams::group1: &
+        & unknown member :: ", trim(name)
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
     end select
 end subroutine
 
@@ -759,68 +849,120 @@ case ('string2', 'group1%string2')
 end function
 
 
-subroutine parse_command_argument_group2 (params,i, iostat, arg)
+subroutine parse_command_argument_group2 (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
-    !   i : integer, positional argument of the parameter name
-    !       is incremented if parameter is found
     ! Output:
     !   iostat : integer, optional
-    !       -1 : --help was printed
-    !       0  : param found
-    !       1  : error when reading
+    !       number of arguments that have not been parsed
+    !        0 : all arguments were found
+    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       -1 : error when reading
+    !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
-    !   arg : character, optional : the ith command line argument
-    !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group2_t), intent(inout) :: params
-    integer, intent(inout) :: i
-    integer, optional :: iostat
-    character(len=*), optional :: arg
+    integer, intent(out), optional :: iostat
     character(len=512) :: argn, argv
+    logical :: missing_value
 
-    call get_command_argument(i, argn)
+    integer :: i, n, parsed, ioset
 
-    if (present(arg)) arg = trim(argn)
+    n = command_argument_count()
+    parsed = 0
 
-    ! Print HELP ?
-    if (argn == '--help' .or. argn=='-h') then
-      call print_help_group2(params)
-      if (present(iostat)) then
-        iostat = -1
+    i = 1
+    do while (i <= n)
+      call get_command_argument(i, argn)
+
+      ! Print HELP ?
+      if (argn == '--help' .or. argn=='-h') then
+        call print_help_group2(params)
+        if (present(iostat)) then
+          iostat = -2
+          return
+        else
+          stop
+        endif
+      endif
+
+      if (argn(1:2)  /= "--") then
+        if (.not.present(iostat)) then
+          write(*,*) "i=",i, "; Got: ",trim(argn)
+          stop("ERROR::ioparams type-specific command line &
+            & arguments must start with '--'")
+        else
+          i = i + 1  ! check next argument
+          cycle
+        endif
+      endif
+
+      if (has_param_group2(params, trim(argn(3:)))) then
+        ! +++++  present
+
+        ! only "--name value" is tolerated
+        ! check if value is missing
+        missing_value = .false.
+        if (i+1 <= n) then
+          call get_command_argument(i+1, argv)
+          if ( len(argv) > 1) then
+            ! ...next argument starts with '--'
+            if (argv(1:2)  == "--" ) then
+              missing_value = .true.
+            endif
+          endif
+        else
+          ! ...end of command line
+          missing_value = .true.
+        endif
+
+        if (missing_value) then
+          write(*,*) "ERROR::ioparams::group2: &
+            & missing value for "//trim(argn(3:))
+          if (present(iostat)) then
+            iostat = -1
+            return
+          else
+            stop
+          endif
+        endif
+
+        call set_param_string_group2(params, trim(argn(3:)), trim(argv), &
+          & iostat=iostat)
+
+        if (present(iostat)) then
+          if (iostat /= 0) then
+            return  ! error
+          endif
+        endif
+
+        parsed = parsed + 2
+        i = i + 2   ! only "--name value" is considered for now
+
       else
-        stop
+        ! +++++  not found
+
+        if (.not. present(iostat)) then
+          write(*,*) "ERROR: unknown parameter in group2 : ",trim(argn)
+          write(*,*) ""
+          write(*,*) "-h or --help for HELP"
+          stop
+        endif
+
+        i = i + 1
+
       endif
-      return
+
+    enddo
+
+    ! At this point, any type error or --help message cases are already sorted
+! out
+    if (present(iostat)) then
+      iostat = parsed
     endif
 
-    if (argn(1:2)  /= "--") then
-      print*, "i=",i, "; Got: ",trim(argn)
-      stop("ERROR: type-specific command line &
-        arguments must start with '--'")
-    endif
-
-    if (has_param_group2(params, trim(argn(3:)))) then
-      ! +++++  present
-      call get_command_argument(i+1, argv)
-      call set_param_string_group2(params, trim(argn(3:)), trim(argv))
-      i = i+2
-      if (present(iostat)) then
-        iostat = 0
-      endif
-    else
-      ! +++++  no found
-      if (present(iostat)) then
-        iostat = 1
-      else
-        write(*,*) "ERROR: unknown parameter in group2 : ",trim(argn)
-        write(*,*) ""
-        write(*,*) "-h or --help for HELP"
-        stop
-      endif
-    endif
 end subroutine
 
 subroutine print_help_group2(params, iounit, default)
@@ -854,7 +996,7 @@ if (def) then
     write(valuestr, *) params%string1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
-adjustl(nameshort), trim(adjustl(valuestr))
+ &adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -865,7 +1007,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
-trim(adjustl(valuestr)), size(params%stringarr1)
+ &trim(adjustl(valuestr)), size(params%stringarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -875,7 +1017,7 @@ if (def) then
     write(valuestr, *) params%logical1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
-adjustl(nameshort), trim(adjustl(valuestr))
+ &adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -885,7 +1027,7 @@ if (def) then
     write(valuestr, *) params%integer1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Comment about integer1 (default: & 
-",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+ &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Comment about integer1")') adjustl(nameshort)
 endif
@@ -895,10 +1037,10 @@ if (def) then
     write(valuestr, *) params%integer2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Another comment for integer2 (default: & 
-",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+ &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Another comment for integer2")') & 
-adjustl(nameshort)
+ &adjustl(nameshort)
 endif
 
 write(nameshort, *) "string2"
@@ -906,7 +1048,7 @@ if (def) then
     write(valuestr, *) params%string2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"nasty   sign in comment (default: & 
-",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+ &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"nasty   sign in comment")') adjustl(nameshort)
 endif
@@ -917,7 +1059,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
-trim(adjustl(valuestr)), size(params%intarr1)
+ &trim(adjustl(valuestr)), size(params%intarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -927,7 +1069,7 @@ if (def) then
     write(valuestr, *) params%double1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
-adjustl(nameshort), trim(adjustl(valuestr))
+ &adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -938,7 +1080,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
-trim(adjustl(valuestr)), size(params%dblarr1)
+ &trim(adjustl(valuestr)), size(params%dblarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -949,21 +1091,25 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
-trim(adjustl(valuestr)), size(params%logarr1)
+ &trim(adjustl(valuestr)), size(params%logarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
 
 end subroutine
 
-subroutine set_param_string_group2 (params, name, string)
+subroutine set_param_string_group2 (params, name, string, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group2 type from a string argument
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group2_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
-    integer :: iostat
+    integer, intent(out), optional :: iostat
+
+    if (present(iostat)) then
+      iostat = 0
+    endif
 
     select case (name)
 
@@ -977,10 +1123,10 @@ case ('stringarr1', 'group2%stringarr1')
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
---group2%stringarr1"
+ &--group2%stringarr1"
         else
             write(*,*) "ERROR converting string to character(len=clen), & 
-dimension(3) :: stringarr1: --group2%stringarr1 ",trim(string)
+ &dimension(3) :: stringarr1: --group2%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -988,14 +1134,14 @@ dimension(3) :: stringarr1: --group2%stringarr1 ",trim(string)
 case ('logical1', 'group2%logical1')
     read(string, *, iostat=IOSTAT) params%logical1
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%logical1 = ", & 
-params%logical1
+ &params%logical1
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%logical1"
         else
             write(*,*) "ERROR converting string to logical :: logical1: & 
---group2%logical1 ",trim(string)
+ &--group2%logical1 ",trim(string)
         endif
         stop
     endif
@@ -1003,14 +1149,14 @@ params%logical1
 case ('integer1', 'group2%integer1')
     read(string, *, iostat=IOSTAT) params%integer1
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer1 = ", & 
-params%integer1
+ &params%integer1
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%integer1"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
-integer1: --group2%integer1 ",trim(string)
+ &integer1: --group2%integer1 ",trim(string)
         endif
         stop
     endif
@@ -1018,14 +1164,14 @@ integer1: --group2%integer1 ",trim(string)
 case ('integer2', 'group2%integer2')
     read(string, *, iostat=IOSTAT) params%integer2
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer2 = ", & 
-params%integer2
+ &params%integer2
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%integer2"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
-integer2: --group2%integer2 ",trim(string)
+ &integer2: --group2%integer2 ",trim(string)
         endif
         stop
     endif
@@ -1042,7 +1188,7 @@ case ('intarr1', 'group2%intarr1')
             write(*,*) "ERROR: missing parameter value for --group2%intarr1"
         else
             write(*,*) "ERROR converting string to integer(kind=ip), & 
-dimension(7) :: intarr1: --group2%intarr1 ",trim(string)
+ &dimension(7) :: intarr1: --group2%intarr1 ",trim(string)
         endif
         stop
     endif
@@ -1056,7 +1202,7 @@ case ('double1', 'group2%double1')
             write(*,*) "ERROR: missing parameter value for --group2%double1"
         else
             write(*,*) "ERROR converting string to real(kind=dp) :: double1: & 
---group2%double1 ",trim(string)
+ &--group2%double1 ",trim(string)
         endif
         stop
     endif
@@ -1069,7 +1215,7 @@ case ('dblarr1', 'group2%dblarr1')
             write(*,*) "ERROR: missing parameter value for --group2%dblarr1"
         else
             write(*,*) "ERROR converting string to real(kind=dp), dimension(5) & 
-:: dblarr1: --group2%dblarr1 ",trim(string)
+ &:: dblarr1: --group2%dblarr1 ",trim(string)
         endif
         stop
     endif
@@ -1082,15 +1228,19 @@ case ('logarr1', 'group2%logarr1')
             write(*,*) "ERROR: missing parameter value for --group2%logarr1"
         else
             write(*,*) "ERROR converting string to logical, dimension(5) :: & 
-logarr1: --group2%logarr1 ",trim(string)
+ &logarr1: --group2%logarr1 ",trim(string)
         endif
         stop
     endif
 
     case default
-      write(*,*) "ERROR set_param_string for group2: unknown member :: & 
-",trim(name)
-      stop
+      write(*,*) "ERROR::ioparams::group2: &
+        & unknown member :: ", trim(name)
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
     end select
 end subroutine
 
@@ -1121,68 +1271,120 @@ case ('logarr1', 'group2%logarr1')
 end function
 
 
-subroutine parse_command_argument_control (params,i, iostat, arg)
+subroutine parse_command_argument_control (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
-    !   i : integer, positional argument of the parameter name
-    !       is incremented if parameter is found
     ! Output:
     !   iostat : integer, optional
-    !       -1 : --help was printed
-    !       0  : param found
-    !       1  : error when reading
+    !       number of arguments that have not been parsed
+    !        0 : all arguments were found
+    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       -1 : error when reading
+    !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
-    !   arg : character, optional : the ith command line argument
-    !       as returned by native get_command_argument(i, arg)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(control_t), intent(inout) :: params
-    integer, intent(inout) :: i
-    integer, optional :: iostat
-    character(len=*), optional :: arg
+    integer, intent(out), optional :: iostat
     character(len=512) :: argn, argv
+    logical :: missing_value
 
-    call get_command_argument(i, argn)
+    integer :: i, n, parsed, ioset
 
-    if (present(arg)) arg = trim(argn)
+    n = command_argument_count()
+    parsed = 0
 
-    ! Print HELP ?
-    if (argn == '--help' .or. argn=='-h') then
-      call print_help_control(params)
-      if (present(iostat)) then
-        iostat = -1
+    i = 1
+    do while (i <= n)
+      call get_command_argument(i, argn)
+
+      ! Print HELP ?
+      if (argn == '--help' .or. argn=='-h') then
+        call print_help_control(params)
+        if (present(iostat)) then
+          iostat = -2
+          return
+        else
+          stop
+        endif
+      endif
+
+      if (argn(1:2)  /= "--") then
+        if (.not.present(iostat)) then
+          write(*,*) "i=",i, "; Got: ",trim(argn)
+          stop("ERROR::ioparams type-specific command line &
+            & arguments must start with '--'")
+        else
+          i = i + 1  ! check next argument
+          cycle
+        endif
+      endif
+
+      if (has_param_control(params, trim(argn(3:)))) then
+        ! +++++  present
+
+        ! only "--name value" is tolerated
+        ! check if value is missing
+        missing_value = .false.
+        if (i+1 <= n) then
+          call get_command_argument(i+1, argv)
+          if ( len(argv) > 1) then
+            ! ...next argument starts with '--'
+            if (argv(1:2)  == "--" ) then
+              missing_value = .true.
+            endif
+          endif
+        else
+          ! ...end of command line
+          missing_value = .true.
+        endif
+
+        if (missing_value) then
+          write(*,*) "ERROR::ioparams::control: &
+            & missing value for "//trim(argn(3:))
+          if (present(iostat)) then
+            iostat = -1
+            return
+          else
+            stop
+          endif
+        endif
+
+        call set_param_string_control(params, trim(argn(3:)), trim(argv), &
+          & iostat=iostat)
+
+        if (present(iostat)) then
+          if (iostat /= 0) then
+            return  ! error
+          endif
+        endif
+
+        parsed = parsed + 2
+        i = i + 2   ! only "--name value" is considered for now
+
       else
-        stop
+        ! +++++  not found
+
+        if (.not. present(iostat)) then
+          write(*,*) "ERROR: unknown parameter in control : ",trim(argn)
+          write(*,*) ""
+          write(*,*) "-h or --help for HELP"
+          stop
+        endif
+
+        i = i + 1
+
       endif
-      return
+
+    enddo
+
+    ! At this point, any type error or --help message cases are already sorted
+! out
+    if (present(iostat)) then
+      iostat = parsed
     endif
 
-    if (argn(1:2)  /= "--") then
-      print*, "i=",i, "; Got: ",trim(argn)
-      stop("ERROR: type-specific command line &
-        arguments must start with '--'")
-    endif
-
-    if (has_param_control(params, trim(argn(3:)))) then
-      ! +++++  present
-      call get_command_argument(i+1, argv)
-      call set_param_string_control(params, trim(argn(3:)), trim(argv))
-      i = i+2
-      if (present(iostat)) then
-        iostat = 0
-      endif
-    else
-      ! +++++  no found
-      if (present(iostat)) then
-        iostat = 1
-      else
-        write(*,*) "ERROR: unknown parameter in control : ",trim(argn)
-        write(*,*) ""
-        write(*,*) "-h or --help for HELP"
-        stop
-      endif
-    endif
 end subroutine
 
 subroutine print_help_control(params, iounit, default)
@@ -1216,45 +1418,53 @@ if (def) then
     write(valuestr, *) params%print_nml
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"print read namelist to string? (default: & 
-",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+ &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"print read namelist to string?")') & 
-adjustl(nameshort)
+ &adjustl(nameshort)
 endif
 
 end subroutine
 
-subroutine set_param_string_control (params, name, string)
+subroutine set_param_string_control (params, name, string, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the control type from a string argument
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(control_t), intent(inout) :: params
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
-    integer :: iostat
+    integer, intent(out), optional :: iostat
+
+    if (present(iostat)) then
+      iostat = 0
+    endif
 
     select case (name)
 
 case ('print_nml', 'control%print_nml')
     read(string, *, iostat=IOSTAT) params%print_nml
     if (VERBOSE .or. IOSTAT/=0) write(*,*) "control%print_nml = ", & 
-params%print_nml
+ &params%print_nml
 
     if (IOSTAT /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
---control%print_nml"
+ &--control%print_nml"
         else
             write(*,*) "ERROR converting string to logical :: print_nml: & 
---control%print_nml ",trim(string)
+ &--control%print_nml ",trim(string)
         endif
         stop
     endif
 
     case default
-      write(*,*) "ERROR set_param_string for control: unknown member :: & 
-",trim(name)
-      stop
+      write(*,*) "ERROR::ioparams::control: &
+        & unknown member :: ", trim(name)
+      if (present(iostat)) then
+        iostat = -1
+      else
+        stop
+      endif
     end select
 end subroutine
 
@@ -1295,7 +1505,7 @@ subroutine set_param_group1_character (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: & 
-character(len=*) :: ",trim(name)
+ &character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1318,7 +1528,7 @@ subroutine get_param_group1_character (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member & 
-character(len=*) :: ",trim(name)
+ &character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1338,7 +1548,7 @@ subroutine set_param_group1_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: & 
-character(len=*), dimension(:) :: ",trim(name)
+ &character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1358,7 +1568,7 @@ subroutine get_param_group1_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member & 
-character(len=*), dimension(:) :: ",trim(name)
+ &character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1381,7 +1591,7 @@ subroutine set_param_group1_integer (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: & 
-integer(kind=ip) :: ",trim(name)
+ &integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1404,7 +1614,7 @@ subroutine get_param_group1_integer (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member & 
-integer(kind=ip) :: ",trim(name)
+ &integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1424,7 +1634,7 @@ subroutine set_param_group1_logical (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: logical & 
-:: ",trim(name)
+ &:: ",trim(name)
             stop
     end select
 end subroutine
@@ -1444,7 +1654,7 @@ subroutine get_param_group1_logical (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member logical & 
-:: ",trim(name)
+ &:: ",trim(name)
             stop
     end select
 end subroutine
@@ -1467,7 +1677,7 @@ subroutine set_param_group2_character (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-character(len=*) :: ",trim(name)
+ &character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1490,7 +1700,7 @@ subroutine get_param_group2_character (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
-character(len=*) :: ",trim(name)
+ &character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1510,7 +1720,7 @@ subroutine set_param_group2_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-character(len=*), dimension(:) :: ",trim(name)
+ &character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1530,7 +1740,7 @@ subroutine get_param_group2_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
-character(len=*), dimension(:) :: ",trim(name)
+ &character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1553,7 +1763,7 @@ subroutine set_param_group2_integer (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-integer(kind=ip) :: ",trim(name)
+ &integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1576,7 +1786,7 @@ subroutine get_param_group2_integer (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
-integer(kind=ip) :: ",trim(name)
+ &integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1596,7 +1806,7 @@ subroutine set_param_group2_integer_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-integer(kind=ip), dimension(:) :: ",trim(name)
+ &integer(kind=ip), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1616,7 +1826,7 @@ subroutine get_param_group2_integer_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
-integer(kind=ip), dimension(:) :: ",trim(name)
+ &integer(kind=ip), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1636,7 +1846,7 @@ subroutine set_param_group2_logical (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: logical & 
-:: ",trim(name)
+ &:: ",trim(name)
             stop
     end select
 end subroutine
@@ -1656,7 +1866,7 @@ subroutine get_param_group2_logical (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member logical & 
-:: ",trim(name)
+ &:: ",trim(name)
             stop
     end select
 end subroutine
@@ -1676,7 +1886,7 @@ subroutine set_param_group2_logical_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-logical, dimension(:) :: ",trim(name)
+ &logical, dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1696,7 +1906,7 @@ subroutine get_param_group2_logical_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member logical, & 
-dimension(:) :: ",trim(name)
+ &dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1716,7 +1926,7 @@ subroutine set_param_group2_real (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-real(kind=dp) :: ",trim(name)
+ &real(kind=dp) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1736,7 +1946,7 @@ subroutine get_param_group2_real (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
-real(kind=dp) :: ",trim(name)
+ &real(kind=dp) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1756,7 +1966,7 @@ subroutine set_param_group2_real_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
-real(kind=dp), dimension(:) :: ",trim(name)
+ &real(kind=dp), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1776,7 +1986,7 @@ subroutine get_param_group2_real_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
-real(kind=dp), dimension(:) :: ",trim(name)
+ &real(kind=dp), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1796,7 +2006,7 @@ subroutine set_param_control_logical (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for control: unknown type member: & 
-logical :: ",trim(name)
+ &logical :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1816,7 +2026,7 @@ subroutine get_param_control_logical (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for control: unknown type member logical & 
-:: ",trim(name)
+ &:: ",trim(name)
             stop
     end select
 end subroutine
