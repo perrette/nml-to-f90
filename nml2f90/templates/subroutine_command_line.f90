@@ -38,7 +38,7 @@ subroutine parse_command_argument_{group_name} (params,i, iostat, arg)
     if (argn(1:2)  /= "--") then
       print*, "i=",i, "; Got: ",trim(argn)
       stop("ERROR: type-specific command line &
-        arguments must start with '--'")
+        & arguments must start with '--'")
     endif
 
     if (has_param_{group_name}(params, trim(argn(3:)))) then
