@@ -35,8 +35,8 @@ In its simplest form, this would be:
     call parse_command_args(par1, unmatched=unmatched, stop_on_help=.true.)
 
     if (size(unmatched) > 0) then
-        write(*,*) "Some parameters were not matched:"
-        write(*,*) unmatched
+        write(*,*) "Some arguments were not matched:"
+        write(*,*) trim(trim_array(unmatched))
         stop
     endif
     

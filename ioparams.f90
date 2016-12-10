@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.108.g36d608c.dirty
+! version: 0+untagged.110.g72cc886.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -29,7 +29,9 @@ module type_conversion
       module procedure :: string_to_array_logical
     end interface
 
+
   contains
+
 
     subroutine signal_error(iostat)
       integer, optional :: iostat
@@ -202,6 +204,7 @@ module ioparams
   public :: set_param
   public :: get_param
 
+  public :: trim_array
 
   integer, parameter :: dp = 8
   integer, parameter :: ip = 4
@@ -305,6 +308,17 @@ module ioparams
 
 
 contains
+
+  function trim_array(arr) result(str)
+      character(len=*), intent(in) :: arr(:)
+      character(len=len(arr)*size(arr)) :: str
+      integer :: i, n
+      str = ""
+      do i=1,size(arr)
+          str = trim(str)//" "//trim(arr(i))
+      enddo
+      str = adjustl(str)
+  end function
 
   ! Namelist I/O ******************************************
     subroutine read_nml_group1 (iounit, params, iostat)
