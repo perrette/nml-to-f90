@@ -313,7 +313,7 @@ class Module(object):
                         else:
                             short_code += subl+' &\n'
                 else:
-                    short_code += " & \n &".join(sublines) +"\n"
+                    short_code += " & \n& ".join(sublines) +"\n"
         code = short_code
 
         return code
