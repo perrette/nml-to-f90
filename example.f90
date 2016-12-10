@@ -1,13 +1,14 @@
 program example
   use ioparams, only: group1_t, control_t, &
     read_nml, write_nml, &
-    parse_command_args, print_help, count_parsed_args
+    parse_command_args, print_help
 
   implicit none
   type(group1_t) :: par1
   type(control_t) :: ctr
-  integer :: i, iostat, parsed
+  integer :: i, parsed
   character(len=256) :: arg
+  character(len=256), allocatable :: unmatched(:)
 
   ! read namelist
   open(88, file="namelist.nml")
@@ -16,20 +17,15 @@ program example
   close(88)
 
   ! parse command-line arguments
-  parsed = 0
-  call parse_command_args(par1, iostat)
-  parsed = parsed + count_parsed_args(iostat)
-  call parse_command_args(ctr, iostat)
-  parsed = parsed + count_parsed_args(iostat)
+  call parse_command_args(par1, unmatched=unmatched, stop_on_help=.false.)
+  call parse_command_args(ctr, args=unmatched, unmatched=unmatched)
 
-
-  write(*, *) "Parsed args: ", parsed
-  if (iostat /= -2 .and. parsed < command_argument_count()) then
-    write(*,*) "Not all arguments were parsed"
+  if (size(unmatched) > 0) then
+    write(*,*) "Some arguments were not matched: "
+    write(*,*) unmatched
     stop
   endif
 
-  write(*,*) 
   if (ctr%print_nml) then
     write(*,*) "-------------------------------------"
     write(*,*) "Print namelist : "
@@ -37,8 +33,6 @@ program example
     call write_nml(6, par1)
     write(*,*) "-------------------------------------"
   endif
-  write(*,*) 
-  write(*,*) "Nice ! Call with -h flag to get help on existing parameters."
-  write(*,*) 
+  write(*,*) "Example program. Call with -h flag to get help on existing parameters."
 
 end program

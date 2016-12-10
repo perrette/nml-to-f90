@@ -24,22 +24,22 @@ In its simplest form, this would be:
 
     type(group1_t) :: par1
     integer :: iounit=88, iostat
+    character(len=50), dimension(:), allocatable :: unmatched
 
     ! read namelist
     open(iounit, file="namelist.nml")
     call read_nml(iounit, par1)
     close(iounit)
 
-    ! parse command-line arguments and stop in case of error
-    call parse_command_args(par1, iostat)
-    if (iostat == -2) then
-        stop  ! help
-    elseif (iostat == -1) then
-        stop
-    elseif (iostat > 0) then
-        write(*,*) "Unknown parameter(s)"
+    ! parse command-line arguments and stop in case of error or with --help
+    call parse_command_args(par1, unmatched=unmatched, stop_on_help=.true.)
+
+    if (size(unmatched) > 0) then
+        write(*,*) "Some parameters were not matched:"
+        write(*,*) unmatched
         stop
     endif
+    
 
 
 __NOTE__: the script interface will be simplified soon (see [issue #1](https://github.com/perrette/nml-to-f90/issues/1))

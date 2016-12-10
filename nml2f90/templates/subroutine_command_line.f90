@@ -15,7 +15,7 @@ subroutine parse_command_args_{group_name} (params, iostat, unmatched, args, &
     type({type_name}), intent(inout) :: params
     integer, intent(out), optional :: iostat
     character(len=*), dimension(:), intent(in), optional :: args
-    character(len=*), dimension(:), allocatable, intent(out), optional :: unmatched
+    character(len=*), dimension(:), allocatable, intent(inout), optional :: unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
     logical, intent(in), optional :: stop_on_help
     character(len=clen) :: argn, argv
@@ -144,8 +144,6 @@ subroutine parse_command_args_{group_name} (params, iostat, unmatched, args, &
     endif
 
     if (present(unmatched)) then
-      if (allocated(unmatched)) deallocate(unmatched)
-      allocate(unmatched(n-parsed))
       unmatched = unmatched_opt(:n-parsed)
     endif
 

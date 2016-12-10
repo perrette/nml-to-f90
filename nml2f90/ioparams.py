@@ -440,7 +440,7 @@ class CommandLine(Feature):
     """
     name = "command_line"
     public = ["parse_command_args", "print_help", "set_param_string", "has_param"]
-    public_helper = ["count_parsed_args"]
+    public_helper = []
     private = []
     dependencies = ["type_conversion"]
 

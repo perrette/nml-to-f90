@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.105.gca95871.dirty
+! version: 0+untagged.108.g36d608c.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -199,7 +199,6 @@ module ioparams
   public :: print_help
   public :: set_param_string
   public :: has_param
-  public :: count_parsed_args
   public :: set_param
   public :: get_param
 
@@ -528,32 +527,6 @@ end subroutine
 
 
 ! Command-line argument passing
-       ! -----------------------------
-
-    ! Usage : call parse_command_args(par)
-    ! Usage : call parse_command_args(par, io=io)
-    !         count = count_parsed_args(io)
-    !         call parse_command_args(par2, io=io)
-    !         count = count + count_parsed_args(io)
-    !         if (count /= command_argument_count()) stop('unmatched
-! parameters')
-
-
-        function count_parsed_args(iostat) result(nparsed)
-          ! Check iostat and count parsed argument
-          integer, intent(in) :: iostat
-      integer :: nparsed
-          if (iostat == -1) then
-            write(*,*) "ERROR when parsing command-line params. Try -h or & 
-& --help"
-            stop
-          else if (iostat >= 0) then
-            nparsed = command_argument_count() - iostat
-          else
-            nparsed = 0
-          endif
-        end function
-
     subroutine parse_command_args_group1 (params, iostat, unmatched, args, &
     & stop_on_help)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -571,7 +544,7 @@ end subroutine
     type(group1_t), intent(inout) :: params
     integer, intent(out), optional :: iostat
     character(len=*), dimension(:), intent(in), optional :: args
-    character(len=*), dimension(:), allocatable, intent(out), optional :: & 
+    character(len=*), dimension(:), allocatable, intent(inout), optional :: & 
 & unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
     logical, intent(in), optional :: stop_on_help
@@ -702,8 +675,6 @@ end subroutine
     endif
 
     if (present(unmatched)) then
-      if (allocated(unmatched)) deallocate(unmatched)
-      allocate(unmatched(n-parsed))
       unmatched = unmatched_opt(:n-parsed)
     endif
 
@@ -934,7 +905,7 @@ subroutine parse_command_args_group2 (params, iostat, unmatched, args, &
     type(group2_t), intent(inout) :: params
     integer, intent(out), optional :: iostat
     character(len=*), dimension(:), intent(in), optional :: args
-    character(len=*), dimension(:), allocatable, intent(out), optional :: & 
+    character(len=*), dimension(:), allocatable, intent(inout), optional :: & 
 & unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
     logical, intent(in), optional :: stop_on_help
@@ -1065,8 +1036,6 @@ subroutine parse_command_args_group2 (params, iostat, unmatched, args, &
     endif
 
     if (present(unmatched)) then
-      if (allocated(unmatched)) deallocate(unmatched)
-      allocate(unmatched(n-parsed))
       unmatched = unmatched_opt(:n-parsed)
     endif
 
@@ -1400,7 +1369,7 @@ subroutine parse_command_args_control (params, iostat, unmatched, args, &
     type(control_t), intent(inout) :: params
     integer, intent(out), optional :: iostat
     character(len=*), dimension(:), intent(in), optional :: args
-    character(len=*), dimension(:), allocatable, intent(out), optional :: & 
+    character(len=*), dimension(:), allocatable, intent(inout), optional :: & 
 & unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
     logical, intent(in), optional :: stop_on_help
@@ -1531,8 +1500,6 @@ subroutine parse_command_args_control (params, iostat, unmatched, args, &
     endif
 
     if (present(unmatched)) then
-      if (allocated(unmatched)) deallocate(unmatched)
-      allocate(unmatched(n-parsed))
       unmatched = unmatched_opt(:n-parsed)
     endif
 

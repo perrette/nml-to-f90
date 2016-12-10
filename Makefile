@@ -76,7 +76,9 @@ example: $(objdir)/ioparams.o $(objdir)/example.o
 test: $(objdir)/ioparams.o $(objdir)/test.o
 	$(FC) $(DFLAGS) $(FLAGS) -o test.x $^ $(LFLAGS)
 	@echo " "
-	@echo "    test.x is ready."
+	@echo "    test.x is ready. run it"
+	@echo " "
+	./test.x
 	@echo " "
 
 test_nml: $(objdir)/nml.o $(objdir)/ioparams.o $(objdir)/test_nml.o
