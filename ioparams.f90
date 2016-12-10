@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.113.gdbb41c0.dirty
+! version: 0+untagged.116.g3ddfd89.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -195,6 +195,7 @@ module ioparams
   public :: control_t
   public :: read_nml
   public :: write_nml
+  public :: read_nml_file
   public :: parse_command_args
   public :: print_help
   public :: set_param_string
@@ -246,6 +247,12 @@ module ioparams
     module procedure :: write_nml_group1
     module procedure :: write_nml_group2
     module procedure :: write_nml_control
+  end interface
+
+  interface read_nml_file
+    module procedure :: read_nml_file_group1
+    module procedure :: read_nml_file_group2
+    module procedure :: read_nml_file_control
   end interface
 
   interface parse_command_args
@@ -405,6 +412,16 @@ subroutine write_nml_group1 (iounit, params)
     write(unit=iounit, nml=group1)
 end subroutine
 
+subroutine read_nml_file_group1 (file, params, iostat)
+    character(len=*), intent(in) :: file
+    type(group1_t), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    integer :: unit = 4563
+    open(file=file, unit=unit, status='OLD')
+    call read_nml_group1 (unit, params, iostat)
+    close(unit)
+end subroutine
+
 subroutine read_nml_group2 (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the group2 group in a namelist file and assign to type
@@ -500,6 +517,16 @@ subroutine write_nml_group2 (iounit, params)
     write(unit=iounit, nml=group2)
 end subroutine
 
+subroutine read_nml_file_group2 (file, params, iostat)
+    character(len=*), intent(in) :: file
+    type(group2_t), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    integer :: unit = 4563
+    open(file=file, unit=unit, status='OLD')
+    call read_nml_group2 (unit, params, iostat)
+    close(unit)
+end subroutine
+
 subroutine read_nml_control (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the control group in a namelist file and assign to type
@@ -546,6 +573,16 @@ subroutine write_nml_control (iounit, params)
 
     ! write_all
     write(unit=iounit, nml=control)
+end subroutine
+
+subroutine read_nml_file_control (file, params, iostat)
+    character(len=*), intent(in) :: file
+    type(control_t), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    integer :: unit = 4563
+    open(file=file, unit=unit, status='OLD')
+    call read_nml_control (unit, params, iostat)
+    close(unit)
 end subroutine
 
 
@@ -610,7 +647,7 @@ end subroutine
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop('End of help message : stop')
+          stop('End of help message : exit')
         endif
       endif
 
@@ -967,7 +1004,7 @@ subroutine parse_command_args_group2 (params, args, unmatched, &
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop('End of help message : stop')
+          stop('End of help message : exit')
         endif
       endif
 
@@ -1427,7 +1464,7 @@ subroutine parse_command_args_control (params, args, unmatched, &
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop('End of help message : stop')
+          stop('End of help message : exit')
         endif
       endif
 
