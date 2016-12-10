@@ -24,7 +24,7 @@ In its simplest form, this would be:
 
     type(group1_t) :: par1
     integer :: iounit=88, iostat
-    character(len=50), dimension(:), allocatable :: unmatched
+    character(len=50), dimension(:), allocatable :: args
 
     ! read namelist
     open(iounit, file="namelist.nml")
@@ -32,7 +32,8 @@ In its simplest form, this would be:
     close(iounit)
 
     ! parse command-line arguments and stop in case of error or with --help
-    call parse_command_args(par1, unmatched=unmatched, stop_on_help=.true.)
+    call command_argument_as_array(args)
+    call parse_command_args(par1, args=args, unmatched=args, stop_on_help=.true.)
 
     if (size(unmatched) > 0) then
         write(*,*) "Some arguments were not matched:"

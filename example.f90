@@ -1,6 +1,6 @@
 program example
   use ioparams, only: group1_t, control_t, &
-    read_nml, write_nml, &
+    read_nml, write_nml, command_argument_as_array, &
     parse_command_args, print_help, trim_array
 
   implicit none
@@ -8,7 +8,7 @@ program example
   type(control_t) :: ctr
   integer :: i, parsed
   character(len=256) :: arg
-  character(len=256), allocatable :: unmatched(:)
+  character(len=256), allocatable :: args(:)
 
   ! read namelist
   open(88, file="namelist.nml")
@@ -17,12 +17,13 @@ program example
   close(88)
 
   ! parse command-line arguments
-  call parse_command_args(par1, unmatched=unmatched, stop_on_help=.false.)
-  call parse_command_args(ctr, args=unmatched, unmatched=unmatched)
+  call command_argument_as_array(args)
+  call parse_command_args(par1, args=args, unmatched=args, stop_on_help=.false.)
+  call parse_command_args(ctr, args=args, unmatched=args)
 
-  if (size(unmatched) > 0) then
+  if (size(args) > 0) then
     write(*,*) "Some arguments were not matched: "
-    write(*,*) trim(trim_array(unmatched))
+    write(*,*) trim(trim_array(args))
     stop
   endif
 

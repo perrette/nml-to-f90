@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.111.ge6ab418.dirty
+! version: 0+untagged.112.g4bc62c3.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -203,6 +203,7 @@ module ioparams
   public :: get_param
 
   public :: trim_array
+  public :: command_argument_as_array
 
   integer, parameter :: dp = 8
   integer, parameter :: ip = 4
@@ -317,6 +318,16 @@ contains
       enddo
       str = adjustl(str)
   end function
+
+  subroutine command_argument_as_array(args)
+      character(len=*), intent(out), allocatable :: args(:)
+      integer :: i, n
+      n = command_argument_count()
+      allocate(args(n))
+      do i=1,n
+          call get_command_argument(i, args(i))
+      enddo
+  end subroutine
 
   ! Namelist I/O ******************************************
     subroutine read_nml_group1 (iounit, params, iostat)
@@ -574,17 +585,13 @@ end subroutine
     ! Define a list of command line arguments args_opt
     if (present(args)) then
       ! ... provided as subroutine argument
-      n = size(args)
       args_opt = args
     else
       ! ... provided as command-line argument
-      n = command_argument_count()
-      if (allocated(args_opt)) deallocate(args_opt)
-      allocate(args_opt(n))
-      do i=1,n
-          call get_command_argument(i, args_opt(i))
-      enddo
+      call command_argument_as_array(args_opt)
     endif
+
+    n = size(args_opt)
 
     if (allocated(unmatched_opt)) deallocate(unmatched_opt)
     allocate(unmatched_opt(n))
@@ -935,17 +942,13 @@ subroutine parse_command_args_group2 (params, unmatched, args, &
     ! Define a list of command line arguments args_opt
     if (present(args)) then
       ! ... provided as subroutine argument
-      n = size(args)
       args_opt = args
     else
       ! ... provided as command-line argument
-      n = command_argument_count()
-      if (allocated(args_opt)) deallocate(args_opt)
-      allocate(args_opt(n))
-      do i=1,n
-          call get_command_argument(i, args_opt(i))
-      enddo
+      call command_argument_as_array(args_opt)
     endif
+
+    n = size(args_opt)
 
     if (allocated(unmatched_opt)) deallocate(unmatched_opt)
     allocate(unmatched_opt(n))
@@ -1399,17 +1402,13 @@ subroutine parse_command_args_control (params, unmatched, args, &
     ! Define a list of command line arguments args_opt
     if (present(args)) then
       ! ... provided as subroutine argument
-      n = size(args)
       args_opt = args
     else
       ! ... provided as command-line argument
-      n = command_argument_count()
-      if (allocated(args_opt)) deallocate(args_opt)
-      allocate(args_opt(n))
-      do i=1,n
-          call get_command_argument(i, args_opt(i))
-      enddo
+      call command_argument_as_array(args_opt)
     endif
+
+    n = size(args_opt)
 
     if (allocated(unmatched_opt)) deallocate(unmatched_opt)
     allocate(unmatched_opt(n))

@@ -4,6 +4,7 @@ program test_io_params
   use ioparams, only: read_nml, write_nml
   use ioparams, only: set_param, get_param
   use ioparams, only: parse_command_args, print_help
+  use ioparams, only: command_argument_as_array
   use ioparams, only: has_param, set_param_string ! low-level
 
   implicit none 
@@ -115,7 +116,8 @@ program test_io_params
   i = 1
   io=0
   parsed = 0
-  call parse_command_args(group1, unmatched=unmatched, stop_on_help=.false.)
+  call command_argument_as_array(unmatched)
+  call parse_command_args(group1, args=unmatched, unmatched=unmatched, stop_on_help=.false.)
   call parse_command_args(group2, args=unmatched)
 
   ! Print namelist to screen

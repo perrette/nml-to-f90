@@ -32,17 +32,13 @@ subroutine parse_command_args_{group_name} (params, unmatched, args, &
     ! Define a list of command line arguments args_opt
     if (present(args)) then
       ! ... provided as subroutine argument
-      n = size(args)
       args_opt = args
     else
       ! ... provided as command-line argument
-      n = command_argument_count()
-      if (allocated(args_opt)) deallocate(args_opt) 
-      allocate(args_opt(n))
-      do i=1,n
-          call get_command_argument(i, args_opt(i))
-      enddo
+      call command_argument_as_array(args_opt)
     endif
+
+    n = size(args_opt)
 
     if (allocated(unmatched_opt)) deallocate(unmatched_opt)
     allocate(unmatched_opt(n))
