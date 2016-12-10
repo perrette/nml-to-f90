@@ -1,13 +1,12 @@
-subroutine parse_command_argument_{group_name} (params, iostat)
+subroutine parse_command_args_{group_name} (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
     ! Output:
     !   iostat : integer, optional
-    !       number of arguments that have not been parsed
     !        0 : all arguments were found
-    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       >0 : number of unmatched arguments
     !       -1 : error when reading
     !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
@@ -17,7 +16,7 @@ subroutine parse_command_argument_{group_name} (params, iostat)
     character(len=512) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed, ioset
+    integer :: i, n, parsed
 
     n = command_argument_count()
     parsed = 0
@@ -107,7 +106,7 @@ subroutine parse_command_argument_{group_name} (params, iostat)
 
     ! At this point, any type error or --help message cases are already sorted out
     if (present(iostat)) then
-      iostat = parsed
+      iostat = n - parsed
     endif
 
 end subroutine
@@ -148,6 +147,7 @@ subroutine set_param_string_{group_name} (params, name, string, iostat)
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
     integer, intent(out), optional :: iostat
+    integer :: io !! local...
 
     if (present(iostat)) then
       iostat = 0

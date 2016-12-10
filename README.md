@@ -10,7 +10,7 @@ To be imported in any other program as follow (you need to compile
 ioparams.f90 of course, e.g. see **compilation** below)
 
     use ioparams, only: group1_t, group2_t
-    use ioparams, only: read_nml, write_nml, parse_command_argument
+    use ioparams, only: read_nml, write_nml, parse_command_args
 
 where `<group>_t` are newly defined types created from namelist groups
 and the four subroutines are handy I/O and set/get interfaces for the
@@ -31,7 +31,7 @@ In its simplest form, this would be:
     close(iounit)
 
     ! parse command-line arguments and stop in case of error
-    call parse_command_argument(par1, iostat)
+    call parse_command_args(par1, iostat)
     if (iostat == -2) then
         stop  ! help
     elseif (iostat == -1) then
@@ -110,7 +110,7 @@ And the command-line argument parsing for whole type of course, which
 remains a useful feature.  This feature is still a work-in-progress.
 
 Note this concerns ioparams.f90's internals and does not change the way you use 
-ioparams' `read_nml`, `parse_command_argument`, `print_help`. For now, 
+ioparams' `read_nml`, `parse_command_args`, `print_help`. For now, 
 the `write_nml` is not available with this option.
 
 If`--io-nml-nml` is passed, there is no need to indicate `--io-nml`.

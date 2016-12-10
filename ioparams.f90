@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.100.g17be7fc.dirty
+! version: 0+untagged.101.g8b11b0f.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,6 +17,7 @@ module type_conversion
 ! UPDATE M.P. 20161116: string_to_array :: assume comma-separated values
 !
 ! =============================================================
+  implicit none
 
   integer, parameter :: Float = kind(0.d0)
 
@@ -194,10 +195,11 @@ module ioparams
   public :: control_t
   public :: read_nml
   public :: write_nml
-  public :: parse_command_argument
+  public :: parse_command_args
   public :: print_help
   public :: set_param_string
   public :: has_param
+  public :: count_parsed_args
   public :: set_param
   public :: get_param
 
@@ -245,10 +247,10 @@ module ioparams
     module procedure :: write_nml_control
   end interface
 
-  interface parse_command_argument
-    module procedure :: parse_command_argument_group1
-    module procedure :: parse_command_argument_group2
-    module procedure :: parse_command_argument_control
+  interface parse_command_args
+    module procedure :: parse_command_args_group1
+    module procedure :: parse_command_args_group2
+    module procedure :: parse_command_args_control
   end interface
 
   interface print_help
@@ -305,14 +307,14 @@ module ioparams
 
 contains
 
-  subroutine read_nml_group1 (iounit, params, iostat)
+  ! Namelist I/O ******************************************
+    subroutine read_nml_group1 (iounit, params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Read the group1 group in a namelist file and assign to type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     integer, intent(in) :: iounit
     type(group1_t), intent(inout) :: params
     integer, optional, intent(out) :: iostat
-    logical :: nmlf90_verbose = .true.
 
     character(len=clen) :: string1
     character(len=clen), dimension(3) :: stringarr1
@@ -337,7 +339,7 @@ contains
       read(unit=iounit, nml=group1)
     else
       read(unit=iounit, nml=group1, iostat=iostat)
-      if (iostat /= 0 .and. nmlf90_verbose) then
+      if (iostat /= 0 .and. VERBOSE) then
         write(*, *) "Failed to read namelist block: group1"
       endif
     endif
@@ -388,7 +390,6 @@ subroutine read_nml_group2 (iounit, params, iostat)
     integer, intent(in) :: iounit
     type(group2_t), intent(inout) :: params
     integer, optional, intent(out) :: iostat
-    logical :: nmlf90_verbose = .true.
 
     character(len=clen) :: string1
     character(len=clen), dimension(3) :: stringarr1
@@ -421,7 +422,7 @@ subroutine read_nml_group2 (iounit, params, iostat)
       read(unit=iounit, nml=group2)
     else
       read(unit=iounit, nml=group2, iostat=iostat)
-      if (iostat /= 0 .and. nmlf90_verbose) then
+      if (iostat /= 0 .and. VERBOSE) then
         write(*, *) "Failed to read namelist block: group2"
       endif
     endif
@@ -484,7 +485,6 @@ subroutine read_nml_control (iounit, params, iostat)
     integer, intent(in) :: iounit
     type(control_t), intent(inout) :: params
     integer, optional, intent(out) :: iostat
-    logical :: nmlf90_verbose = .true.
 
     logical :: print_nml
 
@@ -498,7 +498,7 @@ subroutine read_nml_control (iounit, params, iostat)
       read(unit=iounit, nml=control)
     else
       read(unit=iounit, nml=control, iostat=iostat)
-      if (iostat /= 0 .and. nmlf90_verbose) then
+      if (iostat /= 0 .and. VERBOSE) then
         write(*, *) "Failed to read namelist block: control"
       endif
     endif
@@ -527,16 +527,42 @@ subroutine write_nml_control (iounit, params)
 end subroutine
 
 
-subroutine parse_command_argument_group1 (params, iostat)
+! Command-line argument passing
+       ! -----------------------------
+
+    ! Usage : call parse_command_args(par)
+    ! Usage : call parse_command_args(par, io=io)
+    !         count = count_parsed_args(io)
+    !         call parse_command_args(par2, io=io)
+    !         count = count + count_parsed_args(io)
+    !         if (count /= command_argument_count()) stop('unmatched
+! parameters')
+
+
+        function count_parsed_args(iostat) result(nparsed)
+          ! Check iostat and count parsed argument
+          integer, intent(in) :: iostat
+      integer :: nparsed
+          if (iostat == -1) then
+            write(*,*) "ERROR when parsing command-line params. Try -h or & 
+ &--help"
+            stop
+          else if (iostat >= 0) then
+            nparsed = command_argument_count() - iostat
+          else
+            nparsed = 0
+          endif
+        end function
+
+    subroutine parse_command_args_group1 (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
     ! Output:
     !   iostat : integer, optional
-    !       number of arguments that have not been parsed
     !        0 : all arguments were found
-    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       >0 : number of unmatched arguments
     !       -1 : error when reading
     !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
@@ -546,7 +572,7 @@ subroutine parse_command_argument_group1 (params, iostat)
     character(len=512) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed, ioset
+    integer :: i, n, parsed
 
     n = command_argument_count()
     parsed = 0
@@ -617,7 +643,6 @@ subroutine parse_command_argument_group1 (params, iostat)
         endif
 
         parsed = parsed + 2
-        i = i + 2   ! only "--name value" is considered for now
 
       else
         ! +++++  not found
@@ -629,16 +654,16 @@ subroutine parse_command_argument_group1 (params, iostat)
           stop
         endif
 
-        i = i + 1
-
       endif
+
+      i = i + 2   ! only "--name value" is considered for now
 
     enddo
 
     ! At this point, any type error or --help message cases are already sorted
 ! out
     if (present(iostat)) then
-      iostat = parsed
+      iostat = n - parsed
     endif
 
 end subroutine
@@ -741,6 +766,7 @@ subroutine set_param_string_group1 (params, name, string, iostat)
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
     integer, intent(out), optional :: iostat
+    integer :: io !! local...
 
     if (present(iostat)) then
       iostat = 0
@@ -753,9 +779,9 @@ case ('string1', 'group1%string1')
     if (VERBOSE) write(*,*) "group1%string1 = ", params%string1
 
 case ('stringarr1', 'group1%stringarr1')
-    call string_to_array(string, params%stringarr1, iostat=iostat)
+    call string_to_array(string, params%stringarr1, iostat=io)
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
  &--group1%stringarr1"
@@ -767,11 +793,10 @@ case ('stringarr1', 'group1%stringarr1')
     endif
 
 case ('logical1', 'group1%logical1')
-    read(string, *, iostat=IOSTAT) params%logical1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%logical1 = ", & 
- &params%logical1
+    read(string, *, iostat=io) params%logical1
+    if (VERBOSE .or. io/=0) write(*,*) "group1%logical1 = ", params%logical1
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%logical1"
         else
@@ -782,11 +807,10 @@ case ('logical1', 'group1%logical1')
     endif
 
 case ('integer1', 'group1%integer1')
-    read(string, *, iostat=IOSTAT) params%integer1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer1 = ", & 
- &params%integer1
+    read(string, *, iostat=io) params%integer1
+    if (VERBOSE .or. io/=0) write(*,*) "group1%integer1 = ", params%integer1
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%integer1"
         else
@@ -797,11 +821,10 @@ case ('integer1', 'group1%integer1')
     endif
 
 case ('integer2', 'group1%integer2')
-    read(string, *, iostat=IOSTAT) params%integer2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group1%integer2 = ", & 
- &params%integer2
+    read(string, *, iostat=io) params%integer2
+    if (VERBOSE .or. io/=0) write(*,*) "group1%integer2 = ", params%integer2
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group1%integer2"
         else
@@ -849,16 +872,15 @@ case ('string2', 'group1%string2')
 end function
 
 
-subroutine parse_command_argument_group2 (params, iostat)
+subroutine parse_command_args_group2 (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
     ! Output:
     !   iostat : integer, optional
-    !       number of arguments that have not been parsed
     !        0 : all arguments were found
-    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       >0 : number of unmatched arguments
     !       -1 : error when reading
     !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
@@ -868,7 +890,7 @@ subroutine parse_command_argument_group2 (params, iostat)
     character(len=512) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed, ioset
+    integer :: i, n, parsed
 
     n = command_argument_count()
     parsed = 0
@@ -939,7 +961,6 @@ subroutine parse_command_argument_group2 (params, iostat)
         endif
 
         parsed = parsed + 2
-        i = i + 2   ! only "--name value" is considered for now
 
       else
         ! +++++  not found
@@ -951,16 +972,16 @@ subroutine parse_command_argument_group2 (params, iostat)
           stop
         endif
 
-        i = i + 1
-
       endif
+
+      i = i + 2   ! only "--name value" is considered for now
 
     enddo
 
     ! At this point, any type error or --help message cases are already sorted
 ! out
     if (present(iostat)) then
-      iostat = parsed
+      iostat = n - parsed
     endif
 
 end subroutine
@@ -1106,6 +1127,7 @@ subroutine set_param_string_group2 (params, name, string, iostat)
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
     integer, intent(out), optional :: iostat
+    integer :: io !! local...
 
     if (present(iostat)) then
       iostat = 0
@@ -1118,9 +1140,9 @@ case ('string1', 'group2%string1')
     if (VERBOSE) write(*,*) "group2%string1 = ", params%string1
 
 case ('stringarr1', 'group2%stringarr1')
-    call string_to_array(string, params%stringarr1, iostat=iostat)
+    call string_to_array(string, params%stringarr1, iostat=io)
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
  &--group2%stringarr1"
@@ -1132,11 +1154,10 @@ case ('stringarr1', 'group2%stringarr1')
     endif
 
 case ('logical1', 'group2%logical1')
-    read(string, *, iostat=IOSTAT) params%logical1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%logical1 = ", & 
- &params%logical1
+    read(string, *, iostat=io) params%logical1
+    if (VERBOSE .or. io/=0) write(*,*) "group2%logical1 = ", params%logical1
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%logical1"
         else
@@ -1147,11 +1168,10 @@ case ('logical1', 'group2%logical1')
     endif
 
 case ('integer1', 'group2%integer1')
-    read(string, *, iostat=IOSTAT) params%integer1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer1 = ", & 
- &params%integer1
+    read(string, *, iostat=io) params%integer1
+    if (VERBOSE .or. io/=0) write(*,*) "group2%integer1 = ", params%integer1
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%integer1"
         else
@@ -1162,11 +1182,10 @@ case ('integer1', 'group2%integer1')
     endif
 
 case ('integer2', 'group2%integer2')
-    read(string, *, iostat=IOSTAT) params%integer2
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%integer2 = ", & 
- &params%integer2
+    read(string, *, iostat=io) params%integer2
+    if (VERBOSE .or. io/=0) write(*,*) "group2%integer2 = ", params%integer2
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%integer2"
         else
@@ -1181,9 +1200,9 @@ case ('string2', 'group2%string2')
     if (VERBOSE) write(*,*) "group2%string2 = ", params%string2
 
 case ('intarr1', 'group2%intarr1')
-    call string_to_array(string, params%intarr1, iostat=iostat)
+    call string_to_array(string, params%intarr1, iostat=io)
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%intarr1"
         else
@@ -1194,10 +1213,10 @@ case ('intarr1', 'group2%intarr1')
     endif
 
 case ('double1', 'group2%double1')
-    read(string, *, iostat=IOSTAT) params%double1
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "group2%double1 = ", params%double1
+    read(string, *, iostat=io) params%double1
+    if (VERBOSE .or. io/=0) write(*,*) "group2%double1 = ", params%double1
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%double1"
         else
@@ -1208,9 +1227,9 @@ case ('double1', 'group2%double1')
     endif
 
 case ('dblarr1', 'group2%dblarr1')
-    call string_to_array(string, params%dblarr1, iostat=iostat)
+    call string_to_array(string, params%dblarr1, iostat=io)
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%dblarr1"
         else
@@ -1221,9 +1240,9 @@ case ('dblarr1', 'group2%dblarr1')
     endif
 
 case ('logarr1', 'group2%logarr1')
-    call string_to_array(string, params%logarr1, iostat=iostat)
+    call string_to_array(string, params%logarr1, iostat=io)
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%logarr1"
         else
@@ -1271,16 +1290,15 @@ case ('logarr1', 'group2%logarr1')
 end function
 
 
-subroutine parse_command_argument_control (params, iostat)
+subroutine parse_command_args_control (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
     !   params : the paramter type
     ! Output:
     !   iostat : integer, optional
-    !       number of arguments that have not been parsed
     !        0 : all arguments were found
-    !       >0 : number of parsed arguments (note: "--name val" makes 2)
+    !       >0 : number of unmatched arguments
     !       -1 : error when reading
     !       -2 : --help was printed
     !       If not provided, execution stop if iostat /= 0
@@ -1290,7 +1308,7 @@ subroutine parse_command_argument_control (params, iostat)
     character(len=512) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed, ioset
+    integer :: i, n, parsed
 
     n = command_argument_count()
     parsed = 0
@@ -1361,7 +1379,6 @@ subroutine parse_command_argument_control (params, iostat)
         endif
 
         parsed = parsed + 2
-        i = i + 2   ! only "--name value" is considered for now
 
       else
         ! +++++  not found
@@ -1373,16 +1390,16 @@ subroutine parse_command_argument_control (params, iostat)
           stop
         endif
 
-        i = i + 1
-
       endif
+
+      i = i + 2   ! only "--name value" is considered for now
 
     enddo
 
     ! At this point, any type error or --help message cases are already sorted
 ! out
     if (present(iostat)) then
-      iostat = parsed
+      iostat = n - parsed
     endif
 
 end subroutine
@@ -1434,6 +1451,7 @@ subroutine set_param_string_control (params, name, string, iostat)
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: string
     integer, intent(out), optional :: iostat
+    integer :: io !! local...
 
     if (present(iostat)) then
       iostat = 0
@@ -1442,11 +1460,11 @@ subroutine set_param_string_control (params, name, string, iostat)
     select case (name)
 
 case ('print_nml', 'control%print_nml')
-    read(string, *, iostat=IOSTAT) params%print_nml
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "control%print_nml = ", & 
+    read(string, *, iostat=io) params%print_nml
+    if (VERBOSE .or. io/=0) write(*,*) "control%print_nml = ", & 
  &params%print_nml
 
-    if (IOSTAT /= 0) then
+    if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
  &--control%print_nml"
@@ -1487,7 +1505,12 @@ end function
 
 
 
-subroutine set_param_group1_character (params, name, value)
+! Interface that covers all derived types and the type
+! of contained variables to generically set or get parameter values:
+!
+! call set_param(params_type, name, value)
+! call get_param(params_type, name, value)
+    subroutine set_param_group1_character (params, name, value)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Set one field of the group1 type
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++

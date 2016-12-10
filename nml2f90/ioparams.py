@@ -262,7 +262,7 @@ class Module(object):
 
         self.description += feature.name + '\n' + '+'*20 + '\n'
         self.description += feature.__doc__ +2*'\n'
-        self.public += self._make_public_declarations(feature.public)
+        self.public += self._make_public_declarations(feature.public+feature.public_helper)
         self.definition += "\n".join([interface.format()+"\n" for interface in feature.interfaces]) + '\n'
         # self.definition += "\n".join([self._make_interface_block(k, feature.interface[k]) for k in feature.interface]) + '\n'
         self.content += feature.content + '\n'
@@ -295,9 +295,8 @@ class Module(object):
             features=", ".join([feature.name for feature in self.features]),
             libraries = self.libcode,
         )
-        # now include libraries as separate module in the code
 
-        # Now make sure that every line is < 80 character
+        # Make sure that every line is < 80 character
         # except those which are pure comment
         short_code = ""
         wrap_opt = dict(break_long_words=False, break_on_hyphens=False, width=78)
@@ -359,19 +358,20 @@ class Interface(object):
 class Feature(object):
     name = ""
     public = [] # to include as public (assume an interface for each)
+    public_helper = [] # to include as standalone public (without interface)
     dependencies = []
     external_dependencies = []
     def __init__(self, module_name):
         self.module_name = module_name
         self.template = open(os.path.join(template_dir, "subroutine_"+self.name+".f90")).read()
-        self.content = ""
+        self.content = self.__doc__  # template in the docs
         self.interfaces = []
         self.group_names = []
         for k in self.public:
             self.interfaces.append(Interface(k))
 
 class NmlIO(Feature):
-    """ Human-readable Namelist I/O
+    """! Namelist I/O ******************************************
     """
     name = "io_nml"
     public = ["read_nml", "write_nml"]
@@ -405,7 +405,7 @@ class NmlIO(Feature):
         self.group_names.append(group.name)
 
 class NmlLib(Feature):
-    """ Human-readable Namelist I/O
+    """! Namelist I/O ******************************************
     """
     name = "io_nml_nml"
     public = ["read_nml","write_nml"]
@@ -436,10 +436,35 @@ class NmlLib(Feature):
 #
 #
 class CommandLine(Feature):
-    """ Command-line argument passing
+    """! Command-line argument passing
+       ! -----------------------------
+
+    ! Usage : call parse_command_args(par)
+    ! Usage : call parse_command_args(par, io=io)
+    !         count = count_parsed_args(io)
+    !         call parse_command_args(par2, io=io)
+    !         count = count + count_parsed_args(io)
+    !         if (count /= command_argument_count()) stop('unmatched parameters')
+             
+
+	function count_parsed_args(iostat) result(nparsed)
+	  ! Check iostat and count parsed argument
+	  integer, intent(in) :: iostat
+      integer :: nparsed
+	  if (iostat == -1) then
+	    write(*,*) "ERROR when parsing command-line params. Try -h or --help"
+	    stop
+	  else if (iostat >= 0) then
+	    nparsed = command_argument_count() - iostat
+	  else
+	    nparsed = 0
+	  endif
+	end function
+
     """
     name = "command_line"
-    public = ["parse_command_argument", "print_help", "set_param_string", "has_param"]
+    public = ["parse_command_args", "print_help", "set_param_string", "has_param"]
+    public_helper = ["count_parsed_args"]
     private = []
     dependencies = ["type_conversion"]
 
@@ -448,7 +473,7 @@ class CommandLine(Feature):
     #
 
     template_set_check = """
-    if (IOSTAT /= 0) then 
+    if (io /= 0) then 
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --{group}%{name}"
         else
@@ -461,8 +486,8 @@ class CommandLine(Feature):
     # set_param_string
     template_set_string_case = """
 case ('{name}', '{group}%{name}')
-    read(string, *, iostat=IOSTAT) params%{name}
-    if (VERBOSE .or. IOSTAT/=0) write(*,*) "{group}%{name} = ", params%{name}
+    read(string, *, iostat=io) params%{name}
+    if (VERBOSE .or. io/=0) write(*,*) "{group}%{name} = ", params%{name}
 """+ template_set_check
 
     template_set_string_case_char = """
@@ -474,7 +499,7 @@ case ('{name}', '{group}%{name}')
     # set_param_string (array version)
     template_set_string_case_array = """
 case ('{name}', '{group}%{name}')
-    call string_to_array(string, params%{name}, iostat=iostat)
+    call string_to_array(string, params%{name}, iostat=io)
 """+ template_set_check
 
     # has_print help
@@ -540,11 +565,11 @@ endif
         self.group_names.append(group.name)
 
 class SetGetParam(Feature):
-    """Interface that covers all derived types and the type
-    of contained variables to generically set or get parameter values:
-
-    call set_param(params_type, name, value)
-    call get_param(params_type, name, value)
+    """! Interface that covers all derived types and the type
+! of contained variables to generically set or get parameter values:
+!
+! call set_param(params_type, name, value)
+! call get_param(params_type, name, value)
     """
     name = "set_get_param"
     public = ["set_param", "get_param"]

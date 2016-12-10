@@ -3,7 +3,7 @@ program test_io_params
   use ioparams, only: group1_t, group2_t
   use ioparams, only: read_nml, write_nml
   use ioparams, only: set_param, get_param
-  use ioparams, only: parse_command_argument, print_help
+  use ioparams, only: parse_command_args, print_help, count_parsed_args
   use ioparams, only: has_param, set_param_string ! low-level
 
   implicit none 
@@ -17,7 +17,7 @@ program test_io_params
   integer :: test_int, test_int_arr(7)
   character(len=50) :: test_s
 
-  integer :: i, io, iostat, iostats(2), stat
+  integer :: i, parsed, io, iostat, iostats(2), stat
   character(len=256) :: arg, argv
 
   filename = "namelist.nml" 
@@ -85,21 +85,16 @@ program test_io_params
   write(*,*) "Type ./test.x -h for help on how to do that."
   i = 1
   io=0
-  do while(i <= command_argument_count())
-    call get_command_argument(i, arg)
-    select case (arg)
-    case ('-h', '--help') 
-      call print_help(group1, default=.false.)
-      call print_help(group2)
-      stop
-    case default
-      call parse_command_argument(group1, i, iostat=io)
-      if (io==0) cycle ! re-start from loop start
-      call parse_command_argument(group2, i, iostat=io)
-      if (io==0) cycle ! re-start from loop start
-      stop("Invalid parameter. Use -h or --help for help.")
-    end select
-  end do
+  parsed = 0
+  call parse_command_args(group1, iostat=io)
+  parsed = count_parsed_args(io)
+  call parse_command_args(group2, iostat=io)
+  parsed = parsed + count_parsed_args(io)
+  if (io == -2) then
+    stop  ! help
+  elseif (parsed < command_argument_count()) then
+    stop('some arguments were not recognized')
+  endif
 
   ! Print namelist to screen
   write(*,*) " "

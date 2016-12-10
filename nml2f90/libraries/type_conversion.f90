@@ -7,6 +7,7 @@ module type_conversion
 ! UPDATE M.P. 20161116: string_to_array :: assume comma-separated values
 !
 ! =============================================================
+  implicit none
 
   integer, parameter :: Float = kind(0.d0)
 
