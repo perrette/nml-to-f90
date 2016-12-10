@@ -5,7 +5,6 @@ subroutine read_nml_{group_name} (iounit, params, iostat)
     integer, intent(in) :: iounit
     type({type_name}), intent(inout) :: params
     integer, optional, intent(out) :: iostat
-    logical :: nmlf90_verbose = .true.
 
     {variable_definitions}
 
@@ -19,7 +18,7 @@ subroutine read_nml_{group_name} (iounit, params, iostat)
       read(unit=iounit, nml={group_name})
     else
       read(unit=iounit, nml={group_name}, iostat=iostat)
-      if (iostat /= 0 .and. nmlf90_verbose) then
+      if (iostat /= 0 .and. VERBOSE) then
         write(*, *) "Failed to read namelist block: {group_name}"
       endif
     endif
