@@ -16,6 +16,8 @@ program test_io_params
   logical :: test_l
   integer :: test_int, test_int_arr(7)
   character(len=50) :: test_s
+  character(len=50) :: args(14)
+  character(len=50), allocatable :: unmatched(:)
 
   integer :: i, parsed, io, iostat, iostats(2), stat
   character(len=256) :: arg, argv
@@ -76,6 +78,34 @@ program test_io_params
   call set_param_string(group2, "intarr1", "(/ 7,7,7,7,7,7,7 /)")
   call set_param_string(group2, "logical1", ".true.")
 
+  write(*,*) 
+  write(*,*) "Test command-line arguments passed as string array"
+  write(*,*) "--------------------------------------------------"
+  args(1) = "--string1"
+  args(2) = "newtext.txt"
+  args(3) = "--logical1"
+  args(4) = "F"
+  args(5) = "--integer1"
+  args(6) = "2"
+  args(7) = "--double1"
+  args(8) = "777"
+  args(9) = "--stringarr1"
+  args(10) = "bb,cc,dd"
+  args(11) = "--intarr1"
+  args(12) = "1, 2, 3, 4, 5, 6, 7"
+  args(13) = "--dblarr1"
+  args(14) = "5.,4,3,2,1"
+  call parse_command_args(group1, iostat=io, args=args, unmatched=unmatched)
+  if (io == -1) stop('error in arguments')
+  call parse_command_args(group2, args=unmatched) !, unmatched=unmatched)
+  call assert_cmd("group1%string1", "newtext.txt"== group1%string1)
+  call assert_cmd("group1%logical1", .false. .eqv. group1%logical1)
+  call assert_cmd("group1%integer1", 2== group1%integer1)
+  call assert_cmd("group2%double1", 777.d0== group2%double1)
+  call assert_cmd("group1%stringarr1(2)", "cc"== group1%stringarr1(2))
+  call assert_cmd("group2%intarr1(3)", 3== group2%intarr1(3))
+  call assert_cmd("group2%dblarr1(1)", 5.d0== group2%dblarr1(1))
+
   !
   ! Retrieve command-line arguments
   !
@@ -108,4 +138,13 @@ program test_io_params
 
 
 contains
+
+  subroutine assert_cmd(nm, test)
+    character(len=*), intent(in) :: nm
+    logical, intent(in) :: test
+    if (.not.test) then
+      write(*,*) "ERROR: failed cmd",nm
+      stop
+    endif
+  end subroutine
 end program

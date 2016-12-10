@@ -1,4 +1,4 @@
-subroutine parse_command_args_{group_name} (params, iostat)
+subroutine parse_command_args_{group_name} (params, iostat, unmatched, args)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -13,17 +13,38 @@ subroutine parse_command_args_{group_name} (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type({type_name}), intent(inout) :: params
     integer, intent(out), optional :: iostat
-    character(len=512) :: argn, argv
+    character(len=*), dimension(:), intent(in), optional :: args
+    character(len=*), dimension(:), allocatable, intent(out), optional :: unmatched
+    character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    character(len=clen) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed
+    integer :: i,j, n, parsed
 
-    n = command_argument_count()
+    ! Define a list of command line arguments args_opt
+    if (present(args)) then
+      ! ... provided as subroutine argument
+      n = size(args)
+      args_opt = args
+    else
+      ! ... provided as command-line argument
+      n = command_argument_count()
+      if (allocated(args_opt)) deallocate(args_opt) 
+      allocate(args_opt(n))
+      do i=1,n
+          call get_command_argument(i, args_opt(i))
+      enddo
+    endif
+
+    if (allocated(unmatched_opt)) deallocate(unmatched_opt)
+    allocate(unmatched_opt(n))
+
     parsed = 0
 
     i = 1
+    j = 1
     do while (i <= n)
-      call get_command_argument(i, argn)
+      argn = args_opt(i)
 
       ! Print HELP ?
       if (argn == '--help' .or. argn=='-h') then
@@ -42,6 +63,8 @@ subroutine parse_command_args_{group_name} (params, iostat)
           stop("ERROR::{module_name} type-specific command line &
             & arguments must start with '--'")
         else
+          unmatched_opt(j) = trim(argn)
+          j = j + 1
           i = i + 1  ! check next argument
           cycle
         endif
@@ -54,7 +77,7 @@ subroutine parse_command_args_{group_name} (params, iostat)
         ! check if value is missing
         missing_value = .false.
         if (i+1 <= n) then
-          call get_command_argument(i+1, argv)
+          argv = args_opt(i+1)
           if ( len(argv) > 1) then
             ! ...next argument starts with '--'
             if (argv(1:2)  == "--" ) then
@@ -87,6 +110,7 @@ subroutine parse_command_args_{group_name} (params, iostat)
         endif
 
         parsed = parsed + 2
+        i = i + 2
 
       else
         ! +++++  not found
@@ -98,9 +122,11 @@ subroutine parse_command_args_{group_name} (params, iostat)
           stop
         endif
 
-      endif
+        unmatched_opt(j) = trim(argn)
+        j = j + 1
+        i = i + 1 
 
-      i = i + 2   ! only "--name value" is considered for now
+      endif
 
     enddo
 
@@ -108,6 +134,14 @@ subroutine parse_command_args_{group_name} (params, iostat)
     if (present(iostat)) then
       iostat = n - parsed
     endif
+
+    if (present(unmatched)) then
+      if (allocated(unmatched)) deallocate(unmatched)
+      allocate(unmatched(n-parsed))
+      unmatched = unmatched_opt(:n-parsed)
+    endif
+
+    deallocate(args_opt, unmatched_opt)
 
 end subroutine
 

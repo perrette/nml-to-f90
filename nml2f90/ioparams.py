@@ -500,7 +500,14 @@ case ('{name}', '{group}%{name}')
     template_set_string_case_array = """
 case ('{name}', '{group}%{name}')
     call string_to_array(string, params%{name}, iostat=io)
-"""+ template_set_check
+    if (VERBOSE) write(*,*) "{group}%{name} = ", params%{name}(1),', ...'
+""" +template_set_check
+
+    template_set_string_case_array_char = """
+case ('{name}', '{group}%{name}')
+    call string_to_array(string, params%{name}, iostat=io)
+    if (VERBOSE) write(*,*) "{group}%{name} = ", trim(params%{name}(1)),', ...'
+"""+template_set_check
 
     # has_print help
     template_help = """
@@ -540,7 +547,10 @@ endif
             # has_params routines
             list_has_cases += "case ('{name}', '{group}%{name}')".format(name=v.name, group=v.group)+'\n'
             if v.array:
-                list_set_cases += self.template_set_string_case_array.format(**v_map)
+                if v.dtype == "character":
+                    list_set_cases += self.template_set_string_case_array_char.format(**v_map)
+                else:
+                    list_set_cases += self.template_set_string_case_array.format(**v_map)
                 list_help += self.template_help_array.format(**v_map)
             else:
                 if v.dtype == "character":

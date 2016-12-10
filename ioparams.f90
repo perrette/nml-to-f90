@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.101.g8b11b0f.dirty
+! version: 0+untagged.104.g78c5ec1.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -81,7 +81,7 @@ module type_conversion
 
           if (q /= size(value)) then
             write(*,*) "command-line :: expected array of size",size(value),', & 
- &got:', q
+& got:', q
             call signal_error(iostat)
             return
           endif
@@ -324,7 +324,7 @@ contains
     character(len=clen) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, & 
- &string2
+& string2
 
     ! initialize variables
     string1 = params%string1
@@ -369,7 +369,7 @@ subroutine write_nml_group1 (iounit, params)
     character(len=clen) :: string2
 
     namelist / group1 / string1, stringarr1, logical1, integer1, integer2, & 
- &string2
+& string2
 
     ! initialize variables
     string1 = params%string1
@@ -403,7 +403,7 @@ subroutine read_nml_group2 (iounit, params, iostat)
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, integer2, & 
- &string2, intarr1, double1, dblarr1, logarr1
+& string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -460,7 +460,7 @@ subroutine write_nml_group2 (iounit, params)
     logical, dimension(5) :: logarr1
 
     namelist / group2 / string1, stringarr1, logical1, integer1, integer2, & 
- &string2, intarr1, double1, dblarr1, logarr1
+& string2, intarr1, double1, dblarr1, logarr1
 
     ! initialize variables
     string1 = params%string1
@@ -545,7 +545,7 @@ end subroutine
       integer :: nparsed
           if (iostat == -1) then
             write(*,*) "ERROR when parsing command-line params. Try -h or & 
- &--help"
+& --help"
             stop
           else if (iostat >= 0) then
             nparsed = command_argument_count() - iostat
@@ -554,7 +554,7 @@ end subroutine
           endif
         end function
 
-    subroutine parse_command_args_group1 (params, iostat)
+    subroutine parse_command_args_group1 (params, iostat, unmatched, args)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -569,17 +569,39 @@ end subroutine
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group1_t), intent(inout) :: params
     integer, intent(out), optional :: iostat
-    character(len=512) :: argn, argv
+    character(len=*), dimension(:), intent(in), optional :: args
+    character(len=*), dimension(:), allocatable, intent(out), optional :: & 
+& unmatched
+    character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    character(len=clen) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed
+    integer :: i,j, n, parsed
 
-    n = command_argument_count()
+    ! Define a list of command line arguments args_opt
+    if (present(args)) then
+      ! ... provided as subroutine argument
+      n = size(args)
+      args_opt = args
+    else
+      ! ... provided as command-line argument
+      n = command_argument_count()
+      if (allocated(args_opt)) deallocate(args_opt)
+      allocate(args_opt(n))
+      do i=1,n
+          call get_command_argument(i, args_opt(i))
+      enddo
+    endif
+
+    if (allocated(unmatched_opt)) deallocate(unmatched_opt)
+    allocate(unmatched_opt(n))
+
     parsed = 0
 
     i = 1
+    j = 1
     do while (i <= n)
-      call get_command_argument(i, argn)
+      argn = args_opt(i)
 
       ! Print HELP ?
       if (argn == '--help' .or. argn=='-h') then
@@ -598,6 +620,8 @@ end subroutine
           stop("ERROR::ioparams type-specific command line &
             & arguments must start with '--'")
         else
+          unmatched_opt(j) = trim(argn)
+          j = j + 1
           i = i + 1  ! check next argument
           cycle
         endif
@@ -610,7 +634,7 @@ end subroutine
         ! check if value is missing
         missing_value = .false.
         if (i+1 <= n) then
-          call get_command_argument(i+1, argv)
+          argv = args_opt(i+1)
           if ( len(argv) > 1) then
             ! ...next argument starts with '--'
             if (argv(1:2)  == "--" ) then
@@ -643,6 +667,7 @@ end subroutine
         endif
 
         parsed = parsed + 2
+        i = i + 2
 
       else
         ! +++++  not found
@@ -654,9 +679,11 @@ end subroutine
           stop
         endif
 
-      endif
+        unmatched_opt(j) = trim(argn)
+        j = j + 1
+        i = i + 1
 
-      i = i + 2   ! only "--name value" is considered for now
+      endif
 
     enddo
 
@@ -665,6 +692,14 @@ end subroutine
     if (present(iostat)) then
       iostat = n - parsed
     endif
+
+    if (present(unmatched)) then
+      if (allocated(unmatched)) deallocate(unmatched)
+      allocate(unmatched(n-parsed))
+      unmatched = unmatched_opt(:n-parsed)
+    endif
+
+    deallocate(args_opt, unmatched_opt)
 
 end subroutine
 
@@ -699,7 +734,7 @@ if (def) then
     write(valuestr, *) params%string1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
- &adjustl(nameshort), trim(adjustl(valuestr))
+& adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -710,7 +745,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
- &trim(adjustl(valuestr)), size(params%stringarr1)
+& trim(adjustl(valuestr)), size(params%stringarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -720,7 +755,7 @@ if (def) then
     write(valuestr, *) params%logical1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
- &adjustl(nameshort), trim(adjustl(valuestr))
+& adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -730,7 +765,7 @@ if (def) then
     write(valuestr, *) params%integer1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Comment about integer1 (default: & 
- &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+& ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Comment about integer1")') adjustl(nameshort)
 endif
@@ -740,10 +775,10 @@ if (def) then
     write(valuestr, *) params%integer2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Another comment for integer2 (default: & 
- &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+& ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Another comment for integer2")') & 
- &adjustl(nameshort)
+& adjustl(nameshort)
 endif
 
 write(nameshort, *) "string2"
@@ -751,7 +786,7 @@ if (def) then
     write(valuestr, *) params%string2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
- &adjustl(nameshort), trim(adjustl(valuestr))
+& adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -780,14 +815,16 @@ case ('string1', 'group1%string1')
 
 case ('stringarr1', 'group1%stringarr1')
     call string_to_array(string, params%stringarr1, iostat=io)
+    if (VERBOSE) write(*,*) "group1%stringarr1 = ", & 
+& trim(params%stringarr1(1)),', ...'
 
     if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
- &--group1%stringarr1"
+& --group1%stringarr1"
         else
             write(*,*) "ERROR converting string to character(len=clen), & 
- &dimension(3) :: stringarr1: --group1%stringarr1 ",trim(string)
+& dimension(3) :: stringarr1: --group1%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -801,7 +838,7 @@ case ('logical1', 'group1%logical1')
             write(*,*) "ERROR: missing parameter value for --group1%logical1"
         else
             write(*,*) "ERROR converting string to logical :: logical1: & 
- &--group1%logical1 ",trim(string)
+& --group1%logical1 ",trim(string)
         endif
         stop
     endif
@@ -815,7 +852,7 @@ case ('integer1', 'group1%integer1')
             write(*,*) "ERROR: missing parameter value for --group1%integer1"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
- &integer1: --group1%integer1 ",trim(string)
+& integer1: --group1%integer1 ",trim(string)
         endif
         stop
     endif
@@ -829,7 +866,7 @@ case ('integer2', 'group1%integer2')
             write(*,*) "ERROR: missing parameter value for --group1%integer2"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
- &integer2: --group1%integer2 ",trim(string)
+& integer2: --group1%integer2 ",trim(string)
         endif
         stop
     endif
@@ -872,7 +909,7 @@ case ('string2', 'group1%string2')
 end function
 
 
-subroutine parse_command_args_group2 (params, iostat)
+subroutine parse_command_args_group2 (params, iostat, unmatched, args)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -887,17 +924,39 @@ subroutine parse_command_args_group2 (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(group2_t), intent(inout) :: params
     integer, intent(out), optional :: iostat
-    character(len=512) :: argn, argv
+    character(len=*), dimension(:), intent(in), optional :: args
+    character(len=*), dimension(:), allocatable, intent(out), optional :: & 
+& unmatched
+    character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    character(len=clen) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed
+    integer :: i,j, n, parsed
 
-    n = command_argument_count()
+    ! Define a list of command line arguments args_opt
+    if (present(args)) then
+      ! ... provided as subroutine argument
+      n = size(args)
+      args_opt = args
+    else
+      ! ... provided as command-line argument
+      n = command_argument_count()
+      if (allocated(args_opt)) deallocate(args_opt)
+      allocate(args_opt(n))
+      do i=1,n
+          call get_command_argument(i, args_opt(i))
+      enddo
+    endif
+
+    if (allocated(unmatched_opt)) deallocate(unmatched_opt)
+    allocate(unmatched_opt(n))
+
     parsed = 0
 
     i = 1
+    j = 1
     do while (i <= n)
-      call get_command_argument(i, argn)
+      argn = args_opt(i)
 
       ! Print HELP ?
       if (argn == '--help' .or. argn=='-h') then
@@ -916,6 +975,8 @@ subroutine parse_command_args_group2 (params, iostat)
           stop("ERROR::ioparams type-specific command line &
             & arguments must start with '--'")
         else
+          unmatched_opt(j) = trim(argn)
+          j = j + 1
           i = i + 1  ! check next argument
           cycle
         endif
@@ -928,7 +989,7 @@ subroutine parse_command_args_group2 (params, iostat)
         ! check if value is missing
         missing_value = .false.
         if (i+1 <= n) then
-          call get_command_argument(i+1, argv)
+          argv = args_opt(i+1)
           if ( len(argv) > 1) then
             ! ...next argument starts with '--'
             if (argv(1:2)  == "--" ) then
@@ -961,6 +1022,7 @@ subroutine parse_command_args_group2 (params, iostat)
         endif
 
         parsed = parsed + 2
+        i = i + 2
 
       else
         ! +++++  not found
@@ -972,9 +1034,11 @@ subroutine parse_command_args_group2 (params, iostat)
           stop
         endif
 
-      endif
+        unmatched_opt(j) = trim(argn)
+        j = j + 1
+        i = i + 1
 
-      i = i + 2   ! only "--name value" is considered for now
+      endif
 
     enddo
 
@@ -983,6 +1047,14 @@ subroutine parse_command_args_group2 (params, iostat)
     if (present(iostat)) then
       iostat = n - parsed
     endif
+
+    if (present(unmatched)) then
+      if (allocated(unmatched)) deallocate(unmatched)
+      allocate(unmatched(n-parsed))
+      unmatched = unmatched_opt(:n-parsed)
+    endif
+
+    deallocate(args_opt, unmatched_opt)
 
 end subroutine
 
@@ -1017,7 +1089,7 @@ if (def) then
     write(valuestr, *) params%string1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
- &adjustl(nameshort), trim(adjustl(valuestr))
+& adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1028,7 +1100,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
- &trim(adjustl(valuestr)), size(params%stringarr1)
+& trim(adjustl(valuestr)), size(params%stringarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1038,7 +1110,7 @@ if (def) then
     write(valuestr, *) params%logical1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
- &adjustl(nameshort), trim(adjustl(valuestr))
+& adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1048,7 +1120,7 @@ if (def) then
     write(valuestr, *) params%integer1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Comment about integer1 (default: & 
- &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+& ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Comment about integer1")') adjustl(nameshort)
 endif
@@ -1058,10 +1130,10 @@ if (def) then
     write(valuestr, *) params%integer2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"Another comment for integer2 (default: & 
- &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+& ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"Another comment for integer2")') & 
- &adjustl(nameshort)
+& adjustl(nameshort)
 endif
 
 write(nameshort, *) "string2"
@@ -1069,7 +1141,7 @@ if (def) then
     write(valuestr, *) params%string2
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"nasty   sign in comment (default: & 
- &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+& ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"nasty   sign in comment")') adjustl(nameshort)
 endif
@@ -1080,7 +1152,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
- &trim(adjustl(valuestr)), size(params%intarr1)
+& trim(adjustl(valuestr)), size(params%intarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1090,7 +1162,7 @@ if (def) then
     write(valuestr, *) params%double1
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: ",A'//trim(valuelen)//',")")') & 
- &adjustl(nameshort), trim(adjustl(valuestr))
+& adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1101,7 +1173,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
- &trim(adjustl(valuestr)), size(params%dblarr1)
+& trim(adjustl(valuestr)), size(params%dblarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1112,7 +1184,7 @@ if (def) then
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20," (default: &
         [",A'//trim(valuelen)//',", ...], size=",I2,")")') adjustl(nameshort), & 
- &trim(adjustl(valuestr)), size(params%logarr1)
+& trim(adjustl(valuestr)), size(params%logarr1)
 else
     write(io, '("  --",A20,"")') adjustl(nameshort)
 endif
@@ -1141,14 +1213,16 @@ case ('string1', 'group2%string1')
 
 case ('stringarr1', 'group2%stringarr1')
     call string_to_array(string, params%stringarr1, iostat=io)
+    if (VERBOSE) write(*,*) "group2%stringarr1 = ", & 
+& trim(params%stringarr1(1)),', ...'
 
     if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
- &--group2%stringarr1"
+& --group2%stringarr1"
         else
             write(*,*) "ERROR converting string to character(len=clen), & 
- &dimension(3) :: stringarr1: --group2%stringarr1 ",trim(string)
+& dimension(3) :: stringarr1: --group2%stringarr1 ",trim(string)
         endif
         stop
     endif
@@ -1162,7 +1236,7 @@ case ('logical1', 'group2%logical1')
             write(*,*) "ERROR: missing parameter value for --group2%logical1"
         else
             write(*,*) "ERROR converting string to logical :: logical1: & 
- &--group2%logical1 ",trim(string)
+& --group2%logical1 ",trim(string)
         endif
         stop
     endif
@@ -1176,7 +1250,7 @@ case ('integer1', 'group2%integer1')
             write(*,*) "ERROR: missing parameter value for --group2%integer1"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
- &integer1: --group2%integer1 ",trim(string)
+& integer1: --group2%integer1 ",trim(string)
         endif
         stop
     endif
@@ -1190,7 +1264,7 @@ case ('integer2', 'group2%integer2')
             write(*,*) "ERROR: missing parameter value for --group2%integer2"
         else
             write(*,*) "ERROR converting string to integer(kind=ip) :: & 
- &integer2: --group2%integer2 ",trim(string)
+& integer2: --group2%integer2 ",trim(string)
         endif
         stop
     endif
@@ -1201,13 +1275,14 @@ case ('string2', 'group2%string2')
 
 case ('intarr1', 'group2%intarr1')
     call string_to_array(string, params%intarr1, iostat=io)
+    if (VERBOSE) write(*,*) "group2%intarr1 = ", params%intarr1(1),', ...'
 
     if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%intarr1"
         else
             write(*,*) "ERROR converting string to integer(kind=ip), & 
- &dimension(7) :: intarr1: --group2%intarr1 ",trim(string)
+& dimension(7) :: intarr1: --group2%intarr1 ",trim(string)
         endif
         stop
     endif
@@ -1221,33 +1296,35 @@ case ('double1', 'group2%double1')
             write(*,*) "ERROR: missing parameter value for --group2%double1"
         else
             write(*,*) "ERROR converting string to real(kind=dp) :: double1: & 
- &--group2%double1 ",trim(string)
+& --group2%double1 ",trim(string)
         endif
         stop
     endif
 
 case ('dblarr1', 'group2%dblarr1')
     call string_to_array(string, params%dblarr1, iostat=io)
+    if (VERBOSE) write(*,*) "group2%dblarr1 = ", params%dblarr1(1),', ...'
 
     if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%dblarr1"
         else
             write(*,*) "ERROR converting string to real(kind=dp), dimension(5) & 
- &:: dblarr1: --group2%dblarr1 ",trim(string)
+& :: dblarr1: --group2%dblarr1 ",trim(string)
         endif
         stop
     endif
 
 case ('logarr1', 'group2%logarr1')
     call string_to_array(string, params%logarr1, iostat=io)
+    if (VERBOSE) write(*,*) "group2%logarr1 = ", params%logarr1(1),', ...'
 
     if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for --group2%logarr1"
         else
             write(*,*) "ERROR converting string to logical, dimension(5) :: & 
- &logarr1: --group2%logarr1 ",trim(string)
+& logarr1: --group2%logarr1 ",trim(string)
         endif
         stop
     endif
@@ -1290,7 +1367,7 @@ case ('logarr1', 'group2%logarr1')
 end function
 
 
-subroutine parse_command_args_control (params, iostat)
+subroutine parse_command_args_control (params, iostat, unmatched, args)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -1305,17 +1382,39 @@ subroutine parse_command_args_control (params, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type(control_t), intent(inout) :: params
     integer, intent(out), optional :: iostat
-    character(len=512) :: argn, argv
+    character(len=*), dimension(:), intent(in), optional :: args
+    character(len=*), dimension(:), allocatable, intent(out), optional :: & 
+& unmatched
+    character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    character(len=clen) :: argn, argv
     logical :: missing_value
 
-    integer :: i, n, parsed
+    integer :: i,j, n, parsed
 
-    n = command_argument_count()
+    ! Define a list of command line arguments args_opt
+    if (present(args)) then
+      ! ... provided as subroutine argument
+      n = size(args)
+      args_opt = args
+    else
+      ! ... provided as command-line argument
+      n = command_argument_count()
+      if (allocated(args_opt)) deallocate(args_opt)
+      allocate(args_opt(n))
+      do i=1,n
+          call get_command_argument(i, args_opt(i))
+      enddo
+    endif
+
+    if (allocated(unmatched_opt)) deallocate(unmatched_opt)
+    allocate(unmatched_opt(n))
+
     parsed = 0
 
     i = 1
+    j = 1
     do while (i <= n)
-      call get_command_argument(i, argn)
+      argn = args_opt(i)
 
       ! Print HELP ?
       if (argn == '--help' .or. argn=='-h') then
@@ -1334,6 +1433,8 @@ subroutine parse_command_args_control (params, iostat)
           stop("ERROR::ioparams type-specific command line &
             & arguments must start with '--'")
         else
+          unmatched_opt(j) = trim(argn)
+          j = j + 1
           i = i + 1  ! check next argument
           cycle
         endif
@@ -1346,7 +1447,7 @@ subroutine parse_command_args_control (params, iostat)
         ! check if value is missing
         missing_value = .false.
         if (i+1 <= n) then
-          call get_command_argument(i+1, argv)
+          argv = args_opt(i+1)
           if ( len(argv) > 1) then
             ! ...next argument starts with '--'
             if (argv(1:2)  == "--" ) then
@@ -1379,6 +1480,7 @@ subroutine parse_command_args_control (params, iostat)
         endif
 
         parsed = parsed + 2
+        i = i + 2
 
       else
         ! +++++  not found
@@ -1390,9 +1492,11 @@ subroutine parse_command_args_control (params, iostat)
           stop
         endif
 
-      endif
+        unmatched_opt(j) = trim(argn)
+        j = j + 1
+        i = i + 1
 
-      i = i + 2   ! only "--name value" is considered for now
+      endif
 
     enddo
 
@@ -1401,6 +1505,14 @@ subroutine parse_command_args_control (params, iostat)
     if (present(iostat)) then
       iostat = n - parsed
     endif
+
+    if (present(unmatched)) then
+      if (allocated(unmatched)) deallocate(unmatched)
+      allocate(unmatched(n-parsed))
+      unmatched = unmatched_opt(:n-parsed)
+    endif
+
+    deallocate(args_opt, unmatched_opt)
 
 end subroutine
 
@@ -1435,10 +1547,10 @@ if (def) then
     write(valuestr, *) params%print_nml
     write(valuelen, *) max(1,len(trim(adjustl(valuestr))))
     write(io, '("  --",A20,"print read namelist to string? (default: & 
- &",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
+& ",A'//trim(valuelen)//',")")') adjustl(nameshort), trim(adjustl(valuestr))
 else
     write(io, '("  --",A20,"print read namelist to string?")') & 
- &adjustl(nameshort)
+& adjustl(nameshort)
 endif
 
 end subroutine
@@ -1462,15 +1574,15 @@ subroutine set_param_string_control (params, name, string, iostat)
 case ('print_nml', 'control%print_nml')
     read(string, *, iostat=io) params%print_nml
     if (VERBOSE .or. io/=0) write(*,*) "control%print_nml = ", & 
- &params%print_nml
+& params%print_nml
 
     if (io /= 0) then
         if (trim(string) == "") then
             write(*,*) "ERROR: missing parameter value for & 
- &--control%print_nml"
+& --control%print_nml"
         else
             write(*,*) "ERROR converting string to logical :: print_nml: & 
- &--control%print_nml ",trim(string)
+& --control%print_nml ",trim(string)
         endif
         stop
     endif
@@ -1528,7 +1640,7 @@ end function
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: & 
- &character(len=*) :: ",trim(name)
+& character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1551,7 +1663,7 @@ subroutine get_param_group1_character (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member & 
- &character(len=*) :: ",trim(name)
+& character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1571,7 +1683,7 @@ subroutine set_param_group1_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: & 
- &character(len=*), dimension(:) :: ",trim(name)
+& character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1591,7 +1703,7 @@ subroutine get_param_group1_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member & 
- &character(len=*), dimension(:) :: ",trim(name)
+& character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1614,7 +1726,7 @@ subroutine set_param_group1_integer (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: & 
- &integer(kind=ip) :: ",trim(name)
+& integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1637,7 +1749,7 @@ subroutine get_param_group1_integer (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member & 
- &integer(kind=ip) :: ",trim(name)
+& integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1657,7 +1769,7 @@ subroutine set_param_group1_logical (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group1: unknown type member: logical & 
- &:: ",trim(name)
+& :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1677,7 +1789,7 @@ subroutine get_param_group1_logical (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group1: unknown type member logical & 
- &:: ",trim(name)
+& :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1700,7 +1812,7 @@ subroutine set_param_group2_character (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &character(len=*) :: ",trim(name)
+& character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1723,7 +1835,7 @@ subroutine get_param_group2_character (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
- &character(len=*) :: ",trim(name)
+& character(len=*) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1743,7 +1855,7 @@ subroutine set_param_group2_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &character(len=*), dimension(:) :: ",trim(name)
+& character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1763,7 +1875,7 @@ subroutine get_param_group2_character_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
- &character(len=*), dimension(:) :: ",trim(name)
+& character(len=*), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1786,7 +1898,7 @@ subroutine set_param_group2_integer (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &integer(kind=ip) :: ",trim(name)
+& integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1809,7 +1921,7 @@ subroutine get_param_group2_integer (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
- &integer(kind=ip) :: ",trim(name)
+& integer(kind=ip) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1829,7 +1941,7 @@ subroutine set_param_group2_integer_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &integer(kind=ip), dimension(:) :: ",trim(name)
+& integer(kind=ip), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1849,7 +1961,7 @@ subroutine get_param_group2_integer_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
- &integer(kind=ip), dimension(:) :: ",trim(name)
+& integer(kind=ip), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1869,7 +1981,7 @@ subroutine set_param_group2_logical (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: logical & 
- &:: ",trim(name)
+& :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1889,7 +2001,7 @@ subroutine get_param_group2_logical (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member logical & 
- &:: ",trim(name)
+& :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1909,7 +2021,7 @@ subroutine set_param_group2_logical_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &logical, dimension(:) :: ",trim(name)
+& logical, dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1929,7 +2041,7 @@ subroutine get_param_group2_logical_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member logical, & 
- &dimension(:) :: ",trim(name)
+& dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1949,7 +2061,7 @@ subroutine set_param_group2_real (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &real(kind=dp) :: ",trim(name)
+& real(kind=dp) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1969,7 +2081,7 @@ subroutine get_param_group2_real (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
- &real(kind=dp) :: ",trim(name)
+& real(kind=dp) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -1989,7 +2101,7 @@ subroutine set_param_group2_real_arr (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for group2: unknown type member: & 
- &real(kind=dp), dimension(:) :: ",trim(name)
+& real(kind=dp), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -2009,7 +2121,7 @@ subroutine get_param_group2_real_arr (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for group2: unknown type member & 
- &real(kind=dp), dimension(:) :: ",trim(name)
+& real(kind=dp), dimension(:) :: ",trim(name)
             stop
     end select
 end subroutine
@@ -2029,7 +2141,7 @@ subroutine set_param_control_logical (params, name, value)
 
         case default
           write(*,*) "ERROR set_param for control: unknown type member: & 
- &logical :: ",trim(name)
+& logical :: ",trim(name)
             stop
     end select
 end subroutine
@@ -2049,7 +2161,7 @@ subroutine get_param_control_logical (params, name, value)
 
         case default
           write(*,*) "ERROR get_param for control: unknown type member logical & 
- &:: ",trim(name)
+& :: ",trim(name)
             stop
     end select
 end subroutine
