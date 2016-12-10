@@ -3,7 +3,7 @@ program test_io_params
   use ioparams, only: group1_t, group2_t
   use ioparams, only: read_nml, write_nml
   use ioparams, only: set_param, get_param
-  use ioparams, only: parse_command_args, print_help, count_parsed_args
+  use ioparams, only: parse_command_args, print_help
   use ioparams, only: has_param, set_param_string ! low-level
 
   implicit none 
@@ -115,15 +115,8 @@ program test_io_params
   i = 1
   io=0
   parsed = 0
-  call parse_command_args(group1, iostat=io)
-  parsed = count_parsed_args(io)
-  call parse_command_args(group2, iostat=io)
-  parsed = parsed + count_parsed_args(io)
-  if (io == -2) then
-    stop  ! help
-  elseif (parsed < command_argument_count()) then
-    stop('some arguments were not recognized')
-  endif
+  call parse_command_args(group1, unmatched=unmatched, stop_on_help=.false.)
+  call parse_command_args(group2, args=unmatched)
 
   ! Print namelist to screen
   write(*,*) " "

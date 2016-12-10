@@ -437,30 +437,6 @@ class NmlLib(Feature):
 #
 class CommandLine(Feature):
     """! Command-line argument passing
-       ! -----------------------------
-
-    ! Usage : call parse_command_args(par)
-    ! Usage : call parse_command_args(par, io=io)
-    !         count = count_parsed_args(io)
-    !         call parse_command_args(par2, io=io)
-    !         count = count + count_parsed_args(io)
-    !         if (count /= command_argument_count()) stop('unmatched parameters')
-             
-
-	function count_parsed_args(iostat) result(nparsed)
-	  ! Check iostat and count parsed argument
-	  integer, intent(in) :: iostat
-      integer :: nparsed
-	  if (iostat == -1) then
-	    write(*,*) "ERROR when parsing command-line params. Try -h or --help"
-	    stop
-	  else if (iostat >= 0) then
-	    nparsed = command_argument_count() - iostat
-	  else
-	    nparsed = 0
-	  endif
-	end function
-
     """
     name = "command_line"
     public = ["parse_command_args", "print_help", "set_param_string", "has_param"]
