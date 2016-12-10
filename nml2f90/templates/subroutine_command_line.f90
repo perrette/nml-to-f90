@@ -1,5 +1,5 @@
-subroutine parse_command_args_{group_name} (params, iostat, unmatched, args, &
-    & stop_on_help)
+subroutine parse_command_args_{group_name} (params, unmatched, args, &
+    & stop_on_help, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
