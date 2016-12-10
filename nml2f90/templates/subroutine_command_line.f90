@@ -57,7 +57,7 @@ subroutine parse_command_args_{group_name} (params, args, unmatched, &
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop
+          stop('End of help message : exit')
         endif
       endif
 

@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.112.g4bc62c3.dirty
+! version: 0+untagged.113.gdbb41c0.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -550,7 +550,7 @@ end subroutine
 
 
 ! Command-line argument passing
-    subroutine parse_command_args_group1 (params, unmatched, args, &
+    subroutine parse_command_args_group1 (params, args, unmatched, &
     & stop_on_help, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
@@ -610,7 +610,7 @@ end subroutine
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop
+          stop('End of help message : stop')
         endif
       endif
 
@@ -907,7 +907,7 @@ case ('string2', 'group1%string2')
 end function
 
 
-subroutine parse_command_args_group2 (params, unmatched, args, &
+subroutine parse_command_args_group2 (params, args, unmatched, &
     & stop_on_help, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
@@ -967,7 +967,7 @@ subroutine parse_command_args_group2 (params, unmatched, args, &
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop
+          stop('End of help message : stop')
         endif
       endif
 
@@ -1367,7 +1367,7 @@ case ('logarr1', 'group2%logarr1')
 end function
 
 
-subroutine parse_command_args_control (params, unmatched, args, &
+subroutine parse_command_args_control (params, args, unmatched, &
     & stop_on_help, iostat)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
@@ -1427,7 +1427,7 @@ subroutine parse_command_args_control (params, unmatched, args, &
           iostat = -2
           return
         elseif (stop_on_help_opt) then
-          stop
+          stop('End of help message : stop')
         endif
       endif
 
