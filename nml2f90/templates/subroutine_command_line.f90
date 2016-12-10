@@ -1,4 +1,5 @@
-subroutine parse_command_args_{group_name} (params, iostat, unmatched, args)
+subroutine parse_command_args_{group_name} (params, iostat, unmatched, args, &
+    & stop_on_help)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -16,10 +17,17 @@ subroutine parse_command_args_{group_name} (params, iostat, unmatched, args)
     character(len=*), dimension(:), intent(in), optional :: args
     character(len=*), dimension(:), allocatable, intent(out), optional :: unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    logical, intent(in), optional :: stop_on_help
     character(len=clen) :: argn, argv
-    logical :: missing_value
+    logical :: missing_value, stop_on_help_opt
 
     integer :: i,j, n, parsed
+
+    if (present(stop_on_help)) then
+      stop_on_help_opt = stop_on_help
+    else
+      stop_on_help_opt = .true.
+    endif
 
     ! Define a list of command line arguments args_opt
     if (present(args)) then
@@ -52,13 +60,13 @@ subroutine parse_command_args_{group_name} (params, iostat, unmatched, args)
         if (present(iostat)) then
           iostat = -2
           return
-        else
+        elseif (stop_on_help_opt) then
           stop
         endif
       endif
 
       if (argn(1:2)  /= "--") then
-        if (.not.present(iostat)) then
+        if (.not.present(iostat) .and. .not.present(unmatched)) then
           write(*,*) "i=",i, "; Got: ",trim(argn)
           stop("ERROR::{module_name} type-specific command line &
             & arguments must start with '--'")
@@ -115,7 +123,7 @@ subroutine parse_command_args_{group_name} (params, iostat, unmatched, args)
       else
         ! +++++  not found
 
-        if (.not. present(iostat)) then
+        if (.not. present(iostat) .and. .not. present(unmatched)) then
           write(*,*) "ERROR: unknown parameter in {group_name} : ",trim(argn)
           write(*,*) ""
           write(*,*) "-h or --help for HELP"

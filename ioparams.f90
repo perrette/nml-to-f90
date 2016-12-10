@@ -3,7 +3,7 @@
 ! History: nml2f90.py namelist.nml ioparams --io-nml --command-line --set-get-param -v
 !
 ! https://github.com/perrette/nml-to-f90
-! version: 0+untagged.104.g78c5ec1.dirty
+! version: 0+untagged.105.gca95871.dirty
 !  
 ! Features included : io_nml, command_line, set_get_param
 ! +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -554,7 +554,8 @@ end subroutine
           endif
         end function
 
-    subroutine parse_command_args_group1 (params, iostat, unmatched, args)
+    subroutine parse_command_args_group1 (params, iostat, unmatched, args, &
+    & stop_on_help)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -573,10 +574,17 @@ end subroutine
     character(len=*), dimension(:), allocatable, intent(out), optional :: & 
 & unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    logical, intent(in), optional :: stop_on_help
     character(len=clen) :: argn, argv
-    logical :: missing_value
+    logical :: missing_value, stop_on_help_opt
 
     integer :: i,j, n, parsed
+
+    if (present(stop_on_help)) then
+      stop_on_help_opt = stop_on_help
+    else
+      stop_on_help_opt = .true.
+    endif
 
     ! Define a list of command line arguments args_opt
     if (present(args)) then
@@ -609,13 +617,13 @@ end subroutine
         if (present(iostat)) then
           iostat = -2
           return
-        else
+        elseif (stop_on_help_opt) then
           stop
         endif
       endif
 
       if (argn(1:2)  /= "--") then
-        if (.not.present(iostat)) then
+        if (.not.present(iostat) .and. .not.present(unmatched)) then
           write(*,*) "i=",i, "; Got: ",trim(argn)
           stop("ERROR::ioparams type-specific command line &
             & arguments must start with '--'")
@@ -672,7 +680,7 @@ end subroutine
       else
         ! +++++  not found
 
-        if (.not. present(iostat)) then
+        if (.not. present(iostat) .and. .not. present(unmatched)) then
           write(*,*) "ERROR: unknown parameter in group1 : ",trim(argn)
           write(*,*) ""
           write(*,*) "-h or --help for HELP"
@@ -909,7 +917,8 @@ case ('string2', 'group1%string2')
 end function
 
 
-subroutine parse_command_args_group2 (params, iostat, unmatched, args)
+subroutine parse_command_args_group2 (params, iostat, unmatched, args, &
+    & stop_on_help)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -928,10 +937,17 @@ subroutine parse_command_args_group2 (params, iostat, unmatched, args)
     character(len=*), dimension(:), allocatable, intent(out), optional :: & 
 & unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    logical, intent(in), optional :: stop_on_help
     character(len=clen) :: argn, argv
-    logical :: missing_value
+    logical :: missing_value, stop_on_help_opt
 
     integer :: i,j, n, parsed
+
+    if (present(stop_on_help)) then
+      stop_on_help_opt = stop_on_help
+    else
+      stop_on_help_opt = .true.
+    endif
 
     ! Define a list of command line arguments args_opt
     if (present(args)) then
@@ -964,13 +980,13 @@ subroutine parse_command_args_group2 (params, iostat, unmatched, args)
         if (present(iostat)) then
           iostat = -2
           return
-        else
+        elseif (stop_on_help_opt) then
           stop
         endif
       endif
 
       if (argn(1:2)  /= "--") then
-        if (.not.present(iostat)) then
+        if (.not.present(iostat) .and. .not.present(unmatched)) then
           write(*,*) "i=",i, "; Got: ",trim(argn)
           stop("ERROR::ioparams type-specific command line &
             & arguments must start with '--'")
@@ -1027,7 +1043,7 @@ subroutine parse_command_args_group2 (params, iostat, unmatched, args)
       else
         ! +++++  not found
 
-        if (.not. present(iostat)) then
+        if (.not. present(iostat) .and. .not. present(unmatched)) then
           write(*,*) "ERROR: unknown parameter in group2 : ",trim(argn)
           write(*,*) ""
           write(*,*) "-h or --help for HELP"
@@ -1367,7 +1383,8 @@ case ('logarr1', 'group2%logarr1')
 end function
 
 
-subroutine parse_command_args_control (params, iostat, unmatched, args)
+subroutine parse_command_args_control (params, iostat, unmatched, args, &
+    & stop_on_help)
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! Maybe assign ith command line argument to the params type
     ! Input:
@@ -1386,10 +1403,17 @@ subroutine parse_command_args_control (params, iostat, unmatched, args)
     character(len=*), dimension(:), allocatable, intent(out), optional :: & 
 & unmatched
     character(len=clen), dimension(:), allocatable :: args_opt, unmatched_opt
+    logical, intent(in), optional :: stop_on_help
     character(len=clen) :: argn, argv
-    logical :: missing_value
+    logical :: missing_value, stop_on_help_opt
 
     integer :: i,j, n, parsed
+
+    if (present(stop_on_help)) then
+      stop_on_help_opt = stop_on_help
+    else
+      stop_on_help_opt = .true.
+    endif
 
     ! Define a list of command line arguments args_opt
     if (present(args)) then
@@ -1422,13 +1446,13 @@ subroutine parse_command_args_control (params, iostat, unmatched, args)
         if (present(iostat)) then
           iostat = -2
           return
-        else
+        elseif (stop_on_help_opt) then
           stop
         endif
       endif
 
       if (argn(1:2)  /= "--") then
-        if (.not.present(iostat)) then
+        if (.not.present(iostat) .and. .not.present(unmatched)) then
           write(*,*) "i=",i, "; Got: ",trim(argn)
           stop("ERROR::ioparams type-specific command line &
             & arguments must start with '--'")
@@ -1485,7 +1509,7 @@ subroutine parse_command_args_control (params, iostat, unmatched, args)
       else
         ! +++++  not found
 
-        if (.not. present(iostat)) then
+        if (.not. present(iostat) .and. .not. present(unmatched)) then
           write(*,*) "ERROR: unknown parameter in control : ",trim(argn)
           write(*,*) ""
           write(*,*) "-h or --help for HELP"

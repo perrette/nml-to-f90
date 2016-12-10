@@ -95,8 +95,7 @@ program test_io_params
   args(12) = "1, 2, 3, 4, 5, 6, 7"
   args(13) = "--dblarr1"
   args(14) = "5.,4,3,2,1"
-  call parse_command_args(group1, iostat=io, args=args, unmatched=unmatched)
-  if (io == -1) stop('error in arguments')
+  call parse_command_args(group1, stop_on_help=.false., args=args, unmatched=unmatched)
   call parse_command_args(group2, args=unmatched) !, unmatched=unmatched)
   call assert_cmd("group1%string1", "newtext.txt"== group1%string1)
   call assert_cmd("group1%logical1", .false. .eqv. group1%logical1)
