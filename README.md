@@ -37,7 +37,7 @@ In its simplest form, this would be:
 
     if (size(unmatched) > 0) then
         write(*,*) "Some arguments were not matched:"
-        write(*,*) trim(trim_array(unmatched))
+        write(*,*) trim(join_array(unmatched))
         stop
     endif
     

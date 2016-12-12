@@ -1,9 +1,9 @@
 program test_io_params
 
   use ioparams, only: group1_t, group2_t
-  use ioparams, only: read_nml, write_nml
+  use ioparams, only: read_nml, write_nml, read_nml_file
   use ioparams, only: set_param, get_param
-  use ioparams, only: parse_command_args, print_help
+  use ioparams, only: parse_command_args, print_help, join_array
   use ioparams, only: command_argument_as_array
   use ioparams, only: has_param, set_param_string ! low-level
 
@@ -35,11 +35,11 @@ program test_io_params
   ! Read parameters from file
   write(*,*) "READ from ",trim(filename)
   open(iounit, file=filename, status="OLD")
-  write(*,*) "...group1..."
+  write(*,*) "...group1...(read_nml)"
   call read_nml(iounit, group1)
-  write(*,*) "...group2..."
-  call read_nml(iounit, group2)
   close(iounit)
+  write(*,*) "...group2...(read_nml_file)"
+  call read_nml_file(filename, group2)
   write(*,*) "Done. Namelist read successfully."
   write(*,*) " "
   write(*,*) "Test set_param / get_param "
@@ -118,7 +118,11 @@ program test_io_params
   parsed = 0
   call command_argument_as_array(unmatched)
   call parse_command_args(group1, args=unmatched, unmatched=unmatched, stop_on_help=.false.)
-  call parse_command_args(group2, args=unmatched)
+  call parse_command_args(group2, args=unmatched, unmatched=unmatched)
+  if (size(unmatched) > 0) then
+    write(*,*) "Invalid parameters: ", trim(join_array(unmatched))
+    stop
+  endif
 
   ! Print namelist to screen
   write(*,*) " "

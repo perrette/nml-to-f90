@@ -374,7 +374,7 @@ class NmlIO(Feature):
     """! Namelist I/O ******************************************
     """
     name = "io_nml"
-    public = ["read_nml", "write_nml"]
+    public = ["read_nml", "write_nml", "read_nml_file"]
 
     def append_group(self, group):
 

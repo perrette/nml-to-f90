@@ -1,7 +1,7 @@
 program example
   use ioparams, only: group1_t, control_t, &
     read_nml, write_nml, command_argument_as_array, &
-    parse_command_args, print_help, trim_array
+    parse_command_args, print_help, join_array
 
   implicit none
   type(group1_t) :: par1
@@ -23,7 +23,7 @@ program example
 
   if (size(args) > 0) then
     write(*,*) "Some arguments were not matched: "
-    write(*,*) trim(trim_array(args))
+    write(*,*) trim(join_array(args))
     stop
   endif
 

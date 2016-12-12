@@ -45,3 +45,13 @@ subroutine write_nml_{group_name} (iounit, params)
     ! write_all
     write(unit=iounit, nml={group_name}) 
 end subroutine
+
+subroutine read_nml_file_{group_name} (file, params, iostat)
+    character(len=*), intent(in) :: file
+    type({type_name}), intent(inout) :: params
+    integer, optional, intent(out) :: iostat
+    integer :: unit = 4563
+    open(file=file, unit=unit, status='OLD')
+    call read_nml_{group_name} (unit, params, iostat)
+    close(unit)
+end subroutine
