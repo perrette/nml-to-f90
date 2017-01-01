@@ -15,7 +15,7 @@ from .namelist import Namelist, Param
 from . import ioparams
 from .ioparams import Group, Variable, get_call_string
 from .parsef90 import parse_type
-from .version import version as __version__
+from . import  __version__
 
 def _get_type_name(group_name, type_map, type_prefix, type_suffix):
     " build type name from group name "
